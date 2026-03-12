@@ -14,6 +14,7 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 import { TaskPipelineLive, EventFeedLive } from "@/components/war-room-live";
+import { OnboardingGuide } from "@/components/onboarding/onboarding-guide";
 
 interface WorkspacePageProps {
   params: Promise<{ workspaceId: string }>;
@@ -73,6 +74,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
+    include: { config: true },
   });
 
   if (!workspace) notFound();
@@ -85,6 +87,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     memories,
     recentEvents,
     connectedAccounts,
+    creativesCount,
   ] = await Promise.all([
     prisma.campaign.findMany({
       where: { workspaceId },
@@ -112,6 +115,9 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     prisma.connectedAccount.findMany({
       where: { workspaceId, isActive: true },
     }),
+    prisma.creative.count({
+      where: { workspaceId },
+    }),
   ]);
 
   const activeTasks = tasks.filter(
@@ -126,6 +132,10 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
   const currentStepIndex = lifecycleSteps.findIndex(
     (s) => s.key === workspace.status
   );
+
+  const showOnboarding =
+    workspace.status === "onboarding" ||
+    (connectedAccounts.length === 0 && campaigns.length === 0);
 
   return (
     <div>
@@ -155,200 +165,230 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
         </p>
       </div>
 
-      {/* Lifecycle progress */}
-      <div className="panel-surface mb-8 p-5">
-        <p className="eyebrow mb-4">Growth Lifecycle</p>
-        <div className="flex items-center gap-1">
-          {lifecycleSteps.map((step, i) => {
-            const isPast = i < currentStepIndex;
-            const isCurrent = i === currentStepIndex;
-            return (
-              <div key={step.key} className="flex items-center gap-1">
-                {i > 0 && (
-                  <span
-                    className={`text-[10px] ${isPast || isCurrent ? "text-accent/50" : "text-slate-700"}`}
-                  >
-                    &rsaquo;
+      {showOnboarding ? (
+        <OnboardingGuide
+          workspaceId={workspaceId}
+          workspaceName={workspace.name}
+          config={
+            workspace.config
+              ? {
+                  productName: workspace.config.productName,
+                  productDescription: workspace.config.productDescription,
+                  monthlyBudget: workspace.config.monthlyBudget,
+                  primaryGoal: workspace.config.primaryGoal,
+                  targetCac: workspace.config.targetCac,
+                  targetRoas: workspace.config.targetRoas,
+                  currency: workspace.config.currency,
+                }
+              : null
+          }
+          connectedAccounts={connectedAccounts.map((a) => ({
+            id: a.id,
+            platform: a.platform,
+            accountName: a.accountName,
+            isActive: a.isActive,
+          }))}
+          creativesCount={creativesCount}
+          campaignsCount={campaigns.length}
+        />
+      ) : (
+        <>
+          {/* Lifecycle progress */}
+          <div className="panel-surface mb-8 p-5">
+            <p className="eyebrow mb-4">Growth Lifecycle</p>
+            <div className="flex items-center gap-1">
+              {lifecycleSteps.map((step, i) => {
+                const isPast = i < currentStepIndex;
+                const isCurrent = i === currentStepIndex;
+                return (
+                  <div key={step.key} className="flex items-center gap-1">
+                    {i > 0 && (
+                      <span
+                        className={`text-[10px] ${isPast || isCurrent ? "text-accent/50" : "text-slate-700"}`}
+                      >
+                        &rsaquo;
+                      </span>
+                    )}
+                    <div
+                      className={`px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.22em] ${
+                        isCurrent
+                          ? "border border-accent/30 bg-accent/20 text-accent"
+                          : isPast
+                            ? "border border-accent/10 bg-accent/5 text-accent/60"
+                            : "border border-white/5 bg-white/[0.03] text-slate-600"
+                      }`}
+                    >
+                      {step.label}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="mb-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <StatCard icon={Layers} label="Active Tasks" value={String(activeTasks.length)} />
+            <StatCard icon={Megaphone} label="Campaigns" value={String(activeCampaigns.length)} />
+            <StatCard
+              icon={TrendingUp}
+              label="Total Spend"
+              value={formatCurrency(totalSpend)}
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="Revenue"
+              value={formatCurrency(totalRevenue)}
+              highlight={totalRevenue > 0}
+            />
+            <StatCard
+              icon={Shield}
+              label="ROAS"
+              value={roas ? `${roas.toFixed(2)}x` : "—"}
+              highlight={roas !== null && roas >= 2}
+            />
+            <StatCard
+              icon={FlaskConical}
+              label="Experiments"
+              value={String(experiments.filter((e) => e.status === "running").length)}
+            />
+          </div>
+
+          {/* Panels Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Task Pipeline — live polling */}
+            <TaskPipelineLive
+              workspaceId={workspaceId}
+              initialTasks={tasks.map((t) => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+                family: t.family,
+                agentType: t.agentType,
+                priority: t.priority,
+                createdAt: t.createdAt.toISOString(),
+              }))}
+            />
+
+            {/* Recent Events — live polling */}
+            <EventFeedLive
+              workspaceId={workspaceId}
+              initialEvents={recentEvents.map((e) => ({
+                id: e.id,
+                type: e.type,
+                data: e.data as Record<string, unknown> | null,
+                createdAt: e.createdAt.toISOString(),
+              }))}
+            />
+
+            {/* Top Campaigns */}
+            <div className="card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Megaphone className="h-4 w-4 text-slate-500" />
+                <h3 className="text-sm font-semibold text-slate-100">
+                  Top Campaigns
+                </h3>
+              </div>
+              {campaigns.length === 0 ? (
+                <EmptyState text="No campaigns yet" />
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {campaigns.slice(0, 6).map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between p-2.5 bg-white/[0.02] border border-white/5"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-white truncate">
+                          {c.name}
+                        </p>
+                        <p className="text-[10px] text-slate-600 mt-0.5">
+                          {c.type}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 ml-3 shrink-0">
+                        <span className="text-[10px] text-slate-400">
+                          {formatCurrency(c.spend)}
+                        </span>
+                        <span
+                          className={`text-[10px] font-medium flex items-center gap-0.5 ${
+                            (c.roas ?? 0) >= 2
+                              ? "text-accent"
+                              : (c.roas ?? 0) >= 1
+                                ? "text-emerald-400"
+                                : "text-red-400"
+                          }`}
+                        >
+                          {(c.roas ?? 0) >= 1 ? (
+                            <ArrowUpRight className="h-2.5 w-2.5" />
+                          ) : (
+                            <ArrowDownRight className="h-2.5 w-2.5" />
+                          )}
+                          {c.roas ? `${c.roas.toFixed(2)}x` : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Memory */}
+            <div className="card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Brain className="h-4 w-4 text-slate-500" />
+                <h3 className="text-sm font-semibold text-slate-100">
+                  Workspace Memory
+                </h3>
+                {memories.length > 0 && (
+                  <span className="text-[10px] text-slate-600 ml-auto">
+                    {memories.length} active
                   </span>
                 )}
-                <div
-                  className={`px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.22em] ${
-                    isCurrent
-                      ? "border border-accent/30 bg-accent/20 text-accent"
-                      : isPast
-                        ? "border border-accent/10 bg-accent/5 text-accent/60"
-                        : "border border-white/5 bg-white/[0.03] text-slate-600"
-                  }`}
-                >
-                  {step.label}
-                </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="mb-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <StatCard icon={Layers} label="Active Tasks" value={String(activeTasks.length)} />
-        <StatCard icon={Megaphone} label="Campaigns" value={String(activeCampaigns.length)} />
-        <StatCard
-          icon={TrendingUp}
-          label="Total Spend"
-          value={formatCurrency(totalSpend)}
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Revenue"
-          value={formatCurrency(totalRevenue)}
-          highlight={totalRevenue > 0}
-        />
-        <StatCard
-          icon={Shield}
-          label="ROAS"
-          value={roas ? `${roas.toFixed(2)}x` : "—"}
-          highlight={roas !== null && roas >= 2}
-        />
-        <StatCard
-          icon={FlaskConical}
-          label="Experiments"
-          value={String(experiments.filter((e) => e.status === "running").length)}
-        />
-      </div>
-
-      {/* Panels Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Task Pipeline — live polling */}
-        <TaskPipelineLive
-          workspaceId={workspaceId}
-          initialTasks={tasks.map((t) => ({
-            id: t.id,
-            title: t.title,
-            status: t.status,
-            family: t.family,
-            agentType: t.agentType,
-            priority: t.priority,
-            createdAt: t.createdAt.toISOString(),
-          }))}
-        />
-
-        {/* Recent Events — live polling */}
-        <EventFeedLive
-          workspaceId={workspaceId}
-          initialEvents={recentEvents.map((e) => ({
-            id: e.id,
-            type: e.type,
-            data: e.data as Record<string, unknown> | null,
-            createdAt: e.createdAt.toISOString(),
-          }))}
-        />
-
-        {/* Top Campaigns */}
-        <div className="card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Megaphone className="h-4 w-4 text-slate-500" />
-            <h3 className="text-sm font-semibold text-slate-100">
-              Top Campaigns
-            </h3>
-          </div>
-          {campaigns.length === 0 ? (
-            <EmptyState text="No campaigns yet" />
-          ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {campaigns.slice(0, 6).map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between p-2.5 bg-white/[0.02] border border-white/5"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-white truncate">
-                      {c.name}
-                    </p>
-                    <p className="text-[10px] text-slate-600 mt-0.5">
-                      {c.type}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 ml-3 shrink-0">
-                    <span className="text-[10px] text-slate-400">
-                      {formatCurrency(c.spend)}
-                    </span>
-                    <span
-                      className={`text-[10px] font-medium flex items-center gap-0.5 ${
-                        (c.roas ?? 0) >= 2
-                          ? "text-accent"
-                          : (c.roas ?? 0) >= 1
-                            ? "text-emerald-400"
-                            : "text-red-400"
-                      }`}
+              {memories.length === 0 ? (
+                <EmptyState text="No memories stored yet" />
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {memories.map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-2.5 bg-white/[0.02] border border-white/5"
                     >
-                      {(c.roas ?? 0) >= 1 ? (
-                        <ArrowUpRight className="h-2.5 w-2.5" />
-                      ) : (
-                        <ArrowDownRight className="h-2.5 w-2.5" />
-                      )}
-                      {c.roas ? `${c.roas.toFixed(2)}x` : "—"}
-                    </span>
-                  </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 font-medium ${
+                            m.type === "winning_angle" || m.type === "audience_insight"
+                              ? "bg-accent/20 text-accent"
+                              : m.type === "creative_pattern" || m.type === "channel_insight"
+                                ? "bg-blue-500/20 text-blue-400"
+                                : m.type === "failing_angle"
+                                  ? "bg-red-500/20 text-red-400"
+                                  : "bg-zinc-500/20 text-zinc-400"
+                          }`}
+                        >
+                          {m.type}
+                        </span>
+                        <span className="text-[10px] text-slate-400 truncate">
+                          {m.title}
+                        </span>
+                        <span className="text-[10px] text-slate-700 ml-auto shrink-0">
+                          {Math.round(m.confidence * 100)}%
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {m.content.length > 120
+                          ? m.content.slice(0, 120) + "..."
+                          : m.content}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Memory */}
-        <div className="card p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Brain className="h-4 w-4 text-slate-500" />
-            <h3 className="text-sm font-semibold text-slate-100">
-              Workspace Memory
-            </h3>
-            {memories.length > 0 && (
-              <span className="text-[10px] text-slate-600 ml-auto">
-                {memories.length} active
-              </span>
-            )}
           </div>
-          {memories.length === 0 ? (
-            <EmptyState text="No memories stored yet" />
-          ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {memories.map((m) => (
-                <div
-                  key={m.id}
-                  className="p-2.5 bg-white/[0.02] border border-white/5"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`text-[10px] px-1.5 py-0.5 font-medium ${
-                        m.type === "winning_angle" || m.type === "audience_insight"
-                          ? "bg-accent/20 text-accent"
-                          : m.type === "creative_pattern" || m.type === "channel_insight"
-                            ? "bg-blue-500/20 text-blue-400"
-                            : m.type === "failing_angle"
-                              ? "bg-red-500/20 text-red-400"
-                              : "bg-zinc-500/20 text-zinc-400"
-                      }`}
-                    >
-                      {m.type}
-                    </span>
-                    <span className="text-[10px] text-slate-400 truncate">
-                      {m.title}
-                    </span>
-                    <span className="text-[10px] text-slate-700 ml-auto shrink-0">
-                      {Math.round(m.confidence * 100)}%
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    {m.content.length > 120
-                      ? m.content.slice(0, 120) + "..."
-                      : m.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
