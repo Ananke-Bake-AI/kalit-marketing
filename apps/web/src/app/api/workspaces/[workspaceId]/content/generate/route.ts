@@ -68,6 +68,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     generateImage: typeof body.generateImage === "boolean" ? body.generateImage : undefined,
   };
 
+  // Check for API key before attempting generation
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey || apiKey === "sk-ant-xxx") {
+    return NextResponse.json(
+      { error: "Content generation requires an Anthropic API key. Add ANTHROPIC_API_KEY to your environment variables." },
+      { status: 503 }
+    );
+  }
+
   try {
     const result = await generateContent(brief);
 
@@ -78,8 +87,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Content generation failed";
+    // Clean up raw API errors for user-facing display
+    const userMessage = message.includes("authentication_error")
+      ? "API key is invalid. Please check your ANTHROPIC_API_KEY."
+      : message.includes("rate_limit")
+        ? "Rate limit reached. Please try again in a moment."
+        : message;
     return NextResponse.json(
-      { error: message },
+      { error: userMessage },
       { status: 500 }
     );
   }
