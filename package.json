@@ -1,0 +1,20 @@
+{
+  "name": "kalit-marketing",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @kalit/web dev",
+    "build": "pnpm --filter @kalit/web build",
+    "db:generate": "pnpm --filter @kalit/db run db:generate",
+    "db:migrate": "pnpm --filter @kalit/db run db:migrate",
+    "db:push": "pnpm --filter @kalit/db run db:push",
+    "db:studio": "pnpm --filter @kalit/db run db:studio",
+    "db:seed": "pnpm --filter @kalit/db run db:seed",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "process-tasks": "curl -s http://localhost:3000/api/cron/process-tasks"
+  }
+}

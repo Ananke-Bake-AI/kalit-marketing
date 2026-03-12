@@ -1,0 +1,746 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// AUTH & MULTI-TENANCY
+// ============================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  name          String?
+  image         String?
+  password      String?
+  avatarUrl     String?   @map("avatar_url")
+  apiKey        String?   @unique @map("api_key")
+  apiKeyCreated DateTime? @map("api_key_created")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  accounts   Account[]
+  sessions   Session[]
+  workspaces WorkspaceMember[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  // Legacy fields (kept for backward compat)
+  tokenHash    String?  @unique @map("token_hash")
+  expiresAt    DateTime? @map("expires_at")
+  userAgent    String?  @map("user_agent")
+  ipAddress    String?  @map("ip_address")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ============================================================
+// CLIENT GROWTH WORKSPACE
+// ============================================================
+
+enum WorkspaceStatus {
+  onboarding
+  auditing
+  strategy_ready
+  producing
+  awaiting_approval
+  launching
+  monitoring
+  optimizing
+  scaling
+  anomaly_detected
+  blocked
+  paused
+}
+
+enum MemberRole {
+  owner
+  admin
+  editor
+  viewer
+}
+
+model Workspace {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  status      WorkspaceStatus @default(onboarding)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  // Workspace data
+  config             WorkspaceConfig?
+  members            WorkspaceMember[]
+  connectedAccounts  ConnectedAccount[]
+  campaigns          Campaign[]
+  creatives          Creative[]
+  audiences          Audience[]
+  experiments        Experiment[]
+  tasks              Task[]
+  growthPlans        GrowthPlan[]
+  memories           Memory[]
+  policyRules        PolicyRule[]
+  events             Event[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String     @id @default(cuid())
+  workspaceId String     @map("workspace_id")
+  userId      String     @map("user_id")
+  role        MemberRole @default(editor)
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+model WorkspaceConfig {
+  id          String @id @default(cuid())
+  workspaceId String @unique @map("workspace_id")
+
+  // Startup context
+  productName        String  @map("product_name")
+  productDescription String  @map("product_description") @db.Text
+  productUrl         String? @map("product_url")
+  industry           String?
+  stage              String? // launch, validation, growth, scale
+
+  // ICP
+  icpDescription String? @map("icp_description") @db.Text
+  icpSegments    Json?   @map("icp_segments") // structured ICP data
+
+  // Brand
+  brandVoice     String? @map("brand_voice") @db.Text
+  brandGuidelines Json?  @map("brand_guidelines")
+  logoUrl        String? @map("logo_url")
+  colorPalette   Json?   @map("color_palette")
+
+  // Goals & constraints
+  monthlyBudget     Float?   @map("monthly_budget")
+  currency          String   @default("USD")
+  targetGeographies String[] @map("target_geographies")
+  primaryGoal       String?  @map("primary_goal") // signups, leads, revenue, demos
+  targetCac         Float?   @map("target_cac")
+  targetRoas        Float?   @map("target_roas")
+
+  // Autonomy level
+  autonomyMode String @default("approval") @map("autonomy_mode") // draft, approval, guardrailed, autonomous
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_configs")
+}
+
+// ============================================================
+// CONNECTED ACCOUNTS & IDENTITY
+// ============================================================
+
+enum Platform {
+  meta
+  google
+  tiktok
+  linkedin
+  x
+  reddit
+  youtube
+  ga4
+  search_console
+  hubspot
+  salesforce
+  mailchimp
+  sendgrid
+  stripe
+  custom
+}
+
+model ConnectedAccount {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  platform    Platform
+  accountId   String   @map("account_id") // external platform account ID
+  accountName String?  @map("account_name")
+  credentials Json     // encrypted tokens, refresh tokens
+  scopes      String[] // granted permissions
+  isActive    Boolean  @default(true) @map("is_active")
+  lastSyncAt  DateTime? @map("last_sync_at")
+  metadata    Json?    // platform-specific metadata (pixel IDs, page IDs, etc.)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, platform, accountId])
+  @@index([workspaceId])
+  @@map("connected_accounts")
+}
+
+// ============================================================
+// CANONICAL GROWTH SCHEMA (platform-agnostic)
+// ============================================================
+
+enum CampaignStatus {
+  draft
+  pending_approval
+  approved
+  launching
+  active
+  paused
+  optimizing
+  completed
+  failed
+  archived
+}
+
+enum CampaignType {
+  paid_search
+  paid_social
+  display
+  video
+  retargeting
+  organic_social
+  email
+  seo_content
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  workspaceId String         @map("workspace_id")
+  name        String
+  type        CampaignType
+  status      CampaignStatus @default(draft)
+
+  // Strategy link
+  objective      String? // awareness, traffic, conversions, revenue
+  targetAudience String? @map("target_audience") @db.Text
+  messagingAngle String? @map("messaging_angle") @db.Text
+  hypothesis     String? @db.Text
+
+  // Budget
+  dailyBudget   Float?  @map("daily_budget")
+  totalBudget   Float?  @map("total_budget")
+  currency      String  @default("USD")
+
+  // Platform mapping
+  platformCampaignIds Json? @map("platform_campaign_ids") // { meta: "123", google: "456" }
+
+  // Performance (latest snapshot)
+  impressions    Int     @default(0)
+  clicks         Int     @default(0)
+  conversions    Int     @default(0)
+  spend          Float   @default(0)
+  revenue        Float   @default(0)
+  ctr            Float?
+  cpc            Float?
+  cpa            Float?
+  roas           Float?
+
+  // Measurement confidence
+  measurementConfidence Float? @map("measurement_confidence") // 0-1 score
+
+  // Experiment link
+  experimentId String? @map("experiment_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  experiment Experiment? @relation(fields: [experimentId], references: [id])
+  adGroups   AdGroup[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+model AdGroup {
+  id         String @id @default(cuid())
+  campaignId String @map("campaign_id")
+  name       String
+
+  // Targeting
+  audienceId  String? @map("audience_id")
+  targeting   Json?   // platform-agnostic targeting spec
+  placements  Json?   // where ads appear
+
+  // Budget
+  dailyBudget Float? @map("daily_budget")
+
+  // Platform mapping
+  platformAdGroupIds Json? @map("platform_ad_group_ids")
+
+  // Performance
+  impressions Int   @default(0)
+  clicks      Int   @default(0)
+  conversions Int   @default(0)
+  spend       Float @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaign  Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  audience  Audience? @relation(fields: [audienceId], references: [id])
+  creatives AdGroupCreative[]
+
+  @@index([campaignId])
+  @@map("ad_groups")
+}
+
+model AdGroupCreative {
+  id          String @id @default(cuid())
+  adGroupId   String @map("ad_group_id")
+  creativeId  String @map("creative_id")
+  isActive    Boolean @default(true) @map("is_active")
+
+  // Performance for this specific creative in this ad group
+  impressions Int   @default(0)
+  clicks      Int   @default(0)
+  conversions Int   @default(0)
+  spend       Float @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  adGroup  AdGroup  @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
+  creative Creative @relation(fields: [creativeId], references: [id], onDelete: Cascade)
+
+  @@unique([adGroupId, creativeId])
+  @@map("ad_group_creatives")
+}
+
+// ============================================================
+// CREATIVE ENGINE
+// ============================================================
+
+enum CreativeType {
+  ad_copy
+  headline
+  hook
+  cta
+  static_image
+  video_script
+  ugc_concept
+  carousel
+  email_copy
+  social_post
+  blog_draft
+  landing_page_variant
+}
+
+enum CreativeStatus {
+  draft
+  pending_review
+  approved
+  rejected
+  active
+  fatigued
+  archived
+}
+
+model Creative {
+  id          String         @id @default(cuid())
+  workspaceId String         @map("workspace_id")
+  type        CreativeType
+  status      CreativeStatus @default(draft)
+  version     Int            @default(1)
+  parentId    String?        @map("parent_id") // for versioning chain
+
+  // Content
+  title      String?
+  content    Json    // structured content (copy text, image specs, video script, etc.)
+  mediaUrls  String[] @map("media_urls")
+
+  // Hypothesis & experiment linkage
+  hypothesis    String? @db.Text
+  targetSegment String? @map("target_segment")
+  messagingAngle String? @map("messaging_angle")
+  tags          String[]
+
+  // Performance
+  impressions Int   @default(0)
+  clicks      Int   @default(0)
+  conversions Int   @default(0)
+  fatigueScore Float? @map("fatigue_score") // 0-1, detected by system
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent    Creative?          @relation("CreativeVersions", fields: [parentId], references: [id])
+  versions  Creative[]         @relation("CreativeVersions")
+  adGroups  AdGroupCreative[]
+
+  @@index([workspaceId])
+  @@index([type, status])
+  @@map("creatives")
+}
+
+// ============================================================
+// AUDIENCES
+// ============================================================
+
+model Audience {
+  id          String @id @default(cuid())
+  workspaceId String @map("workspace_id")
+  name        String
+  description String? @db.Text
+
+  // Definition
+  definition Json // platform-agnostic audience spec
+  size       Int?
+
+  // Platform mapping
+  platformAudienceIds Json? @map("platform_audience_ids")
+
+  // Performance
+  totalSpend      Float @default(0) @map("total_spend")
+  totalConversions Int  @default(0) @map("total_conversions")
+  avgCpa          Float? @map("avg_cpa")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  adGroups  AdGroup[]
+
+  @@index([workspaceId])
+  @@map("audiences")
+}
+
+// ============================================================
+// EXPERIMENT REGISTRY
+// ============================================================
+
+enum ExperimentStatus {
+  planned
+  running
+  completed
+  inconclusive
+  cancelled
+}
+
+model Experiment {
+  id          String           @id @default(cuid())
+  workspaceId String           @map("workspace_id")
+  name        String
+  status      ExperimentStatus @default(planned)
+
+  // Design
+  hypothesis    String  @db.Text
+  testDesign    Json?   @map("test_design") // what we're testing
+  successMetric String  @map("success_metric") // primary KPI
+  targetConfidence Float @default(0.95) @map("target_confidence")
+
+  // Results
+  outcome       String? @db.Text
+  confidence    Float?
+  winnerVariant String? @map("winner_variant")
+  learnings     String? @db.Text
+
+  startedAt   DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  workspace Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+
+  @@index([workspaceId])
+  @@index([status])
+  @@map("experiments")
+}
+
+// ============================================================
+// TASK PIPELINE
+// ============================================================
+
+enum TaskStatus {
+  queued
+  researching
+  generating
+  waiting_approval
+  approved
+  executing
+  published
+  monitoring
+  needs_revision
+  completed
+  failed
+  archived
+}
+
+enum JobFamily {
+  research
+  production
+  execution
+  review
+}
+
+enum TaskPriority {
+  critical
+  high
+  medium
+  low
+}
+
+enum TaskTrigger {
+  request    // user-initiated
+  event      // system event (anomaly, threshold)
+  scheduled  // cron job
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  workspaceId String       @map("workspace_id")
+  status      TaskStatus   @default(queued)
+  family      JobFamily
+  priority    TaskPriority @default(medium)
+  trigger     TaskTrigger  @default(request)
+
+  // Task definition
+  title       String
+  description String? @db.Text
+  agentType   String  @map("agent_type") // which specialist agent handles this
+  input       Json?   // structured input for the agent
+  output      Json?   // structured output from the agent
+
+  // Scheduling
+  scheduledFor DateTime? @map("scheduled_for")
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  retryCount   Int       @default(0) @map("retry_count")
+
+  // Lineage
+  parentTaskId String? @map("parent_task_id")
+  traceId      String? @map("trace_id") // correlation ID
+
+  // Action explanation (why the system triggered this)
+  reason String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parentTask Task?     @relation("TaskHierarchy", fields: [parentTaskId], references: [id])
+  childTasks Task[]    @relation("TaskHierarchy")
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([family])
+  @@index([scheduledFor])
+  @@index([traceId])
+  @@map("tasks")
+}
+
+// ============================================================
+// GROWTH PLAN (structured strategy output)
+// ============================================================
+
+model GrowthPlan {
+  id          String  @id @default(cuid())
+  workspaceId String  @map("workspace_id")
+  version     Int     @default(1)
+  isActive    Boolean @default(true) @map("is_active")
+
+  // Structured plan (not prose)
+  icpHypotheses      Json @map("icp_hypotheses")      // [{segment, description, priority}]
+  channelPriorities  Json @map("channel_priorities")   // [{channel, reason, budgetPct}]
+  messagingAngles    Json @map("messaging_angles")     // [{angle, targetSegment, hook}]
+  budgetAllocation   Json @map("budget_allocation")    // [{channel, daily, monthly, rules}]
+  experimentMatrix   Json @map("experiment_matrix")    // [{hypothesis, test, metric, duration}]
+  kpiTargets         Json @map("kpi_targets")          // [{metric, target, timeframe}]
+  stopScaleRules     Json @map("stop_scale_rules")     // [{condition, action}]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("growth_plans")
+}
+
+// ============================================================
+// POLICY ENGINE
+// ============================================================
+
+enum PolicyAction {
+  allow
+  require_approval
+  block
+  alert
+}
+
+model PolicyRule {
+  id          String       @id @default(cuid())
+  workspaceId String       @map("workspace_id")
+  isActive    Boolean      @default(true) @map("is_active")
+
+  // Rule definition
+  name        String
+  description String? @db.Text
+  condition   Json    // structured condition: { field, operator, value }
+  action      PolicyAction
+  priority    Int     @default(0) // higher = evaluated first
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("policy_rules")
+}
+
+// ============================================================
+// LEARNING MEMORY (per workspace)
+// ============================================================
+
+enum MemoryType {
+  winning_angle
+  failing_angle
+  audience_insight
+  channel_insight
+  creative_pattern
+  funnel_insight
+  brand_learning
+  experiment_result
+}
+
+model Memory {
+  id          String     @id @default(cuid())
+  workspaceId String     @map("workspace_id")
+  type        MemoryType
+
+  // Content
+  title    String
+  content  String  @db.Text
+  metadata Json?   // structured data
+  tags     String[]
+
+  // Confidence
+  confidence Float  @default(0.5) // 0-1, increases with more evidence
+  evidenceCount Int @default(1) @map("evidence_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([type])
+  @@map("memories")
+}
+
+// ============================================================
+// EVENT BUS LOG
+// ============================================================
+
+enum EventType {
+  // Lifecycle
+  workspace_created
+  workspace_status_changed
+
+  // Campaigns
+  campaign_created
+  campaign_launched
+  campaign_paused
+  campaign_budget_changed
+
+  // Performance signals
+  performance_anomaly
+  creative_fatigue_detected
+  budget_threshold_reached
+  conversion_drop_detected
+  tracking_broken
+
+  // Agent actions
+  task_created
+  task_completed
+  task_failed
+  agent_action_taken
+  approval_requested
+  approval_granted
+  approval_denied
+
+  // Optimization
+  budget_reallocated
+  creative_rotated
+  experiment_started
+  experiment_completed
+
+  // External
+  competitor_signal
+  seo_ranking_changed
+  platform_policy_rejection
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  workspaceId String    @map("workspace_id")
+  type        EventType
+  data        Json?
+  traceId     String?   @map("trace_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([type])
+  @@index([createdAt])
+  @@index([traceId])
+  @@map("events")
+}
