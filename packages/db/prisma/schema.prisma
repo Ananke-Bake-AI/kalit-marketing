@@ -127,6 +127,10 @@ model Workspace {
   memories           Memory[]
   policyRules        PolicyRule[]
   events             Event[]
+  analyticsSnapshots AnalyticsSnapshot[]
+  revenueEvents      RevenueEvent[]
+  emailSends         EmailSend[]
+  socialPosts        SocialPost[]
 
   @@map("workspaces")
 }
@@ -205,6 +209,9 @@ enum Platform {
   mailchimp
   sendgrid
   stripe
+  posthog
+  mixpanel
+  resend
   custom
 }
 
@@ -301,6 +308,7 @@ model Campaign {
   workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   experiment Experiment? @relation(fields: [experimentId], references: [id])
   adGroups   AdGroup[]
+  emailSends EmailSend[]
 
   @@index([workspaceId])
   @@index([status])
@@ -418,10 +426,11 @@ model Creative {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  workspace Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  parent    Creative?          @relation("CreativeVersions", fields: [parentId], references: [id])
-  versions  Creative[]         @relation("CreativeVersions")
-  adGroups  AdGroupCreative[]
+  workspace   Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent      Creative?          @relation("CreativeVersions", fields: [parentId], references: [id])
+  versions    Creative[]         @relation("CreativeVersions")
+  adGroups    AdGroupCreative[]
+  socialPosts SocialPost[]
 
   @@index([workspaceId])
   @@index([type, status])
@@ -743,4 +752,109 @@ model Event {
   @@index([createdAt])
   @@index([traceId])
   @@map("events")
+}
+
+// ============================================================
+// ANALYTICS SNAPSHOTS (GA4, PostHog, Mixpanel)
+// ============================================================
+
+model AnalyticsSnapshot {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  platform    Platform
+  date        String   // YYYY-MM-DD
+  data        Json     // { sessions, pageviews, events, sources, funnels }
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, platform, date])
+  @@index([workspaceId])
+  @@map("analytics_snapshots")
+}
+
+// ============================================================
+// REVENUE EVENTS (Stripe)
+// ============================================================
+
+model RevenueEvent {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  externalId  String   @unique @map("external_id") // Stripe event ID (idempotency)
+  type        String   // payment_intent.succeeded, invoice.paid, etc.
+  amount      Float
+  currency    String
+  customerId  String?  @map("customer_id")
+  metadata    Json?    // utm_source, campaign attribution data
+  occurredAt  DateTime @map("occurred_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([occurredAt])
+  @@map("revenue_events")
+}
+
+// ============================================================
+// EMAIL SENDS (Resend, SendGrid)
+// ============================================================
+
+model EmailSend {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  platform    Platform
+  externalId  String?  @map("external_id")
+  campaignId  String?  @map("campaign_id")
+
+  to          String
+  subject     String
+  status      String   @default("sent") // sent, delivered, opened, clicked, bounced, complained
+  sentAt      DateTime @map("sent_at")
+  openedAt    DateTime? @map("opened_at")
+  clickedAt   DateTime? @map("clicked_at")
+
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaign  Campaign? @relation(fields: [campaignId], references: [id])
+
+  @@index([workspaceId])
+  @@index([campaignId])
+  @@map("email_sends")
+}
+
+// ============================================================
+// SOCIAL POSTS (organic posting)
+// ============================================================
+
+model SocialPost {
+  id          String   @id @default(cuid())
+  workspaceId String   @map("workspace_id")
+  platform    Platform
+  creativeId  String?  @map("creative_id")
+
+  content        String   @db.Text
+  mediaUrls      String[] @map("media_urls")
+  platformPostId String?  @map("platform_post_id")
+  status         String   @default("draft") // draft, scheduled, published, failed, deleted
+  scheduledFor   DateTime? @map("scheduled_for")
+  publishedAt    DateTime? @map("published_at")
+
+  // Engagement metrics
+  likes       Int @default(0)
+  comments    Int @default(0)
+  shares      Int @default(0)
+  impressions Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creative  Creative? @relation(fields: [creativeId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("social_posts")
 }
