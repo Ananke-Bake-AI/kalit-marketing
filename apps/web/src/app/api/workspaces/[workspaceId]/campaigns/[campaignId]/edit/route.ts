@@ -11,6 +11,7 @@ import { prisma } from "@kalit/db";
 import { llmComplete, parseJSON } from "@/lib/llm/client";
 import { getAdapter, type AdCredentials, type AdGroupSpec, type AdSpec } from "@/lib/adapters";
 import { getValidCredentials } from "@/lib/oauth/refresh";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string; campaignId: string }>;
@@ -52,6 +53,9 @@ interface EditedCampaign {
 
 export async function POST(req: NextRequest, ctx: RouteContext) {
   const { workspaceId, campaignId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const body = await req.json();
   const prompt = body.prompt as string;

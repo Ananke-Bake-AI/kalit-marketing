@@ -1,6 +1,7 @@
 import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
 import { generateContent, type ContentBrief } from "@/lib/content/pipeline";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -23,6 +24,9 @@ const VALID_TYPES = [
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   // Validate workspace exists
   const workspace = await prisma.workspace.findUnique({

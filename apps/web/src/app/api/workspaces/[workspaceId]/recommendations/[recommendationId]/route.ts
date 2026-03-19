@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@kalit/db";
 import { executeRecommendation } from "@/lib/engine/action-applicator";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string; recommendationId: string }>;
@@ -16,6 +17,9 @@ interface RouteContext {
 
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
   const { workspaceId, recommendationId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const rec = await prisma.recommendation.findUnique({
     where: { id: recommendationId },

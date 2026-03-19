@@ -1,11 +1,16 @@
 import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   const { workspaceId } = await params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const body = await req.json();
 
   // Validate workspace exists

@@ -3,6 +3,7 @@ import {
   optimizeBudget,
   applyReallocations,
 } from "@/lib/engine/budget-optimizer";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -13,6 +14,10 @@ interface RouteContext {
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const result = await optimizeBudget(workspaceId);
   return NextResponse.json(result);
 }
@@ -22,6 +27,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const { reallocations } = await request.json();
 
   if (!Array.isArray(reallocations) || reallocations.length === 0) {

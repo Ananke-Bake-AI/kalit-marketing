@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@kalit/db";
-import { cookies } from "next/headers";
 import { encode } from "next-auth/jwt";
 
 /**
@@ -138,9 +137,10 @@ export async function GET(request: NextRequest) {
   }
 
   // Create a NextAuth-compatible JWT session token
-  const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+  // Auth.js v5 uses AUTH_SECRET; fall back to NEXTAUTH_SECRET for compatibility
+  const nextAuthSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
   if (!nextAuthSecret) {
-    console.error("NEXTAUTH_SECRET is not configured");
+    console.error("AUTH_SECRET / NEXTAUTH_SECRET is not configured");
     return NextResponse.json(
       { error: "Auth not configured" },
       { status: 500 },
@@ -165,17 +165,17 @@ export async function GET(request: NextRequest) {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 
-  // Set the session cookie and redirect to dashboard
-  const cookieStore = await cookies();
+  // Set cookie on the redirect response directly
+  const redirectUrl = new URL("/dashboard", request.url);
+  const response = NextResponse.redirect(redirectUrl);
 
-  cookieStore.set(cookieName, sessionToken, {
+  response.cookies.set(cookieName, sessionToken, {
     httpOnly: true,
     secure: isSecure,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   });
 
-  const redirectUrl = new URL("/dashboard", request.url);
-  return NextResponse.redirect(redirectUrl);
+  return response;
 }

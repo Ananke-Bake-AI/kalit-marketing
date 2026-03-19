@@ -10,6 +10,7 @@
 import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformKey } from "@/lib/platform-keys";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 type Platform = "meta" | "google" | "tiktok" | "linkedin" | "x" | "reddit" | "hubspot";
 
@@ -19,6 +20,9 @@ interface RouteContext {
 
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { workspaceId, platform } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const account = await prisma.connectedAccount.findFirst({
     where: {
@@ -42,6 +46,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
   const { workspaceId, platform } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   let body: Record<string, unknown>;
   try {

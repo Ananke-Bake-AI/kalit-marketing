@@ -2,6 +2,7 @@ import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdapter } from "@/lib/adapters";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -24,6 +25,10 @@ const connectSchema = z.object({
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const body = await request.json();
   const parsed = connectSchema.safeParse(body);
 

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@kalit/db";
 import { processTask } from "@/lib/engine/agent-router";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string; taskId: string }>;
@@ -15,6 +16,9 @@ interface RouteContext {
 
 export async function GET(_req: NextRequest, ctx: RouteContext) {
   const { workspaceId, taskId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, workspaceId },
@@ -29,6 +33,9 @@ export async function GET(_req: NextRequest, ctx: RouteContext) {
 
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
   const { workspaceId, taskId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, workspaceId },

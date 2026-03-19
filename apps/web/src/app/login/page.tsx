@@ -131,15 +131,6 @@ function LoginForm() {
         </div>
       </form>
 
-      {/* Demo credentials hint */}
-      <div className="mt-4 border border-white/5 bg-white/[0.02] p-3 text-center">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-slate-600">
-          Demo credentials
-        </p>
-        <p className="mt-1 font-mono text-xs text-slate-400">
-          admin@kalit.ai / kalit2024
-        </p>
-      </div>
     </div>
   );
 }

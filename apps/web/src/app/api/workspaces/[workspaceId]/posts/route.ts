@@ -1,6 +1,7 @@
 import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 import type { SocialPostingAdapter, SocialCredentials, SocialPostSpec } from "@/lib/adapters/social-types";
 import { metaSocialAdapter } from "@/lib/adapters/social/meta-social";
@@ -43,6 +44,10 @@ const createPostSchema = z.object({
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const { searchParams } = new URL(request.url);
 
   const platform = searchParams.get("platform");
@@ -73,6 +78,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const body = await request.json();
   const parsed = createPostSchema.safeParse(body);
 

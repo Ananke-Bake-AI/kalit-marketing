@@ -4,6 +4,7 @@ import {
   evaluateExperiment,
   listExperiments,
 } from "@/lib/engine/experiment-manager";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -14,6 +15,10 @@ interface RouteContext {
  */
 export async function GET(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const { searchParams } = new URL(request.url);
   const experimentId = searchParams.get("id");
 
@@ -31,6 +36,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const body = await request.json();
 
   const experiment = await createExperiment(workspaceId, {

@@ -2,6 +2,9 @@ import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { transitionWorkspace } from "@/lib/engine/lifecycle";
+import { requireAuth, isAuthError } from "@/lib/api-auth";
+
+const AUTH_DISABLED = process.env.AUTH_DISABLED === "true";
 
 const createWorkspaceSchema = z.object({
   name: z.string().min(1).max(100),
@@ -37,7 +40,14 @@ const createWorkspaceSchema = z.object({
 const SHAREABLE_PLATFORMS = ["google", "ga4", "stripe", "posthog"];
 
 export async function GET() {
+  const userOrRes = await requireAuth();
+  if (isAuthError(userOrRes)) return userOrRes;
+  const user = userOrRes;
+
   const workspaces = await prisma.workspace.findMany({
+    where: AUTH_DISABLED
+      ? undefined
+      : { members: { some: { userId: user.id } } },
     include: {
       config: true,
       _count: {
@@ -55,6 +65,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const userOrRes = await requireAuth();
+  if (isAuthError(userOrRes)) return userOrRes;
+  const user = userOrRes;
+
   const body = await request.json();
   const parsed = createWorkspaceSchema.safeParse(body);
 
@@ -109,6 +123,17 @@ export async function POST(request: NextRequest) {
     },
     include: { config: true },
   });
+
+  // Add creating user as workspace owner
+  if (!AUTH_DISABLED) {
+    await prisma.workspaceMember.create({
+      data: {
+        workspaceId: workspace.id,
+        userId: user.id,
+        role: "owner",
+      },
+    });
+  }
 
   // Share compatible connections from existing workspaces
   let sharedConnections: string[] = [];

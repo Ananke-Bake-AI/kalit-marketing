@@ -19,6 +19,7 @@ import {
   persistCampaigns,
   type CampaignArchitectOutput,
 } from "@/lib/engine/campaign-persister";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -239,6 +240,9 @@ Design campaigns that will drive ${context.primaryGoal} for ${context.productNam
 
 export async function POST(request: NextRequest, ctx: RouteContext) {
   const { workspaceId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },

@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
 // Paths that never require authentication
-const publicPaths = ["/login", "/api/auth"];
+const publicPaths = ["/login", "/api/auth", "/api/internal", "/api/cron", "/api/events", "/api/webhooks"];
 
 function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;
   return publicPaths.some((p) => pathname.startsWith(p));
 }
 
-export default auth((req: NextRequest & { auth?: unknown }) => {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Dev/testing bypass: skip all auth checks when AUTH_DISABLED=true
@@ -23,13 +23,24 @@ export default auth((req: NextRequest & { auth?: unknown }) => {
     return NextResponse.next();
   }
 
-  // Protect /dashboard/* — redirect unauthenticated users
-  if (!req.auth) {
+  // Check for valid session token
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  const cookieName = req.url.startsWith("https")
+    ? "__Secure-authjs.session-token"
+    : "authjs.session-token";
+  const token = await getToken({
+    req,
+    secret: secret!,
+    salt: cookieName,
+    cookieName,
+  });
+
+  if (!token) {
     // In production with SSO, redirect to main app login
     const mainAppUrl = process.env.MAIN_APP_URL;
     if (mainAppUrl) {
       const suiteReturnUrl = new URL(pathname, req.url).toString();
-      const loginUrl = new URL("/auth/login", mainAppUrl);
+      const loginUrl = new URL("/login", mainAppUrl);
       loginUrl.searchParams.set("returnTo", suiteReturnUrl);
       return NextResponse.redirect(loginUrl);
     }
@@ -41,7 +52,7 @@ export default auth((req: NextRequest & { auth?: unknown }) => {
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [

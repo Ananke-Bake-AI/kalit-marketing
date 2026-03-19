@@ -1,6 +1,7 @@
 import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -21,6 +22,9 @@ const createPolicySchema = z.object({
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
 
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const policies = await prisma.policyRule.findMany({
     where: { workspaceId, isActive: true },
     orderBy: { priority: "desc" },
@@ -31,6 +35,10 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
+
   const body = await request.json();
   const parsed = createPolicySchema.safeParse(body);
 

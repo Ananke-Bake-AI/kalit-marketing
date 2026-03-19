@@ -1,5 +1,6 @@
 import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -10,6 +11,9 @@ interface RouteContext {
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const config = await prisma.workspaceConfig.findUnique({
     where: { workspaceId },
@@ -34,6 +38,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
  */
 export async function POST(request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },

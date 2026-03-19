@@ -28,16 +28,18 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+const AUTH_DISABLED = process.env.AUTH_DISABLED === "true";
+
 export default async function DashboardPage() {
   const session = await auth();
   const userId = session?.user?.id;
 
   // Scope workspaces to current user's memberships
-  // Falls back to showing all workspaces when auth is disabled (dev mode)
+  // Only show all workspaces in dev mode (AUTH_DISABLED=true)
   const workspaces = await prisma.workspace.findMany({
-    where: userId
-      ? { members: { some: { userId } } }
-      : undefined,
+    where: AUTH_DISABLED
+      ? undefined
+      : { members: { some: { userId: userId ?? "no-user" } } },
     orderBy: { updatedAt: "desc" },
     include: {
       _count: {

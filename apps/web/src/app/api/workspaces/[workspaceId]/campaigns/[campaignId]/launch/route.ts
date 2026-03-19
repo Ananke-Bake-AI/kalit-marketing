@@ -13,6 +13,7 @@ import {
 } from "@/lib/engine/campaign-executor";
 import { getAdapter, type AdCredentials } from "@/lib/adapters";
 import { getValidCredentials } from "@/lib/oauth/refresh";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string; campaignId: string }>;
@@ -27,6 +28,9 @@ interface RouteContext {
  */
 export async function POST(req: NextRequest, ctx: RouteContext) {
   const { workspaceId, campaignId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   // Verify campaign exists and belongs to workspace
   const campaign = await prisma.campaign.findUnique({
@@ -93,6 +97,9 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
  */
 export async function PATCH(req: NextRequest, ctx: RouteContext) {
   const { workspaceId, campaignId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const campaign = await prisma.campaign.findUnique({
     where: { id: campaignId },

@@ -9,6 +9,7 @@
 import { prisma } from "@kalit/db";
 import { llmComplete, parseJSON } from "@/lib/llm/client";
 import { transitionWorkspace } from "@/lib/engine/lifecycle";
+import { reportUsage, checkCredits } from "@/lib/usage-reporter";
 
 interface AgentConfig {
   systemPrompt: string;
@@ -563,6 +564,19 @@ export async function processTask(taskId: string): Promise<{
       throw new Error(`No agent config found for task ${taskId}`);
     }
 
+    // Credit check: find workspace owner's external org
+    const workspaceOwner = await prisma.workspaceMember.findFirst({
+      where: { workspaceId: task.workspaceId, role: "owner" },
+      include: { user: { select: { externalOrgId: true, externalUserId: true } } },
+    });
+
+    if (workspaceOwner?.user?.externalOrgId) {
+      const creditCheck = await checkCredits(workspaceOwner.user.externalOrgId, 1);
+      if (!creditCheck.allowed) {
+        throw new Error(creditCheck.error || "Insufficient credits");
+      }
+    }
+
     // Call Claude via unified LLM client (API key or local session)
     const response = await llmComplete({
       model: prompt.config.model,
@@ -613,6 +627,17 @@ export async function processTask(taskId: string): Promise<{
         },
       },
     });
+
+    // Report usage to main app (fire-and-forget)
+    if (workspaceOwner?.user?.externalUserId && workspaceOwner?.user?.externalOrgId) {
+      reportUsage({
+        externalUserId: workspaceOwner.user.externalUserId,
+        externalOrgId: workspaceOwner.user.externalOrgId,
+        action: `task:${task.agentType}`,
+        credits: 1,
+        metadata: { taskId: task.id, model: prompt.config.model },
+      });
+    }
 
     // Auto-transition workspace when all lifecycle-triggered tasks are done
     await checkLifecycleAutoTransition(task.workspaceId);

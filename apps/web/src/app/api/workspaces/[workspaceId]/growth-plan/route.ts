@@ -1,5 +1,6 @@
 import { prisma } from "@kalit/db";
 import { NextRequest, NextResponse } from "next/server";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -10,6 +11,9 @@ interface RouteContext {
  */
 export async function GET(_request: NextRequest, context: RouteContext) {
   const { workspaceId } = await context.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const plan = await prisma.growthPlan.findFirst({
     where: { workspaceId, isActive: true },

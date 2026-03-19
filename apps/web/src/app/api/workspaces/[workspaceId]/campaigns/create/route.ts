@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@kalit/db";
 import { llmComplete, parseJSON } from "@/lib/llm/client";
+import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -48,6 +49,9 @@ interface GeneratedCampaign {
 
 export async function POST(req: NextRequest, ctx: RouteContext) {
   const { workspaceId } = await ctx.params;
+
+  const authResult = await requireWorkspaceMember(workspaceId);
+  if (isAuthError(authResult)) return authResult;
 
   const body = await req.json();
   const prompt = body.prompt as string;
