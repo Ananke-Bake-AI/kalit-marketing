@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 export function usePolling<T>(
   url: string,
   intervalMs: number = 5000
-): { data: T | null; loading: boolean; error: Error | null } {
+): { data: T | null; loading: boolean; error: Error | null; mutate: () => void } {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -58,5 +58,10 @@ export function usePolling<T>(
     };
   }, [fetchData, intervalMs]);
 
-  return { data, loading, error };
+  // Manual refresh trigger
+  const mutate = useCallback(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, mutate };
 }

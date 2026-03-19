@@ -187,6 +187,17 @@ export const redditAdapter: ChannelAdapter = {
     );
   },
 
+  async removeCampaign(
+    credentials: AdCredentials,
+    platformId: string
+  ): Promise<void> {
+    await redditFetch(
+      `campaigns/${platformId}`,
+      credentials.accessToken,
+      { method: "DELETE" }
+    );
+  },
+
   async createAdGroup(
     credentials: AdCredentials,
     campaignPlatformId: string,

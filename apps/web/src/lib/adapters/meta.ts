@@ -183,6 +183,15 @@ export const metaAdapter: ChannelAdapter = {
     });
   },
 
+  async removeCampaign(
+    credentials: AdCredentials,
+    platformId: string
+  ): Promise<void> {
+    await metaFetch(`/${platformId}`, credentials.accessToken, {
+      method: "DELETE",
+    });
+  },
+
   async createAdGroup(
     credentials: AdCredentials,
     campaignPlatformId: string,

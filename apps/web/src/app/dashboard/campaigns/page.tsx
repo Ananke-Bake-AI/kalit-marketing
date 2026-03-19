@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CampaignCreatePrompt } from "@/components/dashboard/campaign-create-prompt";
 
 interface Campaign {
   id: string;
@@ -123,18 +124,25 @@ export default function CampaignsPage() {
           </p>
         </div>
 
-        <select
-          value={selectedWorkspace}
-          onChange={(e) => setSelectedWorkspace(e.target.value)}
-          className="input text-sm w-56"
-        >
-          {workspaces.map((w) => (
-            <option key={w.id} value={w.id}>
-              {w.name}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-3">
+          <select
+            value={selectedWorkspace}
+            onChange={(e) => setSelectedWorkspace(e.target.value)}
+            className="input text-sm w-56"
+          >
+            {workspaces.map((w) => (
+              <option key={w.id} value={w.id}>
+                {w.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {/* Create Campaign */}
+      {selectedWorkspace && (
+        <CampaignCreatePrompt workspaceId={selectedWorkspace} />
+      )}
 
       {/* Aggregate Stats */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -241,10 +249,15 @@ export default function CampaignsPage() {
                 {filtered.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-white/[0.02] transition-colors"
+                    className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                    onClick={() => {
+                      if (selectedWorkspace) {
+                        window.location.href = `/dashboard/workspaces/${selectedWorkspace}/campaigns/${c.id}`;
+                      }
+                    }}
                   >
                     <td className="p-3">
-                      <p className="text-white font-medium">{c.name}</p>
+                      <p className="text-white font-medium group-hover:text-accent transition-colors">{c.name}</p>
                       <p className="text-xs text-zinc-600 mt-0.5">
                         {c.platform}
                       </p>

@@ -21,6 +21,8 @@ model User {
   avatarUrl     String?   @map("avatar_url")
   apiKey        String?   @unique @map("api_key")
   apiKeyCreated DateTime? @map("api_key_created")
+  externalUserId  String?   @unique @map("external_user_id")  // Main app user ID (SSO)
+  externalOrgId   String?            @map("external_org_id")  // Main app org ID (SSO)
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -131,6 +133,7 @@ model Workspace {
   revenueEvents      RevenueEvent[]
   emailSends         EmailSend[]
   socialPosts        SocialPost[]
+  recommendations    Recommendation[]
 
   @@map("workspaces")
 }
@@ -181,6 +184,13 @@ model WorkspaceConfig {
 
   // Autonomy level
   autonomyMode String @default("approval") @map("autonomy_mode") // draft, approval, guardrailed, autonomous
+
+  // Supervisor scheduling
+  supervisorEnabled  Boolean  @default(false)
+  scheduleMode       String   @default("automatic") // "automatic" | "custom"
+  customIntervals    Json?    // { reviewInterval: 24, fatigueCheck: 12, ... } in hours
+  lastSupervisorRun  DateTime?
+  supervisorStatus   String   @default("idle") // "idle" | "running" | "paused" | "error"
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -282,7 +292,10 @@ model Campaign {
   totalBudget   Float?  @map("total_budget")
   currency      String  @default("USD")
 
-  // Platform mapping
+  // Platform targeting — which ad platform this campaign is designed for
+  platform    String?  // google, meta, tiktok, reddit, linkedin, x — null means unassigned
+
+  // Platform mapping — IDs after deployment
   platformCampaignIds Json? @map("platform_campaign_ids") // { meta: "123", google: "456" }
 
   // Performance (latest snapshot)
@@ -305,10 +318,11 @@ model Campaign {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  workspace  Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  experiment Experiment? @relation(fields: [experimentId], references: [id])
-  adGroups   AdGroup[]
-  emailSends EmailSend[]
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  experiment      Experiment?      @relation(fields: [experimentId], references: [id])
+  adGroups        AdGroup[]
+  emailSends      EmailSend[]
+  recommendations Recommendation[]
 
   @@index([workspaceId])
   @@index([status])
@@ -579,12 +593,16 @@ model Task {
   // Action explanation (why the system triggered this)
   reason String? @db.Text
 
+  // Whether the action applicator has processed this task's output
+  appliedAt DateTime? @map("applied_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  workspace  Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  parentTask Task?     @relation("TaskHierarchy", fields: [parentTaskId], references: [id])
-  childTasks Task[]    @relation("TaskHierarchy")
+  workspace       Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parentTask      Task?            @relation("TaskHierarchy", fields: [parentTaskId], references: [id])
+  childTasks      Task[]           @relation("TaskHierarchy")
+  recommendations Recommendation[]
 
   @@index([workspaceId])
   @@index([status])
@@ -684,6 +702,9 @@ model Memory {
   confidence Float  @default(0.5) // 0-1, increases with more evidence
   evidenceCount Int @default(1) @map("evidence_count")
 
+  // Source tracking
+  source String? // e.g. "website:https://...", "file_upload", "agent:performance_analyst"
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -735,6 +756,16 @@ enum EventType {
   competitor_signal
   seo_ranking_changed
   platform_policy_rejection
+
+  // Context & Supervisor
+  website_analyzed
+  supervisor_started
+  supervisor_paused
+
+  // Recommendations
+  recommendation_created
+  recommendation_applied
+  recommendation_dismissed
 }
 
 model Event {
@@ -857,4 +888,60 @@ model SocialPost {
   @@index([status])
   @@index([scheduledFor])
   @@map("social_posts")
+}
+
+// ============================================================
+// AI RECOMMENDATIONS (human-in-the-loop for touchy actions)
+// ============================================================
+
+enum RecommendationStatus {
+  pending
+  approved
+  applied
+  dismissed
+  expired
+  failed
+}
+
+model Recommendation {
+  id          String               @id @default(cuid())
+  workspaceId String               @map("workspace_id")
+  status      RecommendationStatus @default(pending)
+
+  // Classification
+  category    String // budget_change, campaign_pause, campaign_resume, bid_strategy_change, budget_reallocation
+  impact      String @default("medium") // high, medium, low
+
+  // What the agent suggests
+  title       String
+  description String? @db.Text
+  reason      String? @db.Text
+
+  // Structured action payload (adapter-ready when approved)
+  actionPayload Json @map("action_payload")
+  // { platform, campaignId, platformCampaignId, action, params }
+
+  // Source tracking
+  taskId    String? @map("task_id")
+  agentType String? @map("agent_type")
+
+  // Target campaign
+  campaignId String? @map("campaign_id")
+
+  // Resolution
+  resolvedAt    DateTime? @map("resolved_at")
+  resolvedBy    String?   @map("resolved_by")
+  appliedResult Json?     @map("applied_result")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaign  Campaign? @relation(fields: [campaignId], references: [id])
+  task      Task?     @relation(fields: [taskId], references: [id])
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([campaignId])
+  @@map("recommendations")
 }

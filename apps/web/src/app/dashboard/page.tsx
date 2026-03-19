@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { prisma } from "@kalit/db";
+import { auth } from "@/lib/auth";
 
 const lifecycleColors: Record<string, { bg: string; text: string; border: string }> = {
   onboarding:        { bg: "bg-cyan-500/15",    text: "text-cyan-400",    border: "border-cyan-500/30" },
@@ -28,7 +29,15 @@ function formatCurrency(amount: number): string {
 }
 
 export default async function DashboardPage() {
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  // Scope workspaces to current user's memberships
+  // Falls back to showing all workspaces when auth is disabled (dev mode)
   const workspaces = await prisma.workspace.findMany({
+    where: userId
+      ? { members: { some: { userId } } }
+      : undefined,
     orderBy: { updatedAt: "desc" },
     include: {
       _count: {

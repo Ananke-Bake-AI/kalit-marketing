@@ -134,6 +134,7 @@ export async function syncPerformanceData(workspaceId: string): Promise<{
   errors: string[];
 }> {
   const { getAdapter } = await import("../adapters");
+  const { getValidCredentials } = await import("../oauth/refresh");
 
   const campaigns = await prisma.campaign.findMany({
     where: {
@@ -155,10 +156,26 @@ export async function syncPerformanceData(workspaceId: string): Promise<{
     const adapter = getAdapter(account.platform);
     if (!adapter) continue;
 
-    const credentials = account.credentials as {
-      accessToken: string;
-      refreshToken?: string;
-    };
+    // Use getValidCredentials to ensure refresh token is available
+    let credentials: { accessToken: string; refreshToken?: string; accountId: string; metadata?: Record<string, string> };
+    try {
+      const creds = await getValidCredentials(account.id);
+      credentials = {
+        accessToken: creds.accessToken,
+        refreshToken: creds.refreshToken,
+        accountId: account.accountId,
+        metadata: (account.metadata as Record<string, string>) ?? {},
+      };
+    } catch {
+      // Fallback to raw credentials from DB
+      const raw = account.credentials as { accessToken?: string; refreshToken?: string };
+      credentials = {
+        accessToken: raw.accessToken || "",
+        refreshToken: raw.refreshToken,
+        accountId: account.accountId,
+        metadata: (account.metadata as Record<string, string>) ?? {},
+      };
+    }
 
     const platformCampaigns = campaigns.filter((c) => {
       const ids = c.platformCampaignIds as Record<string, string> | null;
@@ -177,11 +194,7 @@ export async function syncPerformanceData(workspaceId: string): Promise<{
       const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
       const perfData = await adapter.getPerformance(
-        {
-          accessToken: credentials.accessToken,
-          refreshToken: credentials.refreshToken,
-          accountId: account.accountId,
-        },
+        credentials,
         platformIds,
         {
           start: sevenDaysAgo.toISOString().split("T")[0],
@@ -232,6 +245,63 @@ export async function syncPerformanceData(workspaceId: string): Promise<{
         });
 
         campaignsUpdated++;
+      }
+
+      // Sync ad group level metrics if adapter supports it
+      if (adapter.getAdGroupPerformance) {
+        try {
+          const agPerfData = await adapter.getAdGroupPerformance(
+            credentials,
+            platformIds,
+            {
+              start: sevenDaysAgo.toISOString().split("T")[0],
+              end: today.toISOString().split("T")[0],
+            }
+          );
+
+          // Aggregate per ad group and update
+          const agTotals = new Map<string, { impressions: number; clicks: number; conversions: number; spend: number; revenue: number }>();
+          for (const d of agPerfData) {
+            const existing = agTotals.get(d.adGroupPlatformId) ?? { impressions: 0, clicks: 0, conversions: 0, spend: 0, revenue: 0 };
+            existing.impressions += d.impressions;
+            existing.clicks += d.clicks;
+            existing.conversions += d.conversions;
+            existing.spend += d.spend;
+            existing.revenue += d.revenue;
+            agTotals.set(d.adGroupPlatformId, existing);
+          }
+
+          // Look up ad groups by platform ID and update
+          for (const campaign of platformCampaigns) {
+            const adGroups = await prisma.adGroup.findMany({
+              where: { campaignId: campaign.id },
+              select: { id: true, platformAdGroupIds: true },
+            });
+
+            for (const ag of adGroups) {
+              const agIds = ag.platformAdGroupIds as Record<string, string> | null;
+              const agPlatformId = agIds?.[account.platform];
+              if (!agPlatformId) continue;
+
+              const totals = agTotals.get(agPlatformId);
+              if (!totals) continue;
+
+              await prisma.adGroup.update({
+                where: { id: ag.id },
+                data: {
+                  impressions: totals.impressions,
+                  clicks: totals.clicks,
+                  conversions: totals.conversions,
+                  spend: totals.spend,
+                },
+              });
+            }
+          }
+        } catch (agErr) {
+          errors.push(
+            `${account.platform} ad-group-sync: ${agErr instanceof Error ? agErr.message : "Unknown error"}`
+          );
+        }
       }
 
       // Update last sync timestamp

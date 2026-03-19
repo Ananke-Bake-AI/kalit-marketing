@@ -2,8 +2,12 @@
  * OAuth Provider Configurations
  *
  * Centralised OAuth config for all supported platforms.
- * Client IDs and secrets are sourced from environment variables.
+ * Client IDs and secrets are sourced from:
+ *   1. Dashboard-saved credentials (.credentials/platform-keys.json)
+ *   2. Environment variables (fallback)
  */
+
+import { getPlatformKey } from "../platform-keys";
 
 export interface OAuthProviderConfig {
   platform: string;
@@ -20,8 +24,8 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     platform: "meta",
     authorizationUrl: "https://www.facebook.com/v21.0/dialog/oauth",
     tokenUrl: "https://graph.facebook.com/v21.0/oauth/access_token",
-    clientId: process.env.META_CLIENT_ID ?? "",
-    clientSecret: process.env.META_CLIENT_SECRET ?? "",
+    clientId: getPlatformKey("META_CLIENT_ID"),
+    clientSecret: getPlatformKey("META_CLIENT_SECRET"),
     scopes: [
       "ads_management",
       "ads_read",
@@ -35,9 +39,12 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     platform: "google",
     authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
-    clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+    clientId: getPlatformKey("GOOGLE_CLIENT_ID"),
+    clientSecret: getPlatformKey("GOOGLE_CLIENT_SECRET"),
     scopes: [
+      "openid",
+      "email",
+      "profile",
       "https://www.googleapis.com/auth/adwords",
       "https://www.googleapis.com/auth/analytics.readonly",
     ],
@@ -51,11 +58,11 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     platform: "tiktok",
     authorizationUrl: "https://business-api.tiktok.com/portal/auth",
     tokenUrl: "https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/",
-    clientId: process.env.TIKTOK_CLIENT_ID ?? "",
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET ?? "",
+    clientId: getPlatformKey("TIKTOK_CLIENT_ID"),
+    clientSecret: getPlatformKey("TIKTOK_CLIENT_SECRET"),
     scopes: ["ad_management", "creative_management"],
     additionalParams: {
-      app_id: process.env.TIKTOK_CLIENT_ID ?? "",
+      app_id: getPlatformKey("TIKTOK_CLIENT_ID"),
     },
   }),
 
@@ -63,8 +70,8 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     platform: "x",
     authorizationUrl: "https://twitter.com/i/oauth2/authorize",
     tokenUrl: "https://api.twitter.com/2/oauth2/token",
-    clientId: process.env.X_CLIENT_ID ?? "",
-    clientSecret: process.env.X_CLIENT_SECRET ?? "",
+    clientId: getPlatformKey("X_CLIENT_ID"),
+    clientSecret: getPlatformKey("X_CLIENT_SECRET"),
     scopes: ["tweet.read", "tweet.write", "users.read", "offline.access"],
     additionalParams: {
       code_challenge_method: "S256",
@@ -75,8 +82,8 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     platform: "linkedin",
     authorizationUrl: "https://www.linkedin.com/oauth/v2/authorization",
     tokenUrl: "https://www.linkedin.com/oauth/v2/accessToken",
-    clientId: process.env.LINKEDIN_CLIENT_ID ?? "",
-    clientSecret: process.env.LINKEDIN_CLIENT_SECRET ?? "",
+    clientId: getPlatformKey("LINKEDIN_CLIENT_ID"),
+    clientSecret: getPlatformKey("LINKEDIN_CLIENT_SECRET"),
     scopes: [
       "r_liteprofile",
       "r_ads",
@@ -91,8 +98,8 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     platform: "reddit",
     authorizationUrl: "https://www.reddit.com/api/v1/authorize",
     tokenUrl: "https://www.reddit.com/api/v1/access_token",
-    clientId: process.env.REDDIT_CLIENT_ID ?? "",
-    clientSecret: process.env.REDDIT_CLIENT_SECRET ?? "",
+    clientId: getPlatformKey("REDDIT_CLIENT_ID"),
+    clientSecret: getPlatformKey("REDDIT_CLIENT_SECRET"),
     scopes: ["submit", "edit", "read", "identity"],
     additionalParams: {
       duration: "permanent",
@@ -103,8 +110,8 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     platform: "hubspot",
     authorizationUrl: "https://app.hubspot.com/oauth/authorize",
     tokenUrl: "https://api.hubapi.com/oauth/v1/token",
-    clientId: process.env.HUBSPOT_CLIENT_ID ?? "",
-    clientSecret: process.env.HUBSPOT_CLIENT_SECRET ?? "",
+    clientId: getPlatformKey("HUBSPOT_CLIENT_ID"),
+    clientSecret: getPlatformKey("HUBSPOT_CLIENT_SECRET"),
     scopes: [
       "crm.objects.contacts.read",
       "crm.objects.contacts.write",

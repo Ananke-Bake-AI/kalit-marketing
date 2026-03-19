@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, Link2, DollarSign, Palette, Rocket } from "lucide-react";
+import { Sparkles, Globe, Link2, DollarSign, Palette, Rocket } from "lucide-react";
 import { WelcomeStep } from "./steps/welcome-step";
+import { ContextStep } from "./steps/context-step";
 import { ConnectStep } from "./steps/connect-step";
 import { BudgetStep } from "./steps/budget-step";
 import { ContentStep } from "./steps/content-step";
 import { LaunchStep } from "./steps/launch-step";
 
-type StepKey = "welcome" | "connect" | "budget" | "content" | "launch";
+type StepKey = "welcome" | "context" | "connect" | "budget" | "content" | "launch";
 
 interface OnboardingGuideProps {
   workspaceId: string;
@@ -30,10 +31,12 @@ interface OnboardingGuideProps {
   }>;
   creativesCount: number;
   campaignsCount: number;
+  memoriesCount: number;
 }
 
 const steps: { key: StepKey; label: string; icon: React.ElementType }[] = [
   { key: "welcome", label: "Welcome", icon: Sparkles },
+  { key: "context", label: "Context", icon: Globe },
   { key: "connect", label: "Connect", icon: Link2 },
   { key: "budget", label: "Budget & Goals", icon: DollarSign },
   { key: "content", label: "Create Content", icon: Palette },
@@ -47,6 +50,7 @@ export function OnboardingGuide({
   connectedAccounts,
   creativesCount,
   campaignsCount,
+  memoriesCount,
 }: OnboardingGuideProps) {
   const [currentStep, setCurrentStep] = useState<StepKey>("welcome");
   const [dismissed, setDismissed] = useState(false);
@@ -55,7 +59,9 @@ export function OnboardingGuide({
     (key: StepKey): boolean => {
       switch (key) {
         case "welcome":
-          return true; // always completable
+          return true;
+        case "context":
+          return memoriesCount >= 1;
         case "connect":
           return connectedAccounts.length >= 1;
         case "budget":
@@ -68,7 +74,7 @@ export function OnboardingGuide({
           return false;
       }
     },
-    [connectedAccounts.length, config?.monthlyBudget, config?.primaryGoal, creativesCount, campaignsCount]
+    [connectedAccounts.length, config?.monthlyBudget, config?.primaryGoal, creativesCount, campaignsCount, memoriesCount]
   );
 
   // Check localStorage dismissal
@@ -89,7 +95,6 @@ export function OnboardingGuide({
         return;
       }
     }
-    // All complete, go to launch
     setCurrentStep("launch");
   }, [isStepComplete]);
 
@@ -104,7 +109,6 @@ export function OnboardingGuide({
   };
 
   const handleComplete = () => {
-    // Reload the page to show the full dashboard
     window.location.reload();
   };
 
@@ -178,6 +182,15 @@ export function OnboardingGuide({
             workspaceName={workspaceName}
             productName={config?.productName ?? null}
             onNext={goNext}
+          />
+        )}
+
+        {currentStep === "context" && (
+          <ContextStep
+            workspaceId={workspaceId}
+            hasContext={memoriesCount > 0}
+            onComplete={goNext}
+            onBack={goBack}
           />
         )}
 

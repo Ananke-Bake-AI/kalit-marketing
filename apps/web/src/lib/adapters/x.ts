@@ -185,6 +185,17 @@ export const xAdapter: ChannelAdapter = {
     );
   },
 
+  async removeCampaign(
+    credentials: AdCredentials,
+    platformId: string
+  ): Promise<void> {
+    await xFetch(
+      `accounts/${credentials.accountId}/campaigns/${platformId}`,
+      credentials.accessToken,
+      { method: "DELETE" }
+    );
+  },
+
   async createAdGroup(
     credentials: AdCredentials,
     campaignPlatformId: string,

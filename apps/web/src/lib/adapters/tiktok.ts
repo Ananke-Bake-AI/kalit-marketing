@@ -187,6 +187,20 @@ export const tiktokAdapter: ChannelAdapter = {
     });
   },
 
+  async removeCampaign(
+    credentials: AdCredentials,
+    platformId: string
+  ): Promise<void> {
+    await tiktokFetch("campaign/status/update/", credentials.accessToken, {
+      method: "POST",
+      body: JSON.stringify({
+        advertiser_id: credentials.accountId,
+        campaign_ids: [platformId],
+        operation_status: "DELETE",
+      }),
+    });
+  },
+
   async createAdGroup(
     credentials: AdCredentials,
     campaignPlatformId: string,

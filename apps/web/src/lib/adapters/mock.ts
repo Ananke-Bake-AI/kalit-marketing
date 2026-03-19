@@ -69,6 +69,11 @@ export class MockAdapter implements ChannelAdapter {
     _platformId: string
   ): Promise<void> {}
 
+  async removeCampaign(
+    _credentials: AdCredentials,
+    _platformId: string
+  ): Promise<void> {}
+
   async createAdGroup(
     _credentials: AdCredentials,
     _campaignPlatformId: string,

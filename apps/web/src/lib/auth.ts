@@ -51,11 +51,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
       }
+      // Hydrate external IDs for SSO users on first sign-in or refresh
+      if (token.id && !token.externalUserId) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { externalUserId: true, externalOrgId: true },
+        });
+        if (dbUser?.externalUserId) {
+          token.externalUserId = dbUser.externalUserId;
+          token.externalOrgId = dbUser.externalOrgId;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
       if (token?.id) {
         session.user.id = token.id as string;
+      }
+      if (token?.externalUserId) {
+        (session.user as unknown as Record<string, unknown>).externalUserId =
+          token.externalUserId;
+        (session.user as unknown as Record<string, unknown>).externalOrgId =
+          token.externalOrgId;
       }
       return session;
     },

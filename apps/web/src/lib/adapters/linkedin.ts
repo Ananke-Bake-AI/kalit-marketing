@@ -215,6 +215,20 @@ export const linkedinAdapter: ChannelAdapter = {
     );
   },
 
+  async removeCampaign(
+    credentials: AdCredentials,
+    platformId: string
+  ): Promise<void> {
+    await linkedinFetch(
+      `adCampaignGroups/${platformId}`,
+      credentials.accessToken,
+      {
+        method: "POST",
+        body: JSON.stringify({ patch: { $set: { status: "ARCHIVED" } } }),
+      }
+    );
+  },
+
   async createAdGroup(
     credentials: AdCredentials,
     campaignPlatformId: string,

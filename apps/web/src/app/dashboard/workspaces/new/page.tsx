@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -10,6 +10,8 @@ import {
   Palette,
   DollarSign,
   Shield,
+  Link2,
+  Check,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -46,7 +48,22 @@ export default function NewWorkspacePage() {
     targetCac: "",
     targetRoas: "",
     autonomyMode: "approval" as string,
+    shareConnections: true,
   });
+
+  // Fetch existing shareable connections from other workspaces
+  const [existingConnections, setExistingConnections] = useState<
+    Array<{ platform: string; accountName: string | null; workspaceName: string }>
+  >([]);
+
+  useEffect(() => {
+    fetch("/api/workspaces/shareable-connections")
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setExistingConnections(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -66,6 +83,7 @@ export default function NewWorkspacePage() {
         body: JSON.stringify({
           name: form.name,
           slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+          shareConnections: form.shareConnections,
           config: {
             productName: form.productName,
             productDescription: form.productDescription,
@@ -350,6 +368,77 @@ export default function NewWorkspacePage() {
                 </button>
               ))}
             </div>
+
+            {/* Share Connections */}
+            {existingConnections.length > 0 && (
+              <div className="mt-6">
+                <p className="section-title mb-4">Share Connections</p>
+                <button
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      shareConnections: !prev.shareConnections,
+                    }))
+                  }
+                  className={`flex w-full items-start gap-3 border p-4 text-left transition-all ${
+                    form.shareConnections
+                      ? "border-accent/30 bg-accent/10"
+                      : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                  }`}
+                >
+                  <div
+                    className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border transition-colors ${
+                      form.shareConnections
+                        ? "border-accent bg-accent"
+                        : "border-white/20 bg-transparent"
+                    }`}
+                  >
+                    {form.shareConnections && (
+                      <Check className="h-3 w-3 text-black" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-3.5 w-3.5 text-accent" />
+                      <p
+                        className={`text-sm font-semibold ${
+                          form.shareConnections
+                            ? "text-accent"
+                            : "text-slate-200"
+                        }`}
+                      >
+                        Share connections from existing workspaces
+                      </p>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Compatible ad accounts will be shared so you can start
+                      launching campaigns immediately. You can switch to
+                      workspace-specific accounts later.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {existingConnections.map((conn, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-slate-400"
+                        >
+                          <span className="font-medium capitalize">
+                            {conn.platform}
+                          </span>
+                          {conn.accountName && (
+                            <span className="text-slate-600">
+                              · {conn.accountName}
+                            </span>
+                          )}
+                          <span className="text-slate-600">
+                            from {conn.workspaceName}
+                          </span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
           </div>
         )}
 

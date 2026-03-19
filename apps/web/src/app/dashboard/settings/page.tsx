@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { PlatformKeysForm } from "@/components/dashboard/platform-keys-form";
+import { Check, AlertTriangle, X, Plug, ArrowRight } from "lucide-react";
 
 interface ConnectedAccount {
   id: string;
@@ -91,10 +95,34 @@ function formatCurrency(amount: number, currency: string = "USD"): string {
 }
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams();
+  const connectedPlatform = searchParams.get("connected");
+  const oauthError = searchParams.get("error");
+  const [banner, setBanner] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState<string>("");
   const [workspace, setWorkspace] = useState<WorkspaceDetail | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Show banner from URL params (OAuth redirect)
+  useEffect(() => {
+    if (connectedPlatform) {
+      const label =
+        platformLabels[connectedPlatform] ?? connectedPlatform;
+      setBanner({
+        type: "success",
+        message: `${label} connected successfully!`,
+      });
+      // Clean up URL
+      window.history.replaceState({}, "", "/dashboard/settings");
+    } else if (oauthError) {
+      setBanner({ type: "error", message: oauthError });
+      window.history.replaceState({}, "", "/dashboard/settings");
+    }
+  }, [connectedPlatform, oauthError]);
 
   useEffect(() => {
     fetch("/api/workspaces")
@@ -149,6 +177,32 @@ export default function SettingsPage() {
           ))}
         </select>
       </div>
+
+      {/* OAuth success/error banner */}
+      {banner && (
+        <div
+          className={`flex items-center justify-between p-3 border text-sm ${
+            banner.type === "success"
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              : "bg-red-500/10 border-red-500/20 text-red-400"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {banner.type === "success" ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <AlertTriangle className="h-4 w-4" />
+            )}
+            <span>{banner.message}</span>
+          </div>
+          <button
+            onClick={() => setBanner(null)}
+            className="text-current hover:opacity-70 cursor-pointer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="card p-12 text-center">
@@ -353,9 +407,19 @@ export default function SettingsPage() {
 
           {/* Connected Platforms — full width */}
           <div className="card p-5 space-y-4 lg:col-span-2">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
-              Connected Platforms
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+                Connected Platforms
+              </p>
+              <Link
+                href="/dashboard/connections"
+                className="inline-flex items-center gap-1.5 text-[11px] text-accent hover:text-accent/80 transition-colors"
+              >
+                <Plug className="h-3 w-3" />
+                Manage Connections
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
             {workspace?.connectedAccounts &&
             workspace.connectedAccounts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -391,13 +455,29 @@ export default function SettingsPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-zinc-600">
-                No platforms connected yet
-              </p>
+              <div className="text-center py-6">
+                <Plug className="h-8 w-8 text-zinc-700 mx-auto mb-2" />
+                <p className="text-sm text-zinc-500">
+                  No platforms connected yet
+                </p>
+                <Link
+                  href="/dashboard/connections"
+                  className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 text-xs font-bold bg-accent text-black hover:bg-accent/90 transition-colors"
+                >
+                  <Plug className="h-3.5 w-3.5" />
+                  Connect Your First Platform
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             )}
           </div>
         </div>
       )}
+
+      {/* Platform API Credentials */}
+      <div className="card p-5">
+        <PlatformKeysForm />
+      </div>
     </div>
   );
 }

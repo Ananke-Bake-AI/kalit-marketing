@@ -1,5 +1,6 @@
 import { prisma } from "@kalit/db";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import {
   Layers,
   Activity,
@@ -12,9 +13,15 @@ import {
   Shield,
   ArrowUpRight,
   ArrowDownRight,
+  ChevronRight,
+  DollarSign,
 } from "lucide-react";
 import { TaskPipelineLive, EventFeedLive } from "@/components/war-room-live";
 import { OnboardingGuide } from "@/components/onboarding/onboarding-guide";
+import { SupervisorPanel } from "@/components/dashboard/supervisor-panel";
+import { ContextAnalyzer } from "@/components/dashboard/context-analyzer";
+import { ConnectPlatforms } from "@/components/dashboard/connect-platforms";
+import { WorkspaceEdit } from "@/components/dashboard/workspace-edit";
 
 interface WorkspacePageProps {
   params: Promise<{ workspaceId: string }>;
@@ -133,9 +140,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     (s) => s.key === workspace.status
   );
 
-  const showOnboarding =
-    workspace.status === "onboarding" ||
-    (connectedAccounts.length === 0 && campaigns.length === 0);
+  const showOnboarding = workspace.status === "onboarding";
 
   return (
     <div>
@@ -163,6 +168,27 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             ? "Complete setup to begin the autonomous growth cycle"
             : `Runtime active — ${activeTasks.length} tasks in pipeline`}
         </p>
+        <div className="mt-3">
+          <WorkspaceEdit
+            workspaceId={workspaceId}
+            initialValues={{
+              name: workspace.name,
+              productName: workspace.config?.productName,
+              productDescription: workspace.config?.productDescription,
+              productUrl: workspace.config?.productUrl,
+              industry: workspace.config?.industry,
+              stage: workspace.config?.stage,
+              icpDescription: workspace.config?.icpDescription,
+              brandVoice: workspace.config?.brandVoice,
+              monthlyBudget: workspace.config?.monthlyBudget,
+              targetCac: workspace.config?.targetCac,
+              targetRoas: workspace.config?.targetRoas,
+              currency: workspace.config?.currency ?? "USD",
+              autonomyMode: workspace.config?.autonomyMode,
+              primaryGoal: workspace.config?.primaryGoal,
+            }}
+          />
+        </div>
       </div>
 
       {showOnboarding ? (
@@ -190,6 +216,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
           }))}
           creativesCount={creativesCount}
           campaignsCount={campaigns.length}
+          memoriesCount={memories.length}
         />
       ) : (
         <>
@@ -267,6 +294,9 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                 agentType: t.agentType,
                 priority: t.priority,
                 createdAt: t.createdAt.toISOString(),
+                startedAt: t.startedAt?.toISOString() ?? null,
+                completedAt: t.completedAt?.toISOString() ?? null,
+                reason: t.reason,
               }))}
             />
 
@@ -286,25 +316,47 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
               <div className="flex items-center gap-2 mb-4">
                 <Megaphone className="h-4 w-4 text-slate-500" />
                 <h3 className="text-sm font-semibold text-slate-100">
-                  Top Campaigns
+                  Campaigns
                 </h3>
+                <span className="text-[10px] text-slate-600 ml-auto">
+                  {campaigns.length} total
+                </span>
               </div>
               {campaigns.length === 0 ? (
                 <EmptyState text="No campaigns yet" />
               ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {campaigns.slice(0, 6).map((c) => (
-                    <div
+                <div className="space-y-2 max-h-72 overflow-y-auto">
+                  {campaigns.slice(0, 8).map((c) => (
+                    <Link
                       key={c.id}
-                      className="flex items-center justify-between p-2.5 bg-white/[0.02] border border-white/5"
+                      href={`/dashboard/workspaces/${workspaceId}/campaigns/${c.id}`}
+                      className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 hover:border-white/15 hover:bg-white/[0.04] transition-all group"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-white truncate">
-                          {c.name}
-                        </p>
-                        <p className="text-[10px] text-slate-600 mt-0.5">
-                          {c.type}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium text-white truncate group-hover:text-accent transition-colors">
+                            {c.name}
+                          </p>
+                          <span className={`text-[9px] px-1.5 py-0.5 font-medium ${
+                            c.status === "active" ? "bg-emerald-500/20 text-emerald-400" :
+                            c.status === "draft" ? "bg-zinc-500/20 text-zinc-400" :
+                            c.status === "paused" ? "bg-orange-500/20 text-orange-400" :
+                            "bg-blue-500/20 text-blue-400"
+                          }`}>
+                            {c.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-[10px] text-slate-600">
+                            {c.type.replace(/_/g, " ")}
+                          </span>
+                          {c.dailyBudget && (
+                            <span className="text-[10px] text-slate-500 flex items-center gap-0.5">
+                              <DollarSign className="h-2.5 w-2.5" />
+                              {c.dailyBudget}/d
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="flex items-center gap-3 ml-3 shrink-0">
                         <span className="text-[10px] text-slate-400">
@@ -326,8 +378,9 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                           )}
                           {c.roas ? `${c.roas.toFixed(2)}x` : "—"}
                         </span>
+                        <ChevronRight className="h-3.5 w-3.5 text-slate-700 group-hover:text-slate-400 transition-colors" />
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -385,6 +438,23 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Supervisor + Context */}
+            <SupervisorPanel workspaceId={workspaceId} />
+            <ContextAnalyzer workspaceId={workspaceId} />
+
+            {/* Connect Platforms — full width */}
+            <div className="lg:col-span-2">
+              <ConnectPlatforms
+                workspaceId={workspaceId}
+                connectedAccounts={connectedAccounts.map((a) => ({
+                  id: a.id,
+                  platform: a.platform,
+                  accountName: a.accountName,
+                  isActive: a.isActive,
+                }))}
+              />
             </div>
           </div>
         </>

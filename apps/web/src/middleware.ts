@@ -18,13 +18,23 @@ export default auth((req: NextRequest & { auth?: unknown }) => {
     return NextResponse.next();
   }
 
-  // Allow public paths through
+  // Allow public paths through (includes /api/auth/sso/callback)
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
-  // Protect /dashboard/* — redirect unauthenticated users to /login
+  // Protect /dashboard/* — redirect unauthenticated users
   if (!req.auth) {
+    // In production with SSO, redirect to main app login
+    const mainAppUrl = process.env.MAIN_APP_URL;
+    if (mainAppUrl) {
+      const suiteReturnUrl = new URL(pathname, req.url).toString();
+      const loginUrl = new URL("/auth/login", mainAppUrl);
+      loginUrl.searchParams.set("returnTo", suiteReturnUrl);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Fallback: redirect to local login (dev/standalone mode)
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);

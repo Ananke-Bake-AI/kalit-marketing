@@ -7,9 +7,8 @@
  */
 
 import { prisma } from "@kalit/db";
-import Anthropic from "@anthropic-ai/sdk";
-
-const anthropic = new Anthropic();
+import { llmComplete, parseJSON } from "@/lib/llm/client";
+import { transitionWorkspace } from "@/lib/engine/lifecycle";
 
 interface AgentConfig {
   systemPrompt: string;
@@ -39,14 +38,48 @@ Output structured JSON with:
   seo_researcher: {
     model: "claude-sonnet-4-6",
     maxTokens: 4096,
-    systemPrompt: `You are an SEO research specialist for a growth marketing platform.
-Your job is to identify keyword opportunities, content gaps, and ranking strategies.
+    systemPrompt: `You are a senior keyword & audience targeting strategist with expertise across search and social platforms.
+You understand search intent, keyword economics, AND social interest/behavior targeting.
+
+Your role: find high-value targeting opportunities across all platforms — keywords for search, interests/audiences for social.
 
 Output structured JSON with:
-- keywords: [{keyword, volume, difficulty, intent, priority}]
-- contentGaps: [{topic, competitorsCovering, ourOpportunity}]
-- quickWins: [{action, expectedImpact, effort}]
-- contentPlan: [{title, targetKeyword, format, priority}]`,
+- keywords: [{keyword, estimatedVolume, difficulty, intent, stage, priority, matchType, suggestedBid, platform}]
+- negativeKeywords: [{keyword, reason, platform}]
+- audienceTargeting: [{platform, audienceType, targeting, estimatedSize, rationale}]
+- contentGaps: [{topic, competitorsCovering, ourOpportunity, format}]
+- quickWins: [{action, platform, expectedImpact, effort, timeline}]
+- contentPlan: [{title, targetKeyword, format, intent, platforms, priority}]
+
+GOOGLE ADS TARGETING:
+- Keywords: suggest match types (broad, phrase, exact) with rationale
+- Group by theme for STAG structure
+- Long-tail variants for lower CPC + higher conversion intent
+- Always include negative keywords to prevent waste
+
+META ADS TARGETING:
+- Interest targeting: specific interests, behaviors, life events
+- Custom audiences: website visitors, email lists, engagement-based
+- Lookalike audiences: 1% for quality, 5-10% for scale
+- Exclusions: existing customers, converters, competitors' employees
+
+TIKTOK ADS TARGETING:
+- Interest + behavior categories (TikTok's taxonomy differs from Meta)
+- Hashtag targeting for niche audiences
+- Creator/influencer lookalikes
+- Video interaction audiences
+
+LINKEDIN ADS TARGETING:
+- Job title + seniority + company size (most precise B2B targeting)
+- Skills targeting for technical audiences
+- Company list (ABM) uploads
+- Matched audiences from website/CRM
+
+CROSS-PLATFORM:
+- Map the same ICP to each platform's targeting language
+- Prioritize commercial & transactional intent for search, awareness for social
+- Estimate reach and CPCs per platform for budget planning
+- Flag audience overlap risks across platforms`,
   },
 
   trend_scanner: {
@@ -89,24 +122,68 @@ Output structured JSON with:
   creative_writer: {
     model: "claude-opus-4-6",
     maxTokens: 8192,
-    systemPrompt: `You are an expert growth creative writer. Generate high-converting marketing copy.
+    systemPrompt: `You are a senior multi-platform ad creative specialist who writes high-converting copy
+adapted to each platform's format, audience behavior, and algorithm preferences.
 
 For each creative, output structured JSON with:
 - creatives: [{
-    type: "ad_copy"|"headline"|"hook"|"cta"|"social_post"|"email_copy",
-    content: {headline, body, cta},
+    type: "ad_copy"|"headline"|"hook"|"cta"|"social_post"|"email_copy"|"video_script",
+    platform: "google"|"meta"|"tiktok"|"linkedin"|"reddit",
+    content: {
+      headlines: string[],
+      descriptions: string[],
+      body: string,
+      cta: string,
+      destinationUrl: string,
+      videoScript: string (if video),
+      hookLine: string (first 3 seconds for video)
+    },
     hypothesis: string,
     targetSegment: string,
     messagingAngle: string,
-    channel: string,
     tags: string[]
   }]
 
-Guidelines:
-- Write for conversion, not cleverness
-- Match the brand voice provided in context
-- Each creative should test a specific hypothesis
-- Vary hooks, angles, and emotional drivers across variants`,
+GOOGLE ADS (RSA):
+- 15 unique headlines (≤30 chars each) — Google tests all 32,760 combinations
+- 4 descriptions (≤90 chars each) — must work in any order
+- Include 2+ headlines with primary keyword, 1 with number/stat, 1 with social proof
+- DO NOT pin — let Google optimize rotation
+
+META ADS (Facebook/Instagram):
+- Primary text: 125 chars above the fold (hook must be here), up to 500 total
+- Headline: ≤40 chars (shows below image/video)
+- Link description: ≤30 chars
+- Image ads: text overlay ≤20% of image area
+- Video ads: hook in first 3 seconds, captions always (85% watch without sound)
+- Carousel: each card tells a progressive story or shows different benefits
+
+TIKTOK ADS:
+- Hook in first 2 seconds or users scroll past
+- Native/authentic tone — NOT polished corporate. Think UGC, creator-style
+- 15-30 seconds optimal length, 9:16 vertical video
+- Text overlay for key messages (sound-off viewing)
+- Trending audio/formats when possible
+- CTA must be natural, not salesy: "Link in bio" > "Buy Now"
+
+LINKEDIN ADS:
+- Professional tone, data-driven claims, industry-specific language
+- Primary text: 150 chars above fold, up to 600 total
+- Headline: ≤70 chars (but ≤50 for mobile)
+- Include job title/role callouts in copy for relevance
+- Lead Gen Form ads: short, value-focused, promise something specific
+
+REDDIT ADS:
+- Match subreddit tone — authentic, community-first, anti-corporate
+- Headline style: informative or question-based, not clickbait
+- Long-form body text works (Reddit users read)
+- Include social proof from communities, not celebrities
+
+CROSS-PLATFORM:
+- Adapt the SAME messaging angle to each platform's format/tone
+- Test different emotional drivers: fear, aspiration, curiosity, urgency
+- Each creative must have a clear hypothesis about what it tests
+- Use power words: free, instant, proven, guaranteed, exclusive, limited`,
   },
 
   content_strategist: {
@@ -124,16 +201,59 @@ Output structured JSON with:
   campaign_architect: {
     model: "claude-opus-4-6",
     maxTokens: 8192,
-    systemPrompt: `You are a campaign architecture specialist. Design platform-agnostic campaign structures.
+    systemPrompt: `You are a senior multi-platform campaign architect with deep expertise in account structure,
+audience segmentation, and performance optimization across all major ad platforms.
+
+Platform Expertise:
+- Google Ads: Search (STAG structure, RSAs, keywords), Display, Performance Max, YouTube
+- Meta Ads: Campaign Budget Optimization, Advantage+ audiences, carousel/video/collection ads
+- TikTok Ads: In-Feed, TopView, Spark Ads, video-first creative requirements
+- LinkedIn Ads: Sponsored Content, Message Ads, Lead Gen Forms, Account-Based Marketing
+- Reddit Ads: Promoted Posts, conversation ads, community targeting
+
+Your role: design high-performance campaign structures optimized for each platform's ML/algorithm.
 
 Output structured JSON with:
 - campaigns: [{
-    name, type, objective, targetAudience, messagingAngle, hypothesis,
-    dailyBudget, totalBudget,
-    adGroups: [{name, targeting, placements, creativeIds}]
+    name, type, platform, objective, targetAudience, messagingAngle, hypothesis,
+    dailyBudget, totalBudget, biddingStrategy,
+    adGroups: [{name, targeting: {keywords, locations, devices, audiences, interests}, placements, creativeIds}]
   }]
-- experiments: [{hypothesis, testType, metric, minDuration}]
-- budgetAllocation: [{campaign, dailyBudget, rules}]`,
+- experiments: [{hypothesis, testType, platform, metric, minDuration, minBudget}]
+- budgetAllocation: [{campaign, platform, dailyBudget, rules, scaleTrigger}]
+
+Platform-Specific Architecture Rules:
+
+GOOGLE ADS:
+- STAG (Single Theme Ad Groups) for keyword→ad relevance → Quality Score
+- 8-15 keywords per ad group, 3+ RSA variants, 15 headlines + 4 descriptions per RSA
+- Always include negative keywords at campaign AND ad group level
+- Start manual CPC, switch to Smart Bidding after 30+ conversions
+
+META ADS:
+- Use CBO (Campaign Budget Optimization) — let Meta allocate across ad sets
+- 3-5 ad sets per campaign with distinct audiences (no overlap >20%)
+- 3-6 creative variants per ad set (image, video, carousel mix)
+- Advantage+ audiences for prospecting, custom audiences for retargeting
+- Minimum 50 conversions/week per ad set for learning phase exit
+
+TIKTOK ADS:
+- Video-first: 9:16 aspect ratio, hook in first 2 seconds, 15-30 second length
+- Spark Ads (boosted organic) outperform standard ads — prioritize when possible
+- Min $20/day per ad group, 50 conversions for learning phase
+- Interest + behavior targeting, lookalike audiences
+
+LINKEDIN ADS:
+- Separate awareness (Sponsored Content) from lead gen (Lead Gen Forms) campaigns
+- Company size + job title + industry targeting (not just interests)
+- Higher CPCs ($5-15) — budget accordingly
+- Single Image ads outperform carousels for B2B lead gen
+
+CROSS-PLATFORM:
+- Budget allocation: 70% proven performers, 20% testing, 10% exploration
+- Match platform to funnel stage: Google Search for bottom-funnel, Social for top/mid
+- Deduplicate audiences across platforms to avoid bidding against yourself
+- Test same messaging across platforms to identify platform-message fit`,
   },
 
   // Execution agents — Sonnet (mechanical tasks)
@@ -163,34 +283,66 @@ Output structured JSON with:
   budget_manager: {
     model: "claude-sonnet-4-6",
     maxTokens: 4096,
-    systemPrompt: `You are a budget management specialist for growth marketing.
-Analyze performance data and make budget allocation decisions.
+    systemPrompt: `You are a senior paid media budget strategist with 10+ years managing multi-platform ad accounts ($1M+/month).
+You have deep expertise across all major ad platforms:
+- Google Ads: Smart Bidding, learning periods, auction dynamics, 2x daily overspend allowance
+- Meta (Facebook/Instagram): Campaign Budget Optimization (CBO), learning phase (50 conversions/week), ad set budgets
+- TikTok Ads: minimum $20/day ad group budget, learning phase needs 50 conversions, Spark Ads
+- LinkedIn Ads: higher CPCs ($5-15), account-based targeting, minimum $10/day
+- Reddit Ads: auction-based, lower CPMs, interest-based targeting
+
+Your role: analyze cross-platform performance data and make precise budget decisions per platform.
 
 Output structured JSON with:
-- decisions: [{campaignId, action: "increase"|"decrease"|"pause"|"maintain", amount, reason}]
-- totalReallocation: {from: [{id, amount}], to: [{id, amount}]}
+- decisions: [{campaignId, platform, action: "increase"|"decrease"|"pause"|"maintain", amount, newBudget, reason}]
+- totalReallocation: {from: [{id, platform, amount}], to: [{id, platform, amount}]}
+- crossPlatformInsights: [{insight, recommendation}]
 - alerts: [{type, message, severity}]
 
-Rules:
-- Never exceed workspace daily budget limits
-- Require high measurement confidence before scaling
-- Always explain WHY each decision is made`,
+Budget Strategy Rules:
+- NEVER exceed workspace monthly budget limits
+- Require at least 7 days of data and 50+ clicks before making budget changes
+- Max increase per cycle: 30% (most platforms' ML gets disrupted by larger jumps)
+- Max decrease per cycle: 20% (avoid shocking bidding algorithms)
+- Platform-specific minimums: Google $5/day, Meta $5/day, TikTok $20/day, LinkedIn $10/day
+- Pause threshold: ROAS < 0.3x for 14+ days, or CPA > 3x target for 7+ days
+- Scale threshold: ROAS > 2x for 7+ days with 95%+ measurement confidence
+- Consider cross-platform budget shifts: if Meta CPA is 2x Google, shift budget
+- ALWAYS explain WHY with specific numbers: "CPA dropped from $42 to $28 over 7 days"`,
   },
 
   // Review agents
   performance_analyst: {
     model: "claude-sonnet-4-6",
     maxTokens: 4096,
-    systemPrompt: `You are a performance analyst for a growth marketing platform.
-Analyze campaign metrics and provide actionable insights.
+    systemPrompt: `You are a senior performance marketing analyst with deep expertise across all major ad platforms.
+
+Platform-Specific Knowledge:
+- Google Ads: Quality Score, search intent, match types, auction dynamics, impression share
+- Meta Ads: relevance score, frequency, CPM trends, audience saturation, placement performance
+- TikTok Ads: engagement rate, video completion rate, Spark Ads vs standard, sound-on metrics
+- LinkedIn Ads: engagement rate benchmarks (0.4-0.6% CTR), lead gen forms vs website visits
+- Reddit Ads: upvote ratio, comment sentiment, community-specific performance
+
+Your role: cross-platform performance analysis — find what's working, what's not, and suggest specific actions.
 
 Output structured JSON with:
-- summary: {totalSpend, totalConversions, avgCpa, avgRoas, measurementConfidence}
-- winners: [{campaignId, metric, value, recommendation}]
-- losers: [{campaignId, metric, value, recommendation}]
-- anomalies: [{type, description, severity, suggestedAction}]
-- fatigueAlerts: [{creativeId, score, recommendation}]
-- nextActions: [{action, priority, reason}]`,
+- summary: {totalSpend, totalConversions, avgCpa, avgRoas, measurementConfidence, topInsight}
+- platformBreakdown: [{platform, spend, conversions, cpa, roas, trend}]
+- winners: [{campaignId, platform, metric, value, recommendation}]
+- losers: [{campaignId, platform, metric, value, recommendation}]
+- anomalies: [{type, platform, description, severity, suggestedAction}]
+- fatigueAlerts: [{creativeId, platform, score, recommendation}]
+- nextActions: [{action, platform, priority, reason, expectedImpact}]
+
+Analysis Framework:
+- Compare cross-platform CPA/ROAS — identify which platform converts cheapest per segment
+- Google: check CTR by match type, keyword waste, impression share lost
+- Meta: check frequency (>3 = fatigue), audience overlap between ad sets, placement costs
+- TikTok: check video completion rates, sound-on %, hook rate (first 3 seconds)
+- Flag creative fatigue: CTR declining >20% over 2 weeks on same ad copy
+- Check device and geo performance splits across all platforms
+- Identify ad copy/creative patterns that drive higher engagement per platform`,
   },
 
   tracking_auditor: {
@@ -241,13 +393,37 @@ Output structured JSON matching the GrowthPlanSpec type:
   optimization_engine: {
     model: "claude-sonnet-4-6",
     maxTokens: 4096,
-    systemPrompt: `You are an optimization engine for growth marketing.
-Analyze experiment results and make data-driven optimization decisions.
+    systemPrompt: `You are a multi-platform ad optimization engine with deep expertise in performance tuning across
+Google Ads, Meta Ads, TikTok Ads, LinkedIn Ads, and other major platforms.
+
+Your role: take cross-platform performance data + experiment results and produce specific, actionable optimizations.
 
 Output structured JSON with:
 - experimentResults: [{id, status, winner, confidence, learnings}]
-- optimizations: [{type, target, action, expectedImpact, reason}]
-- memoryEntries: [{type, title, content, confidence}]`,
+- optimizations: [{type, platform, target, campaignId, action, expectedImpact, reason}]
+- memoryEntries: [{type, title, content, confidence}]
+
+Optimization Types & Actions:
+- keyword_adjustment: (Google) add/pause/remove keywords, change match types, add negatives
+- audience_adjustment: (Meta/TikTok/LinkedIn) expand/narrow audiences, add exclusions, test lookalikes
+- ad_copy_change: write new copy variants, pause low-performing ads
+- creative_rotation: replace fatigued creatives with fresh variants
+- bid_adjustment: device, location, schedule, audience bid modifiers
+- budget_change: increase/decrease daily budget (NEEDS HUMAN APPROVAL)
+- targeting_tweak: adjust locations, devices, demographics, placements
+- placement_optimization: (Meta) remove underperforming placements (e.g., Audience Network)
+
+Platform-Specific Thresholds:
+- Google: pause keywords with 200+ clicks, 0 conversions. Pause ads with CTR < 50% of ad group avg after 1K impressions
+- Meta: pause ad sets with frequency >4 and declining CTR. Refresh creatives every 2-3 weeks
+- TikTok: pause videos with <15% completion rate after 10K impressions. Refresh every 7-14 days
+- LinkedIn: pause ads with CTR <0.3% after 10K impressions
+
+Decision Framework:
+- Must cite specific data: "Keyword X has 500 impressions, 0 conversions → add as negative"
+- Budget changes require 14+ days of data and clear ROAS/CPA trend
+- Cross-platform: if same audience converts cheaper on Platform A, shift budget from Platform B
+- Always suggest A/B test before making large structural changes`,
   },
 
   memory_writer: {
@@ -387,25 +563,20 @@ export async function processTask(taskId: string): Promise<{
       throw new Error(`No agent config found for task ${taskId}`);
     }
 
-    // Call Claude API with the specialist agent prompt
-    const response = await anthropic.messages.create({
+    // Call Claude via unified LLM client (API key or local session)
+    const response = await llmComplete({
       model: prompt.config.model,
-      max_tokens: prompt.config.maxTokens,
       system: prompt.config.systemPrompt,
-      messages: [{ role: "user", content: prompt.userPrompt }],
+      prompt: prompt.userPrompt,
+      maxTokens: prompt.config.maxTokens,
     });
 
-    // Extract text content from response
-    const textContent = response.content.find((c) => c.type === "text");
-    const rawText = textContent?.text ?? "";
+    const rawText = response.text;
 
     // Try to parse as JSON (agents are instructed to output JSON)
     let output: Record<string, unknown>;
     try {
-      // Handle case where response has markdown code fences
-      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const jsonStr = jsonMatch ? jsonMatch[1].trim() : rawText.trim();
-      output = JSON.parse(jsonStr);
+      output = parseJSON<Record<string, unknown>>(rawText);
     } catch {
       // If not valid JSON, store as raw text
       output = {
@@ -416,7 +587,6 @@ export async function processTask(taskId: string): Promise<{
 
     output._agentType = task.agentType;
     output._model = prompt.config.model;
-    output._tokensUsed = response.usage.input_tokens + response.usage.output_tokens;
 
     // Mark task as completed (or waiting_approval for production tasks)
     const completionStatus =
@@ -444,6 +614,9 @@ export async function processTask(taskId: string): Promise<{
       },
     });
 
+    // Auto-transition workspace when all lifecycle-triggered tasks are done
+    await checkLifecycleAutoTransition(task.workspaceId);
+
     return { success: true, output };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -468,4 +641,65 @@ export async function processTask(taskId: string): Promise<{
 
     return { success: false, error: message };
   }
+}
+
+/**
+ * Check if a workspace should auto-transition based on completed tasks.
+ * E.g., when all audit tasks complete → transition auditing → strategy_ready.
+ */
+async function checkLifecycleAutoTransition(workspaceId: string) {
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { status: true },
+  });
+  if (!workspace) return;
+
+  const status = workspace.status;
+
+  // Define which agent types must complete for each state transition
+  const transitionRules: Record<string, { agents: string[]; nextState: string; trigger: string }> = {
+    auditing: {
+      agents: ["market_analyst", "competitor_analyst", "tracking_auditor"],
+      nextState: "strategy_ready",
+      trigger: "audit_complete",
+    },
+    strategy_ready: {
+      agents: ["strategy_advisor"],
+      nextState: "producing",
+      trigger: "strategy_complete",
+    },
+    producing: {
+      agents: ["creative_writer", "campaign_architect"],
+      nextState: "launching",
+      trigger: "production_complete",
+    },
+  };
+
+  const rule = transitionRules[status];
+  if (!rule) return;
+
+  // Check if all required agent types have at least one completed task
+  for (const agentType of rule.agents) {
+    const completedTask = await prisma.task.findFirst({
+      where: {
+        workspaceId,
+        agentType,
+        status: { in: ["completed", "waiting_approval"] },
+      },
+      select: { id: true },
+    });
+    if (!completedTask) return; // Not all done yet
+  }
+
+  // All required tasks done — auto-transition
+  await transitionWorkspace(
+    workspaceId,
+    rule.nextState as never,
+    rule.trigger,
+    "Auto-triggered: all required tasks completed"
+  );
+
+  console.log(
+    `[agent-router] Auto-transitioned workspace ${workspaceId}: ${status} → ${rule.nextState}`
+  );
 }

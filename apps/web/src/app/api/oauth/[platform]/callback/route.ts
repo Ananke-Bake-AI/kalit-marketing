@@ -35,7 +35,7 @@ export async function GET(
       request.nextUrl.searchParams.get("error_description") ?? error;
     return NextResponse.redirect(
       new URL(
-        `/dashboard/settings?error=${encodeURIComponent(errorDescription)}`,
+        `/dashboard/connections?error=${encodeURIComponent(errorDescription)}`,
         request.url
       )
     );
@@ -75,60 +75,72 @@ export async function GET(
 
   const redirectUri = `${baseUrl}/api/oauth/${platform}/callback`;
 
-  const tokenData = await exchangeCodeForTokens(
-    config,
-    code,
-    redirectUri,
-    platform
-  );
+  try {
+    const tokenData = await exchangeCodeForTokens(
+      config,
+      code,
+      redirectUri,
+      platform
+    );
 
-  // Fetch account info from platform (best-effort)
-  const accountInfo = await fetchAccountInfo(platform, tokenData.accessToken);
+    // Fetch account info from platform (best-effort)
+    const accountInfo = await fetchAccountInfo(platform, tokenData.accessToken);
 
-  // Build credentials payload
-  const credentials = encryptJson({
-    accessToken: tokenData.accessToken,
-    refreshToken: tokenData.refreshToken,
-    expiresAt: tokenData.expiresAt,
-  });
+    // Build credentials payload
+    const credentials = encryptJson({
+      accessToken: tokenData.accessToken,
+      refreshToken: tokenData.refreshToken,
+      expiresAt: tokenData.expiresAt,
+    });
 
-  // Map platform string to Prisma Platform enum value
-  const platformEnum = mapToPrismaEnum(platform);
+    // Map platform string to Prisma Platform enum value
+    const platformEnum = mapToPrismaEnum(platform);
 
-  // Upsert ConnectedAccount
-  await prisma.connectedAccount.upsert({
-    where: {
-      workspaceId_platform_accountId: {
+    // Upsert ConnectedAccount
+    await prisma.connectedAccount.upsert({
+      where: {
+        workspaceId_platform_accountId: {
+          workspaceId,
+          platform: platformEnum,
+          accountId: accountInfo.accountId,
+        },
+      },
+      update: {
+        credentials: credentials,
+        scopes: config.scopes,
+        accountName: accountInfo.accountName,
+        isActive: true,
+        metadata: (accountInfo.metadata as Record<string, string>) ?? undefined,
+      },
+      create: {
         workspaceId,
         platform: platformEnum,
         accountId: accountInfo.accountId,
+        accountName: accountInfo.accountName,
+        credentials: credentials,
+        scopes: config.scopes,
+        isActive: true,
+        metadata: (accountInfo.metadata as Record<string, string>) ?? undefined,
       },
-    },
-    update: {
-      credentials: credentials,
-      scopes: config.scopes,
-      accountName: accountInfo.accountName,
-      isActive: true,
-      metadata: (accountInfo.metadata as Record<string, string>) ?? undefined,
-    },
-    create: {
-      workspaceId,
-      platform: platformEnum,
-      accountId: accountInfo.accountId,
-      accountName: accountInfo.accountName,
-      credentials: credentials,
-      scopes: config.scopes,
-      isActive: true,
-      metadata: (accountInfo.metadata as Record<string, string>) ?? undefined,
-    },
-  });
+    });
 
-  // Clear state cookie and redirect
-  const response = NextResponse.redirect(
-    new URL(`/dashboard/settings?connected=${platform}`, request.url)
-  );
-  response.cookies.delete(`oauth_state_${platform}`);
-  return response;
+    // Clear state cookie and redirect
+    const response = NextResponse.redirect(
+      new URL(`/dashboard/connections?connected=${platform}`, request.url)
+    );
+    response.cookies.delete(`oauth_state_${platform}`);
+    return response;
+  } catch (err) {
+    console.error(`[OAuth Callback] ${platform} error:`, err);
+    const message =
+      err instanceof Error ? err.message : "Unknown error during OAuth callback";
+    return NextResponse.redirect(
+      new URL(
+        `/dashboard/connections?error=${encodeURIComponent(message)}`,
+        request.url
+      )
+    );
+  }
 }
 
 // ============================================================
@@ -223,12 +235,22 @@ async function fetchAccountInfo(
         return { accountId: data.id, accountName: data.name };
       }
       case "google": {
+        // Try userinfo first — may fail if openid scope not included
         const res = await fetch(
           "https://www.googleapis.com/oauth2/v2/userinfo",
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
-        const data = (await res.json()) as { id: string; name: string };
-        return { accountId: data.id, accountName: data.name };
+        if (res.ok) {
+          const data = (await res.json()) as { id?: string; name?: string; email?: string };
+          if (data.id) {
+            return { accountId: data.id, accountName: data.name ?? data.email ?? "Google Account" };
+          }
+        }
+        // Fallback: use a stable identifier from the token hash
+        return {
+          accountId: `google_${Buffer.from(accessToken.slice(-16)).toString("hex").slice(0, 12)}`,
+          accountName: "Google Account",
+        };
       }
       case "x": {
         const res = await fetch("https://api.twitter.com/2/users/me", {

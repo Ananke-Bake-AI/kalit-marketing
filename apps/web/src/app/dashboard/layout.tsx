@@ -16,6 +16,7 @@ import {
   Zap,
   BarChart3,
   LogOut,
+  Plug,
 } from "lucide-react";
 
 const navItems = [
@@ -26,6 +27,7 @@ const navItems = [
   { label: "Creatives", icon: Palette, href: "/dashboard/creatives" },
   { label: "Experiments", icon: FlaskConical, href: "/dashboard/experiments" },
   { label: "Memory", icon: Brain, href: "/dashboard/memory" },
+  { label: "Connections", icon: Plug, href: "/dashboard/connections" },
   { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 

@@ -10,6 +10,7 @@ const createWorkspaceSchema = z.object({
     .min(1)
     .max(50)
     .regex(/^[a-z0-9-]+$/),
+  shareConnections: z.boolean().default(true),
   config: z.object({
     productName: z.string().min(1),
     productDescription: z.string().min(1),
@@ -31,6 +32,9 @@ const createWorkspaceSchema = z.object({
       .default("approval"),
   }),
 });
+
+// Platforms that support multi-project under a single account (shareable across workspaces)
+const SHAREABLE_PLATFORMS = ["google", "ga4", "stripe", "posthog"];
 
 export async function GET() {
   const workspaces = await prisma.workspace.findMany({
@@ -61,7 +65,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, slug, config } = parsed.data;
+  const { name, slug, config, shareConnections } = parsed.data;
 
   // Check slug uniqueness
   const existing = await prisma.workspace.findUnique({ where: { slug } });
@@ -99,12 +103,70 @@ export async function POST(request: NextRequest) {
       events: {
         create: {
           type: "workspace_created",
-          data: { name, slug },
+          data: { name, slug, shareConnections },
         },
       },
     },
     include: { config: true },
   });
+
+  // Share compatible connections from existing workspaces
+  let sharedConnections: string[] = [];
+  if (shareConnections) {
+    // Find the oldest workspace with active connections (the "source" workspace)
+    const sourceAccounts = await prisma.connectedAccount.findMany({
+      where: {
+        isActive: true,
+        platform: { in: SHAREABLE_PLATFORMS as never[] },
+        workspaceId: { not: workspace.id },
+      },
+      orderBy: { createdAt: "asc" },
+      // Only take distinct platform+accountId combos (first connected wins)
+      distinct: ["platform", "accountId"],
+    });
+
+    for (const source of sourceAccounts) {
+      // Check if this exact platform+account combo already exists for the new workspace
+      const alreadyExists = await prisma.connectedAccount.findFirst({
+        where: {
+          workspaceId: workspace.id,
+          platform: source.platform,
+          accountId: source.accountId,
+        },
+      });
+      if (alreadyExists) continue;
+
+      await prisma.connectedAccount.create({
+        data: {
+          workspaceId: workspace.id,
+          platform: source.platform,
+          accountId: source.accountId,
+          accountName: source.accountName
+            ? `${source.accountName} (shared)`
+            : "Shared connection",
+          credentials: source.credentials ?? {},
+          scopes: source.scopes,
+          isActive: true,
+          metadata: source.metadata ?? {},
+        },
+      });
+      sharedConnections.push(source.platform);
+    }
+
+    if (sharedConnections.length > 0) {
+      await prisma.event.create({
+        data: {
+          workspaceId: workspace.id,
+          type: "workspace_status_changed",
+          data: {
+            action: "connections_shared",
+            platforms: sharedConnections,
+            count: sharedConnections.length,
+          },
+        },
+      });
+    }
+  }
 
   // Auto-transition to "auditing" state — this triggers the initial research tasks
   // (audit_market, audit_competitors, audit_tracking) via the lifecycle engine
@@ -115,6 +177,15 @@ export async function POST(request: NextRequest) {
     "Auto-triggered on workspace creation"
   );
 
+  // Fire-and-forget: kick off the worker tick to process the newly created audit tasks
+  // This ensures users don't have to wait for the next cron cycle
+  if (transitionResult.success && transitionResult.tasksCreated?.length) {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001";
+    fetch(`${baseUrl}/api/internal/worker/tick`, { method: "GET" }).catch(() => {
+      // Silent — the cron will pick it up eventually
+    });
+  }
+
   return NextResponse.json(
     {
       ...workspace,
@@ -124,6 +195,7 @@ export async function POST(request: NextRequest) {
         tasksCreated: transitionResult.tasksCreated ?? [],
         error: transitionResult.error,
       },
+      _sharedConnections: sharedConnections,
     },
     { status: 201 }
   );

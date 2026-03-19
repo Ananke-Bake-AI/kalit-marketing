@@ -22,6 +22,7 @@ export type {
   AdSpec,
   DateRange,
   PerformanceData,
+  AdGroupPerformanceData,
   PlatformCampaignResult,
   PlatformAdGroupResult,
   PlatformAdResult,

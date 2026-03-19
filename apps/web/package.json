@@ -11,13 +11,18 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.77",
     "@anthropic-ai/sdk": "^0.78.0",
     "@auth/prisma-adapter": "^2.11.1",
+    "@htdangkhoa/google-ads": "^0.23.0",
     "@kalit/core": "workspace:*",
     "@kalit/db": "workspace:*",
     "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.3",
+    "bullmq": "^5.71.0",
     "clsx": "^2.1.0",
+    "google-ads-api": "^23.0.0",
+    "jose": "^6.2.2",
     "lucide-react": "^0.460.0",
     "next": "^15.1.0",
     "next-auth": "5.0.0-beta.30",

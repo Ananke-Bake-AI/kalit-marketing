@@ -31,6 +31,10 @@ export interface ChannelAdapter {
     credentials: AdCredentials,
     platformId: string
   ): Promise<void>;
+  removeCampaign(
+    credentials: AdCredentials,
+    platformId: string
+  ): Promise<void>;
 
   // Ad Groups / Ad Sets
   createAdGroup(
@@ -57,6 +61,12 @@ export interface ChannelAdapter {
     campaignPlatformIds: string[],
     dateRange: DateRange
   ): Promise<PerformanceData[]>;
+
+  getAdGroupPerformance?(
+    credentials: AdCredentials,
+    campaignPlatformIds: string[],
+    dateRange: DateRange
+  ): Promise<AdGroupPerformanceData[]>;
 
   // Budget
   updateBudget(
@@ -95,6 +105,13 @@ export interface CampaignSpec {
   endDate?: string;
   targetGeos?: string[];
   status?: "active" | "paused";
+  // Smart Bidding targets — lets Google's AI optimize towards these goals
+  targetCpa?: number; // Target cost per acquisition
+  targetRoas?: number; // Target return on ad spend (e.g. 2.0 = 200%)
+  // Enable Google Performance Max (AI selects channels automatically)
+  usePerformanceMax?: boolean;
+  // Sitelink extensions (Google: campaign-level)
+  sitelinks?: Array<{ text: string; url: string; description1?: string; description2?: string }>;
 }
 
 export type CampaignObjective =
@@ -137,6 +154,12 @@ export interface AdSpec {
   videoUrl?: string;
   displayUrl?: string;
   descriptions?: string[];
+  /** Extra headlines for RSA (Google needs up to 15 unique headlines) */
+  headlines?: string[];
+  /** Keywords from the ad group — used to inject into RSA headlines for relevance */
+  keywords?: string[];
+  /** Sitelinks for ad extensions */
+  sitelinks?: Array<{ text: string; url: string; description1?: string; description2?: string }>;
 }
 
 export interface PlatformCampaignResult {
@@ -175,4 +198,15 @@ export interface PerformanceData {
   cpc: number;
   cpa: number | null;
   roas: number | null;
+}
+
+export interface AdGroupPerformanceData {
+  adGroupPlatformId: string;
+  campaignPlatformId: string;
+  date: string;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  spend: number;
+  revenue: number;
 }
