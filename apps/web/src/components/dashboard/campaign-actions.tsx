@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Rocket,
   CheckCircle,
@@ -75,9 +75,102 @@ export function CampaignActions({
     campaignPlatform || connectedAccounts[0]?.platform || ""
   );
   const [showPlatformWarning, setShowPlatformWarning] = useState(false);
+  const [extensionDetected, setExtensionDetected] = useState(false);
+  const [browserDeployStatus, setBrowserDeployStatus] = useState<string | null>(null);
 
   const matchingAccounts = connectedAccounts.filter(a => a.platform === campaignPlatform);
   const otherAccounts = connectedAccounts.filter(a => a.platform !== campaignPlatform);
+
+  // Detect Kalit extension
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const detected = document.documentElement.getAttribute("data-kalit-extension") === "true";
+    setExtensionDetected(detected);
+
+    // Listen for extension ready event (if loaded after this component)
+    const handler = () => setExtensionDetected(true);
+    window.addEventListener("kalit-extension-ready", handler);
+
+    // Listen for deploy results
+    const resultHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setBrowserDeployStatus(detail.success ? "success" : "failed");
+    };
+    window.addEventListener("kalit-deploy-result", resultHandler);
+
+    return () => {
+      window.removeEventListener("kalit-extension-ready", handler);
+      window.removeEventListener("kalit-deploy-result", resultHandler);
+    };
+  }, []);
+
+  // Browser-based deployment (via extension)
+  async function handleBrowserDeploy(platform: string) {
+    setBrowserDeployStatus("deploying");
+
+    try {
+      // Fetch full campaign data with ad groups and creatives
+      const res = await fetch(
+        `/api/workspaces/${workspaceId}/campaigns?includeAdGroups=true`
+      );
+      if (!res.ok) throw new Error("Failed to fetch campaigns");
+
+      const campaigns = await res.json();
+      const campaign = campaigns.find(
+        (c: { id: string }) => c.id === campaignId
+      );
+
+      if (!campaign) throw new Error("Campaign not found");
+
+      // Send to extension via postMessage
+      window.postMessage(
+        {
+          type: "KALIT_DEPLOY",
+          platform,
+          campaign: {
+            name: campaign.name,
+            objective: campaign.objective,
+            dailyBudget: campaign.dailyBudget,
+            totalBudget: campaign.totalBudget,
+            currency: campaign.currency,
+            targetAudience: campaign.targetAudience,
+            messagingAngle: campaign.messagingAngle,
+            platform,
+            adGroups: campaign.adGroups?.map(
+              (ag: {
+                name: string;
+                targeting: Record<string, unknown>;
+                creatives: Array<{
+                  creative: {
+                    content: Record<string, unknown>;
+                  };
+                }>;
+              }) => ({
+                name: ag.name,
+                targeting: ag.targeting,
+                creatives: ag.creatives?.map(
+                  (c: {
+                    creative: { content: Record<string, unknown> };
+                  }) => ({
+                    ...c.creative?.content,
+                  })
+                ),
+              })
+            ),
+          },
+        },
+        window.location.origin
+      );
+
+      setBrowserDeployStatus("queued");
+    } catch {
+      setBrowserDeployStatus("failed");
+    }
+  }
+
+  // Platforms that support browser deploy (no API needed)
+  const browserDeployPlatforms = ["x"];
 
   const apiBase = `/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`;
 
@@ -338,8 +431,56 @@ export function CampaignActions({
           </div>
         )}
 
+      {/* Browser Deploy option (for platforms without API access like X) */}
+      {["draft", "pending_approval", "approved", "failed"].includes(status) &&
+        browserDeployPlatforms.includes(campaignPlatform || "") && (
+          <div className="card p-3 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              Deploy via browser
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleBrowserDeploy(campaignPlatform || "x")}
+                disabled={!extensionDetected || browserDeployStatus === "deploying"}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-colors disabled:opacity-50"
+              >
+                {browserDeployStatus === "deploying" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ExternalLink className="h-3.5 w-3.5" />
+                )}
+                Deploy to {platformLabels[campaignPlatform || "x"] || "X"} via Browser
+              </button>
+              {browserDeployStatus === "queued" && (
+                <span className="text-[10px] text-accent">Opening ads.x.com...</span>
+              )}
+              {browserDeployStatus === "success" && (
+                <span className="text-[10px] text-emerald-400">Fields filled — review and submit on X</span>
+              )}
+              {browserDeployStatus === "failed" && (
+                <span className="text-[10px] text-red-400">Browser deploy failed</span>
+              )}
+            </div>
+            {!extensionDetected && (
+              <p className="text-[10px] text-slate-500">
+                Requires the{" "}
+                <a href="/dashboard/connections" className="text-accent underline hover:text-accent/80">
+                  Kalit Deploy extension
+                </a>
+                . Install it from Settings to deploy directly through the ad platform UI.
+              </p>
+            )}
+            {extensionDetected && (
+              <p className="text-[10px] text-slate-600">
+                Opens {platformLabels[campaignPlatform || "x"]} in a new tab and auto-fills the campaign form. You review and submit.
+              </p>
+            )}
+          </div>
+        )}
+
       {/* No connected accounts warning */}
       {!hasConnectedAccounts &&
+        !browserDeployPlatforms.includes(campaignPlatform || "") &&
         ["draft", "pending_approval", "approved", "failed"].includes(status) && (
           <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />

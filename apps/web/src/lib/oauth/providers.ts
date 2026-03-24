@@ -73,9 +73,7 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     clientId: getPlatformKey("X_CLIENT_ID"),
     clientSecret: getPlatformKey("X_CLIENT_SECRET"),
     scopes: ["tweet.read", "tweet.write", "users.read", "offline.access"],
-    additionalParams: {
-      code_challenge_method: "S256",
-    },
+    // PKCE (code_challenge + code_verifier) is handled automatically by the OAuth route
   }),
 
   linkedin: () => ({

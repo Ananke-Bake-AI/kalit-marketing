@@ -17,6 +17,7 @@ interface RouteContext {
 interface GeneratedCampaign {
   name: string;
   type: string;
+  platform: string;
   objective: string;
   targetAudience: string;
   messagingAngle: string;
@@ -29,11 +30,16 @@ interface GeneratedCampaign {
       keywords?: string[];
       ageMin?: number;
       ageMax?: number;
+      genders?: string[];
       locations?: string[];
       interests?: string[];
+      languages?: string[];
       devices?: string[];
+      followerLookalikes?: string[];
+      conversationTopics?: string[];
     };
     placements?: string[];
+    dailyBudget?: number;
     ads: Array<{
       headline: string;
       headlines?: string[];
@@ -75,19 +81,107 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   const productDesc = config?.productDescription || "";
   const industry = config?.industry || "technology";
 
-  const systemPrompt = `You are an elite growth marketing architect. You create complete, ready-to-launch Google Ads campaigns.
+  // Detect target platform from prompt
+  const promptLower = prompt.toLowerCase();
+  let detectedPlatform = "google"; // default
+  if (promptLower.includes("x ads") || promptLower.includes("twitter") || promptLower.includes("promoted tweet") || promptLower.includes("x campaign") || promptLower.includes("on x")) {
+    detectedPlatform = "x";
+  } else if (promptLower.includes("meta") || promptLower.includes("facebook") || promptLower.includes("instagram")) {
+    detectedPlatform = "meta";
+  } else if (promptLower.includes("linkedin")) {
+    detectedPlatform = "linkedin";
+  } else if (promptLower.includes("tiktok")) {
+    detectedPlatform = "tiktok";
+  } else if (promptLower.includes("reddit")) {
+    detectedPlatform = "reddit";
+  }
+
+  // Platform-specific instructions
+  const platformInstructions: Record<string, string> = {
+    google: `Platform: Google Ads
+- type should be "paid_search" or "display"
+- Headlines max 30 characters, descriptions max 90 characters (Google RSA format)
+- Include 5+ headlines per ad in the "headlines" array for RSA rotation
+- Include 3+ descriptions per ad in the "descriptions" array
+- Keywords should be specific, high-intent search terms
+- Include negative keyword suggestions in tags
+- placements: ["search"] or ["display"] or ["search", "display"]`,
+
+    x: `Platform: X (Twitter) Ads
+- type MUST be "paid_social"
+- platform MUST be "x"
+- Ad body is a tweet: compelling, conversational, max 280 characters. Use line breaks for readability. Can include emojis sparingly.
+- headline is the card title (appears below tweet with link preview): max 70 characters
+- cta options: "Learn More", "Sign Up", "Shop Now", "Download", "Visit Site", "Book Now"
+- destinationUrl should include UTM params: ?utm_source=x&utm_medium=paid&utm_campaign={slug}
+- Targeting MUST include:
+  - keywords: terms people tweet about, search for, or engage with on X (at least 10)
+  - interests: from X's interest taxonomy (e.g. "Technology", "Startups", "Artificial intelligence", "SaaS", "Venture capital")
+  - locations: full country names (e.g. "United States", "United Kingdom", "France") — NOT country codes
+  - ageMin/ageMax: realistic for the audience
+  - genders: ["all"] unless specific
+  - languages: ["English"] plus others if relevant
+  - devices: ["Desktop", "iOS", "Android"]
+  - followerLookalikes: 3-6 relevant X accounts (with @) whose followers match the target audience
+  - conversationTopics: trending or evergreen topics the audience engages with
+- Create 2-3 ad groups with different targeting angles (e.g. keyword-based, interest-based, lookalike-based)
+- Each ad group should have 2-3 ad variations for A/B testing
+- Budget: set dailyBudget at ad group level too`,
+
+    meta: `Platform: Meta (Facebook/Instagram) Ads
+- type should be "paid_social"
+- platform MUST be "meta"
+- Ad body: engaging social copy, can be longer than X (up to 500 chars). Use line breaks.
+- headline: attention-grabbing, max 40 characters
+- Include interests from Facebook's interest taxonomy
+- locations as full country names
+- Include age, gender targeting
+- devices: ["mobile", "desktop"]`,
+
+    linkedin: `Platform: LinkedIn Ads
+- type should be "paid_social"
+- platform MUST be "linkedin"
+- Ad copy should be professional, B2B focused
+- headline max 70 characters
+- body: professional tone, focus on business value
+- interests: professional topics (e.g. "SaaS", "Enterprise Software", "Startup")
+- Include job titles, company sizes, industries in targeting where relevant`,
+
+    tiktok: `Platform: TikTok Ads
+- type should be "paid_social"
+- platform MUST be "tiktok"
+- Ad copy should be casual, engaging, short-form video style
+- headline max 100 characters
+- interests from TikTok's taxonomy`,
+
+    reddit: `Platform: Reddit Ads
+- type should be "paid_social"
+- platform MUST be "reddit"
+- Ad copy should match Reddit's tone: authentic, not salesy
+- Target specific subreddits via interests
+- headline max 300 characters`,
+  };
+
+  const platformGuide = platformInstructions[detectedPlatform] || platformInstructions.google;
+
+  const targetGeos = config?.targetGeographies?.join(", ") || "US, UK";
+  const icpDescription = config?.icpDescription || "";
+  const brandVoice = config?.brandVoice || "";
+
+  const systemPrompt = `You are an elite growth marketing architect. You create complete, ready-to-launch ad campaigns for any platform.
 
 Given a campaign brief, generate a full campaign structure with ad groups, targeting, and ads.
 
-Rules:
+${platformGuide}
+
+General rules:
 - Create compelling, specific ad copy — no generic marketing fluff
-- Headlines max 30 characters, descriptions max 90 characters for Google Ads RSA
-- Include 3-5 headlines per ad in the "headlines" array for RSA rotation
-- Include 2-4 descriptions per ad in the "descriptions" array
 - Keywords should be specific and match user intent
 - Budget should be reasonable for the campaign goal
-- Destination URL should use the product website
+- Destination URL should use the product website with appropriate UTM parameters
 - Return ONLY valid JSON, no markdown fences
+- Every field in the targeting object should be populated — the more specific the better
+- The campaign must be fully deployable to ${detectedPlatform} without any manual additions
 
 Product context:
 - Name: ${productName}
@@ -95,42 +189,51 @@ Product context:
 - Industry: ${industry}
 - Website: ${websiteUrl}
 - Monthly budget: ${config?.currency || "USD"} ${config?.monthlyBudget || 5000}
+- Target geographies: ${targetGeos}
+${icpDescription ? `- ICP: ${icpDescription}` : ""}
+${brandVoice ? `- Brand voice: ${brandVoice}` : ""}
 
 JSON schema:
 {
   "name": "string — campaign name prefixed with '${productName} — '",
   "type": "paid_search | paid_social | display | video | retargeting",
+  "platform": "${detectedPlatform}",
   "objective": "awareness | traffic | engagement | leads | conversions | sales",
-  "targetAudience": "string",
-  "messagingAngle": "string",
-  "hypothesis": "string",
+  "targetAudience": "string — detailed description of who we're targeting and why",
+  "messagingAngle": "string — the core message and positioning",
+  "hypothesis": "string — what we expect to happen and why",
   "dailyBudget": number,
   "totalBudget": number,
   "adGroups": [{
-    "name": "string",
+    "name": "string — descriptive name for the targeting angle",
+    "dailyBudget": number,
     "targeting": {
-      "keywords": ["string"],
+      "keywords": ["string — at least 8-10 relevant terms"],
       "ageMin": number,
       "ageMax": number,
-      "locations": ["US"],
-      "interests": ["string"],
-      "devices": ["mobile", "desktop"]
+      "genders": ["all"],
+      "locations": ["full country/region names"],
+      "interests": ["string — platform-specific interests, at least 5"],
+      "languages": ["English"],
+      "devices": ["Desktop", "iOS", "Android"],
+      "followerLookalikes": ["@handle — only for X/Twitter"],
+      "conversationTopics": ["string — only for X/Twitter"]
     },
-    "placements": ["search"],
+    "placements": ["string"],
     "ads": [{
-      "headline": "string (max 30 chars)",
-      "headlines": ["string (max 30 chars each) — at least 5 for RSA"],
-      "body": "string (max 90 chars)",
+      "headline": "string",
+      "headlines": ["string — multiple variants for A/B testing"],
+      "body": "string — the main ad copy",
       "cta": "string",
-      "destinationUrl": "${websiteUrl}",
-      "descriptions": ["string (max 90 chars each) — at least 3"],
+      "destinationUrl": "${websiteUrl}?utm_source=${detectedPlatform}&utm_medium=paid&utm_campaign=...",
+      "descriptions": ["string — multiple variants"],
       "messagingAngle": "string",
-      "tags": ["string"]
+      "tags": ["string — categories for internal tracking"]
     }]
   }]
 }
 
-Create 2-3 ad groups with 2-3 ads each. Be specific and conversion-focused.`;
+Create 2-3 ad groups with 2-3 ads each. Be specific and ${detectedPlatform === "x" ? "conversational — this is Twitter, not a landing page" : "conversion-focused"}.`;
 
   try {
     const response = await llmComplete({
@@ -148,6 +251,7 @@ Create 2-3 ad groups with 2-3 ads each. Be specific and conversion-focused.`;
         workspaceId,
         name: generated.name,
         type: (generated.type || "paid_search") as never,
+        platform: generated.platform || detectedPlatform,
         objective: generated.objective || "conversions",
         status: "draft",
         targetAudience: generated.targetAudience,
@@ -168,6 +272,7 @@ Create 2-3 ad groups with 2-3 ads each. Be specific and conversion-focused.`;
           name: agData.name,
           targeting: (agData.targeting ?? {}) as object,
           placements: agData.placements ?? [],
+          dailyBudget: agData.dailyBudget ?? null,
         },
       });
 

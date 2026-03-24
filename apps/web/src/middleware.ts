@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 // Paths that never require authentication
-const publicPaths = ["/login", "/api/auth", "/api/internal", "/api/cron", "/api/events", "/api/webhooks"];
+const publicPaths = ["/login", "/api/auth", "/api/internal", "/api/cron", "/api/events", "/api/webhooks", "/api/extension"];
 
 function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;

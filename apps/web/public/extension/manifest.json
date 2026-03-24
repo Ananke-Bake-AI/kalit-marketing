@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Kalit Marketing — Ad Deployer",
+  "version": "0.5.0",
+  "description": "Deploy campaigns from Kalit Marketing directly into ad platform dashboards.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://ads.x.com/*",
+    "https://business.x.com/*",
+    "http://localhost:3002/*",
+    "https://marketing.kalit.ai/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:3002/*", "https://marketing.kalit.ai/*"],
+      "js": ["content-scripts/kalit-bridge.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://ads.x.com/*", "https://business.x.com/*"],
+      "js": ["lib/dom-analyzer.js", "lib/form-filler.js", "lib/page-scraper.js", "content-scripts/x-ads-automator.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

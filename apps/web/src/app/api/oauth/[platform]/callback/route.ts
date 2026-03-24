@@ -75,12 +75,16 @@ export async function GET(
 
   const redirectUri = `${baseUrl}/api/oauth/${platform}/callback`;
 
+  // Retrieve PKCE code_verifier from cookie (if platform requires it)
+  const codeVerifier = request.cookies.get(`oauth_pkce_${platform}`)?.value ?? undefined;
+
   try {
     const tokenData = await exchangeCodeForTokens(
       config,
       code,
       redirectUri,
-      platform
+      platform,
+      codeVerifier
     );
 
     // Fetch account info from platform (best-effort)
@@ -124,11 +128,12 @@ export async function GET(
       },
     });
 
-    // Clear state cookie and redirect
+    // Clear state and PKCE cookies, redirect to success
     const response = NextResponse.redirect(
       new URL(`/dashboard/connections?connected=${platform}`, request.url)
     );
     response.cookies.delete(`oauth_state_${platform}`);
+    response.cookies.delete(`oauth_pkce_${platform}`);
     return response;
   } catch (err) {
     console.error(`[OAuth Callback] ${platform} error:`, err);
@@ -162,22 +167,30 @@ async function exchangeCodeForTokens(
   },
   code: string,
   redirectUri: string,
-  platform: string
+  platform: string,
+  codeVerifier?: string
 ): Promise<TokenExchangeResult> {
-  const body = new URLSearchParams({
+  const bodyParams: Record<string, string> = {
     grant_type: "authorization_code",
     code,
     redirect_uri: redirectUri,
     client_id: config.clientId,
     client_secret: config.clientSecret,
-  });
+  };
+
+  // X (Twitter) uses PKCE — include code_verifier and use Basic Auth
+  if (codeVerifier) {
+    bodyParams.code_verifier = codeVerifier;
+  }
+
+  const body = new URLSearchParams(bodyParams);
 
   const headers: Record<string, string> = {
     "Content-Type": "application/x-www-form-urlencoded",
   };
 
-  // Reddit requires Basic Auth
-  if (platform === "reddit") {
+  // Reddit and X require Basic Auth for token exchange
+  if (platform === "reddit" || platform === "x") {
     const basic = Buffer.from(
       `${config.clientId}:${config.clientSecret}`
     ).toString("base64");

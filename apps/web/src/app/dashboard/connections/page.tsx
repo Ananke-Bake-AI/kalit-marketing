@@ -34,6 +34,7 @@ interface GuideStep {
   title: string;
   content: string;
   code?: string;
+  codes?: { label: string; value: string }[];
   link?: { label: string; url: string };
   warning?: string;
   tip?: string;
@@ -100,8 +101,8 @@ const guides: Guide[] = [
         title: "Set Authorized Redirect URI",
         content:
           "Add the callback URL to your OAuth client. For local development:",
-        code: "http://localhost:3000/api/oauth/google/callback",
-        tip: "For production, replace localhost:3000 with your actual domain.",
+        code: "{ORIGIN}/api/oauth/google/callback",
+        tip: "The URL shown is your current environment. In production, it will use your actual domain automatically.",
       },
       {
         title: "Get a Google Ads Developer Token",
@@ -164,62 +165,102 @@ const guides: Guide[] = [
     icon: Megaphone,
     category: "Ad Platforms",
     difficulty: "intermediate",
-    timeEstimate: "15-20 min",
+    timeEstimate: "20-30 min",
     steps: [
       {
-        title: "Create a Meta App",
+        title: "Go to Meta for Developers",
         content:
-          "Go to Meta for Developers and create a new app. Choose \"Business\" type.",
+          "Open developers.facebook.com and log in with the Facebook account that owns (or is admin of) your business. If you don't have a Meta developer account yet, click \"Get Started\" and follow the registration steps.",
         link: {
           label: "Meta for Developers",
+          url: "https://developers.facebook.com/",
+        },
+      },
+      {
+        title: "Create a New App — App Details",
+        content:
+          "Click \"My Apps\" in the top-right, then \"Create App\". In the first step (App Details), enter your app name (e.g. \"Kalit Marketing\") and your contact email. Click Next.",
+        link: {
+          label: "Create a New App",
           url: "https://developers.facebook.com/apps/creation/",
         },
       },
       {
-        title: "Add Products to Your App",
+        title: "Select Use Cases",
         content:
-          'In your app dashboard, click "Add Product" and add: Facebook Login, Marketing API.',
+          "In the second step (Use Cases), you'll see a list of available APIs with checkboxes. Select:\n\n• \"Create and manage ads with the Marketing API\" — required for ad campaigns, ad sets, performance data\n• Optionally: \"Authenticate and request data from users\" (Facebook Login) — for the OAuth login flow\n\nDo NOT select Gaming, WhatsApp, Threads, or other unrelated use cases. Click Next.",
+        tip: "The Marketing API use case is the most important one. It enables creating campaigns, ad sets, and ads programmatically. If you also need Instagram publishing, the Marketing API covers it.",
       },
       {
-        title: "Configure Facebook Login",
+        title: "Associate a Business Account",
         content:
-          "Under Facebook Login > Settings, add the OAuth redirect URI:",
-        code: "http://localhost:3000/api/oauth/meta/callback",
-      },
-      {
-        title: "Set Required Permissions",
-        content:
-          "The app will request: ads_management, ads_read, pages_manage_posts, instagram_basic, instagram_content_publish. In App Review, submit these for review (or use a test user for development).",
-        tip: "App admins and developers can use all permissions without review while in development mode.",
-      },
-      {
-        title: "Get App Credentials",
-        content:
-          "Go to App Settings > Basic. Copy your App ID and App Secret.",
-      },
-      {
-        title: "Create a Test Ad Account",
-        content:
-          "In Meta Business Manager, go to Business Settings > Ad Accounts. Create a test ad account or use an existing sandbox.",
+          "In the third step (Business), select your Meta Business Account (formerly Business Manager). If you don't have one, you'll be prompted to create it at business.facebook.com. This links your app to your business for ad account access and permissions.",
         link: {
-          label: "Business Settings",
+          label: "Meta Business Suite",
+          url: "https://business.facebook.com/",
+        },
+        warning: "You must be an admin of the Business Account to connect ad accounts and grant permissions to your app.",
+      },
+      {
+        title: "Review & Create the App",
+        content:
+          "Review the Requirements step (any prerequisites for your selected use cases), then complete the Overview to finalize. Once created, you'll land on the app dashboard where you can configure settings.",
+      },
+      {
+        title: "Configure Facebook Login — OAuth Redirect URI",
+        content:
+          "Go to Facebook Login > Settings in the left sidebar. Under \"Valid OAuth Redirect URIs\", add your callback URL. For local development:",
+        code: "{ORIGIN}/api/oauth/meta/callback",
+        tip: "The URL shown matches your current environment. For production (e.g. marketing.kalit.ai), add that domain as an additional redirect URI. You can add multiple URIs.",
+      },
+      {
+        title: "Configure App Permissions (Scopes)",
+        content:
+          "The OAuth flow will request these permissions automatically:\n\n• ads_management — create/edit/pause campaigns, ad sets, and ads\n• ads_read — read campaign performance and reporting data\n• pages_manage_posts — publish organic posts on connected Pages\n• instagram_basic — access basic Instagram account info\n• instagram_content_publish — publish content to Instagram\n\nIn development mode, app admins and developers get all permissions without review. For production, you'll need to submit each permission for App Review.",
+        warning: "If your app is in \"Development\" mode, only users listed as admins/developers/testers in the app's Roles settings can authorize. Add your team members there.",
+      },
+      {
+        title: "Get Your App ID and App Secret",
+        content:
+          "Go to App Settings > Basic in the left sidebar. You'll find:\n\n• App ID — the public identifier (numeric, e.g. 123456789012345)\n• App Secret — click \"Show\" and confirm your password to reveal it\n\nCopy both values — you'll need them in the next step.",
+        link: {
+          label: "App Settings > Basic",
+          url: "https://developers.facebook.com/apps/",
+        },
+        warning: "Never share your App Secret publicly. It grants full access to your app.",
+      },
+      {
+        title: "Create or Link an Ad Account",
+        content:
+          "You need a Meta Ad Account to run campaigns. In Meta Business Suite, go to Business Settings > Ad Accounts:\n\n• If you already have one: make sure it's linked to your Business Account\n• To create a new one: Click \"Add\" > \"Create a new ad account\", set your currency and timezone\n• For testing: You can create a sandbox ad account under Business Settings > Ad Accounts\n\nNote: the Ad Account ID (starts with \"act_\") will be used by the adapter to push campaigns.",
+        link: {
+          label: "Business Settings — Ad Accounts",
           url: "https://business.facebook.com/settings/ad-accounts",
         },
+        tip: "You can connect multiple ad accounts later. The initial OAuth flow will let you select which account to use.",
       },
       {
-        title: "Add Environment Variables",
-        content: "Add these to your .env file:",
-        code: 'META_CLIENT_ID="your-app-id"\nMETA_CLIENT_SECRET="your-app-secret"',
-      },
-      {
-        title: "Connect from Dashboard",
+        title: "Add Your Credentials to Kalit",
         content:
-          'Click "Connect Meta" in Settings or during onboarding. Authorize the app and select which ad account and pages to connect.',
+          "Go to Settings in the Kalit Marketing dashboard and paste your App ID and App Secret in the Meta section. Or add them to your .env file:",
+        code: 'META_CLIENT_ID="your-app-id"\nMETA_CLIENT_SECRET="your-app-secret"',
+        tip: "Using the dashboard Settings page is recommended — credentials are stored securely on your server and you don't need to restart the app.",
+      },
+      {
+        title: "Connect Your Meta Account",
+        content:
+          "Go to Settings > Connected Platforms (or the onboarding wizard) and click \"Connect\" on Meta. You'll be redirected to Facebook's authorization screen. Log in, review the permissions, and click \"Continue\". After authorization, you'll be redirected back to the dashboard with a success message.",
+      },
+      {
+        title: "Verify the Connection",
+        content:
+          "After connecting, check Settings > Connected Platforms — Meta should appear with a green status dot and your account name. You can now create campaigns targeting Facebook and Instagram audiences directly from the Growth Console.",
+        tip: "If the connection fails, check: 1) App ID/Secret are correct, 2) Redirect URI matches exactly, 3) Your Facebook account has admin access to the Business Account and Ad Account.",
       },
     ],
     envVars: [
-      { key: "META_CLIENT_ID", description: "Meta App ID" },
-      { key: "META_CLIENT_SECRET", description: "Meta App Secret" },
+      { key: "META_CLIENT_ID", description: "Meta App ID from App Settings > Basic" },
+      { key: "META_CLIENT_SECRET", description: "Meta App Secret from App Settings > Basic" },
     ],
   },
   {
@@ -230,45 +271,59 @@ const guides: Guide[] = [
     icon: Monitor,
     category: "Ad Platforms",
     difficulty: "intermediate",
-    timeEstimate: "10-15 min",
+    timeEstimate: "15-20 min",
     steps: [
       {
-        title: "Create a TikTok Business Center Account",
+        title: "Go to TikTok Business Center",
         content:
-          "Sign up at TikTok Business Center if you don't have one already.",
+          "Open business.tiktok.com and sign in with your TikTok account. If you don't have a TikTok Business Center account, click \"Create an account\" and follow the setup — you'll need a business name, industry, and timezone.",
         link: {
           label: "TikTok Business Center",
           url: "https://business.tiktok.com/",
         },
       },
       {
+        title: "Create an Ad Account",
+        content:
+          "In TikTok Business Center, go to Assets > Ad Accounts and create one if you don't have one. Set your currency and timezone. You'll need an active ad account to run campaigns through the API.",
+        tip: "For testing, TikTok provides a sandbox environment. You can request sandbox access when creating your developer app.",
+      },
+      {
         title: "Register a Developer App",
         content:
-          "Go to TikTok Marketing API and create a developer application.",
+          "Go to the TikTok Marketing API portal. Click \"My Apps\" > \"Create App\". Fill in:\n\n• App name (e.g. \"Kalit Marketing\")\n• Description of what your app does\n• Select the Marketing API product\n• Choose the scopes: Ad Management, Creative Management\n\nSubmit for review — sandbox access is usually granted quickly.",
         link: {
-          label: "TikTok Marketing API",
+          label: "TikTok Marketing API Portal",
           url: "https://business-api.tiktok.com/portal/apps",
         },
+        warning: "TikTok requires app review before you can access production APIs. Sandbox mode is available immediately for testing.",
       },
       {
-        title: "Configure OAuth Redirect",
-        content: "Set the callback URL:",
-        code: "http://localhost:3000/api/oauth/tiktok/callback",
+        title: "Configure OAuth Redirect URI",
+        content: "In your app settings, add the OAuth redirect URI. For local development:",
+        code: "{ORIGIN}/api/oauth/tiktok/callback",
+        tip: "The URL shown matches your current environment. Add your production domain too if needed.",
       },
       {
-        title: "Add Environment Variables",
-        content: "",
+        title: "Get Your App Credentials",
+        content:
+          "In the app dashboard, find your App ID and App Secret. Copy both values.",
+      },
+      {
+        title: "Add Credentials to Kalit",
+        content: "Go to Settings in the dashboard and paste your credentials, or add them to your .env file:",
         code: 'TIKTOK_CLIENT_ID="your-app-id"\nTIKTOK_CLIENT_SECRET="your-app-secret"',
       },
       {
-        title: "Connect from Dashboard",
+        title: "Connect and Verify",
         content:
-          'Click "Connect TikTok" and complete the OAuth authorization.',
+          "Click \"Connect TikTok\" in Settings or the onboarding wizard. You'll be redirected to TikTok's authorization page. Grant access to your ad account, and you'll be redirected back with a success message.",
+        tip: "If authorization fails, ensure your app has been approved and the redirect URI matches exactly.",
       },
     ],
     envVars: [
-      { key: "TIKTOK_CLIENT_ID", description: "TikTok App ID" },
-      { key: "TIKTOK_CLIENT_SECRET", description: "TikTok App Secret" },
+      { key: "TIKTOK_CLIENT_ID", description: "TikTok App ID from Marketing API portal" },
+      { key: "TIKTOK_CLIENT_SECRET", description: "TikTok App Secret from Marketing API portal" },
     ],
   },
   {
@@ -279,39 +334,64 @@ const guides: Guide[] = [
     icon: Globe,
     category: "Ad Platforms",
     difficulty: "intermediate",
-    timeEstimate: "10-15 min",
+    timeEstimate: "15-20 min",
     steps: [
       {
-        title: "Create an X Developer App",
+        title: "Go to the X Developer Console",
         content:
-          "Go to the X Developer Portal and create a new project + app.",
+          "Open console.x.com and sign in with the X account you want to use for advertising. If you don't have a developer account yet, you'll be prompted to sign up and describe your use case.",
         link: {
-          label: "X Developer Portal",
-          url: "https://developer.x.com/en/portal/dashboard",
+          label: "X Developer Console",
+          url: "https://console.x.com/",
         },
+        tip: "X uses a pay-per-use credit model. You can buy credits or enable auto-recharge from the Billing section in the console.",
       },
       {
-        title: "Enable OAuth 2.0",
+        title: "Create an App",
         content:
-          "In your app settings, enable OAuth 2.0 with PKCE. Set the redirect URI:",
-        code: "http://localhost:3000/api/oauth/x/callback",
+          "In the console, click \"Apps\" in the left sidebar, then \"Create App\". Enter a name (e.g. \"Kalit Marketing\") and save.\n\nYou'll land on the app detail page showing:\n• A Bearer Token (for app-only auth)\n• OAuth 1.0 Keys (Consumer Key, Access Token)\n\nIgnore those — we need OAuth 2.0, which requires an extra setup step.",
       },
       {
-        title: "Request Elevated Access",
+        title: "Set Up User Authentication (OAuth 2.0)",
         content:
-          "Apply for Elevated access if you need ads API access. Basic access is fine for organic posting.",
-        warning:
-          "Ads API requires an approved X Ads account + Elevated developer access.",
+          "On your app's detail page, scroll to \"User authentication settings\" and click \"Set up\". You'll go through 3 screens:\n\n1. App permissions → select \"Read and write\"\n2. Type of App → select \"Web App, Automated App or Bot\" (confidential client — gives you a Client Secret)\n3. App info — two required fields (copy each below). The rest (Organization, Terms of Service, Privacy Policy) are optional.\n\nClick Save. This enables OAuth 2.0 and generates your Client ID and Client Secret.",
+        codes: [
+          { label: "Callback URI / Redirect URL (required)", value: "{ORIGIN}/api/oauth/x/callback" },
+          { label: "Website URL (required)", value: "https://kalit.ai" },
+        ],
+        tip: "The Website URL is informational only — it doesn't affect the OAuth flow. Only the Callback URI must match exactly.",
       },
       {
-        title: "Add Environment Variables",
-        content: "",
-        code: 'X_CLIENT_ID="your-client-id"\nX_CLIENT_SECRET="your-client-secret"',
+        title: "Copy Your OAuth 2.0 Client ID and Secret",
+        content:
+          "After saving User authentication settings, your OAuth 2.0 credentials are generated. Copy the Client ID and Client Secret immediately — the Client Secret is only shown once.\n\nX shows two separate credential sets on your app page:\n• Consumer Key & Access Token → OAuth 1.0a (at the top, ignore these)\n• Client ID & Client Secret → OAuth 2.0 (what we need, generated after \"Set up\")\n\nMake sure you're copying from the OAuth 2.0 section.",
+        warning: "The OAuth 2.0 Client ID/Secret are NOT the same as the Consumer Key/Access Token shown at the top. Those are OAuth 1.0a credentials.",
+      },
+      {
+        title: "Request Ads API Access",
+        content:
+          "To run paid campaigns (promoted tweets, ad management, audience targeting), you need Ads API access:\n\n1. Go to ads.x.com and set up your advertising account with billing info\n2. Then go to ads.x.com/help and submit an Ads API access application\n3. Choose \"Standard Access\" for full campaign management (analytics, creatives, audiences)\n4. After approval, regenerate your user access tokens in the Developer Console\n\nApproval may take a few days. You can proceed to connect your account now — the OAuth connection works independently from Ads API access.",
+        link: {
+          label: "X Ads",
+          url: "https://ads.x.com/",
+        },
+        tip: "\"Standard Access\" is what you need for full campaign management. \"Conversion Only\" is limited to tracking only.",
+      },
+      {
+        title: "Add Credentials to Kalit",
+        content: "Go to Settings in the dashboard and paste your OAuth 2.0 credentials, or add them to your .env file:",
+        code: 'X_CLIENT_ID="your-oauth2-client-id"\nX_CLIENT_SECRET="your-oauth2-client-secret"',
+      },
+      {
+        title: "Connect and Verify",
+        content:
+          "Click \"Connect X\" in Settings or the onboarding wizard. You'll be redirected to X to authorize the app. After approval, you'll be redirected back with a success message and your @handle will appear in connected platforms.",
+        tip: "If connection fails: 1) Callback URL must match exactly (no trailing slash mismatch), 2) Use OAuth 2.0 Client ID/Secret (not API Key/Secret), 3) Ensure OAuth 2.0 is configured in your app settings.",
       },
     ],
     envVars: [
-      { key: "X_CLIENT_ID", description: "X OAuth 2.0 Client ID" },
-      { key: "X_CLIENT_SECRET", description: "X OAuth 2.0 Client Secret" },
+      { key: "X_CLIENT_ID", description: "OAuth 2.0 Client ID from console.x.com > Apps > Keys and Tokens" },
+      { key: "X_CLIENT_SECRET", description: "OAuth 2.0 Client Secret from console.x.com > Apps > Keys and Tokens" },
     ],
   },
   {
@@ -322,38 +402,122 @@ const guides: Guide[] = [
     icon: Globe,
     category: "Ad Platforms",
     difficulty: "intermediate",
-    timeEstimate: "10-15 min",
+    timeEstimate: "15-20 min",
     steps: [
       {
-        title: "Create a LinkedIn App",
-        content: "Go to LinkedIn Developer Portal and create a new app.",
+        title: "Go to LinkedIn Developer Portal",
+        content:
+          "Open linkedin.com/developers and sign in with the LinkedIn account that manages your company page. Click \"Create App\" to get started.",
         link: {
           label: "LinkedIn Developers",
           url: "https://www.linkedin.com/developers/apps/new",
         },
       },
       {
-        title: "Request Marketing API Access",
+        title: "Create a LinkedIn App",
         content:
-          'Under "Products", request access to the Marketing Developer Platform. This grants ads_management scopes.',
+          "Fill in the app details:\n\n• App name (e.g. \"Kalit Marketing\")\n• LinkedIn Page — select your company page (required)\n• Privacy policy URL — your website's privacy policy\n• App logo\n\nAfter creation, you'll get your Client ID and Client Secret.",
+        tip: "You must be an admin of the LinkedIn Company Page to associate it with the app.",
       },
       {
-        title: "Set Redirect URI",
-        content: "",
-        code: "http://localhost:3000/api/oauth/linkedin/callback",
+        title: "Request Marketing Developer Platform Access",
+        content:
+          "In your app's dashboard, go to the \"Products\" tab. Find \"Marketing Developer Platform\" and click \"Request access\". This grants the scopes needed for ads management (r_ads, rw_ads). Approval can take a few days.",
+        warning: "Without Marketing Developer Platform access, you can only do organic posting. Ads management requires this product approval.",
       },
       {
-        title: "Add Environment Variables",
-        content: "",
+        title: "Configure OAuth 2.0 Redirect URL",
+        content:
+          "Go to the \"Auth\" tab in your app settings. Under \"Authorized redirect URLs for your app\", add your callback URL. The URL format is:",
+        code: "{ORIGIN}/api/oauth/linkedin/callback",
+      },
+      {
+        title: "Copy Client ID and Client Secret",
+        content:
+          "In the \"Auth\" tab, copy your Client ID and Client Secret (click the eye icon to reveal the secret).",
+      },
+      {
+        title: "Set Up a LinkedIn Ad Account",
+        content:
+          "Go to linkedin.com/campaignmanager to create or access your LinkedIn Campaign Manager account. You'll need an active ad account with billing set up to run paid campaigns.",
+        link: {
+          label: "LinkedIn Campaign Manager",
+          url: "https://www.linkedin.com/campaignmanager/",
+        },
+      },
+      {
+        title: "Add Credentials to Kalit",
+        content: "Go to Settings in the dashboard and paste your credentials, or add them to your .env file:",
         code: 'LINKEDIN_CLIENT_ID="your-client-id"\nLINKEDIN_CLIENT_SECRET="your-client-secret"',
+      },
+      {
+        title: "Connect and Verify",
+        content:
+          "Click \"Connect LinkedIn\" in Settings. Authorize the app on LinkedIn's consent screen, and you'll be redirected back with a success message.",
+        tip: "If connection fails, ensure: 1) Redirect URL matches exactly, 2) Marketing Developer Platform is approved, 3) You're an admin of the associated Company Page.",
       },
     ],
     envVars: [
-      { key: "LINKEDIN_CLIENT_ID", description: "LinkedIn App Client ID" },
+      { key: "LINKEDIN_CLIENT_ID", description: "LinkedIn App Client ID from Auth tab" },
       {
         key: "LINKEDIN_CLIENT_SECRET",
-        description: "LinkedIn App Client Secret",
+        description: "LinkedIn App Client Secret from Auth tab",
       },
+    ],
+  },
+  {
+    id: "reddit-ads",
+    title: "Reddit Ads",
+    description:
+      "Connect Reddit to run promoted posts targeting specific subreddit communities and interest groups.",
+    icon: Globe,
+    category: "Ad Platforms",
+    difficulty: "intermediate",
+    timeEstimate: "10-15 min",
+    steps: [
+      {
+        title: "Go to Reddit Apps",
+        content:
+          "Open reddit.com/prefs/apps while logged in with the Reddit account you want to use for advertising. Scroll down to \"developed applications\".",
+        link: {
+          label: "Reddit Apps",
+          url: "https://www.reddit.com/prefs/apps",
+        },
+      },
+      {
+        title: "Create a Reddit App",
+        content:
+          "Click \"create another app...\" at the bottom. Fill in:\n\n• Name: e.g. \"Kalit Marketing\"\n• Type: select \"web app\"\n• Description: brief description of your use\n• Redirect URI: your callback URL (shown below)\n\nClick \"create app\".",
+        code: "{ORIGIN}/api/oauth/reddit/callback",
+      },
+      {
+        title: "Copy Your Credentials",
+        content:
+          "After creation, you'll see:\n\n• Client ID — the string under the app name (looks like a random string)\n• Client Secret — labeled \"secret\"\n\nCopy both values.",
+      },
+      {
+        title: "Set Up a Reddit Ads Account",
+        content:
+          "Go to ads.reddit.com to create or access your Reddit Ads account. Set up billing and create an ad account. You'll need this to run paid promoted posts.",
+        link: {
+          label: "Reddit Ads",
+          url: "https://ads.reddit.com/",
+        },
+      },
+      {
+        title: "Add Credentials to Kalit",
+        content: "Go to Settings in the dashboard and paste your credentials, or add them to your .env file:",
+        code: 'REDDIT_CLIENT_ID="your-client-id"\nREDDIT_CLIENT_SECRET="your-client-secret"',
+      },
+      {
+        title: "Connect and Verify",
+        content:
+          "Click \"Connect Reddit\" in Settings. Authorize the app on Reddit's consent screen, and you'll be redirected back. Reddit connections use permanent tokens with automatic refresh.",
+      },
+    ],
+    envVars: [
+      { key: "REDDIT_CLIENT_ID", description: "Reddit App Client ID" },
+      { key: "REDDIT_CLIENT_SECRET", description: "Reddit App Secret" },
     ],
   },
 
@@ -665,6 +829,12 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+/** Replace {ORIGIN} placeholders with the current browser origin */
+function resolveOrigin(text: string): string {
+  if (typeof window === "undefined") return text;
+  return text.replace(/\{ORIGIN\}/g, window.location.origin);
+}
+
 function GuideCard({ guide }: { guide: Guide }) {
   const [expanded, setExpanded] = useState(false);
   const Icon = guide.icon;
@@ -729,8 +899,22 @@ function GuideCard({ guide }: { guide: Guide }) {
 
               {step.code && (
                 <div className="relative bg-black/30 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap mb-2">
-                  <CopyButton text={step.code} />
-                  {step.code}
+                  <CopyButton text={resolveOrigin(step.code)} />
+                  {resolveOrigin(step.code)}
+                </div>
+              )}
+
+              {step.codes && (
+                <div className="space-y-2 mb-2">
+                  {step.codes.map((c, j) => (
+                    <div key={j}>
+                      <p className="text-[10px] text-slate-500 font-medium mb-1">{c.label}</p>
+                      <div className="relative bg-black/30 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
+                        <CopyButton text={resolveOrigin(c.value)} />
+                        {resolveOrigin(c.value)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 

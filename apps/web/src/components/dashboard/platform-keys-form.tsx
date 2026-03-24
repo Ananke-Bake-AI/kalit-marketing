@@ -88,6 +88,10 @@ const keyGroups: KeyGroup[] = [
         key: "TIKTOK_CLIENT_ID",
         label: "App ID",
         placeholder: "xxxxxxxxxx",
+        link: {
+          label: "Marketing API Portal",
+          url: "https://business-api.tiktok.com/portal/apps",
+        },
       },
       {
         key: "TIKTOK_CLIENT_SECRET",
@@ -102,16 +106,16 @@ const keyGroups: KeyGroup[] = [
     fields: [
       {
         key: "X_CLIENT_ID",
-        label: "Client ID",
+        label: "OAuth 2.0 Client ID",
         placeholder: "xxxxxxxxxxxxxxxxxxxxxxxx",
         link: {
-          label: "Developer Portal",
-          url: "https://developer.x.com/en/portal/dashboard",
+          label: "Developer Console",
+          url: "https://console.x.com/",
         },
       },
       {
         key: "X_CLIENT_SECRET",
-        label: "Client Secret",
+        label: "OAuth 2.0 Client Secret",
         placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
       },
     ],
@@ -124,11 +128,35 @@ const keyGroups: KeyGroup[] = [
         key: "LINKEDIN_CLIENT_ID",
         label: "Client ID",
         placeholder: "xxxxxxxxxxxxxx",
+        link: {
+          label: "Developer Apps",
+          url: "https://www.linkedin.com/developers/apps",
+        },
       },
       {
         key: "LINKEDIN_CLIENT_SECRET",
         label: "Client Secret",
         placeholder: "xxxxxxxxxxxxxxxx",
+      },
+    ],
+  },
+  {
+    title: "Reddit",
+    icon: "globe",
+    fields: [
+      {
+        key: "REDDIT_CLIENT_ID",
+        label: "Client ID",
+        placeholder: "xxxxxxxxxxxxxx",
+        link: {
+          label: "Reddit Apps",
+          url: "https://www.reddit.com/prefs/apps",
+        },
+      },
+      {
+        key: "REDDIT_CLIENT_SECRET",
+        label: "Client Secret",
+        placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
       },
     ],
   },

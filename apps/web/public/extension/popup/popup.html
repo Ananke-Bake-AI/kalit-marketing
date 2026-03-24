@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 300px;
+      background: #0a0a0f;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      padding: 16px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(200, 255, 0, 0.2);
+    }
+    .header h1 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #c8ff00;
+    }
+    .header .version {
+      font-size: 10px;
+      color: #64748b;
+      margin-left: auto;
+    }
+    .status {
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.02);
+      margin-bottom: 12px;
+    }
+    .status-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .status-value {
+      font-size: 12px;
+      color: #fff;
+    }
+    .status-value.idle { color: #64748b; }
+    .status-value.pending { color: #c8ff00; }
+    .instructions {
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .instructions strong { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Kalit Deploy</h1>
+    <span class="version">v0.1.0</span>
+  </div>
+
+  <div class="status">
+    <div class="status-label">Status</div>
+    <div class="status-value" id="status">Checking...</div>
+  </div>
+
+  <div class="status" id="campaign-info" style="display:none">
+    <div class="status-label">Pending Campaign</div>
+    <div class="status-value" id="campaign-name"></div>
+  </div>
+
+  <div class="instructions">
+    <strong>How it works:</strong><br>
+    1. Review a campaign in Kalit Marketing<br>
+    2. Click "Deploy to X" on the campaign page<br>
+    3. The X Ads Manager opens with fields auto-filled<br>
+    4. Review and submit the campaign on X
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

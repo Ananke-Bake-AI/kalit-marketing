@@ -25,6 +25,12 @@ import {
   Circle,
 } from "lucide-react";
 
+/** Replace {ORIGIN} placeholders with the current browser origin */
+function resolveOrigin(text: string): string {
+  if (typeof window === "undefined") return text;
+  return text.replace(/\{ORIGIN\}/g, window.location.origin);
+}
+
 // ============================================================
 // Types
 // ============================================================
@@ -47,6 +53,7 @@ interface WizardStep {
   warning?: string;
   tip?: string;
   code?: string;
+  codes?: { label: string; value: string }[];
   actionLabel?: string;
   actionUrl?: string;
 }
@@ -114,12 +121,12 @@ const platformWizards: PlatformWizard[] = [
         description:
           'Go to Credentials > Create Credentials > OAuth 2.0 Client ID. Select "Web application". Add the redirect URI shown below.',
         type: "redirect",
-        code: "http://localhost:3001/api/oauth/google/callback",
+        code: "{ORIGIN}/api/oauth/google/callback",
         link: {
           label: "Create Credentials",
           url: "https://console.cloud.google.com/apis/credentials",
         },
-        tip: "For production, replace localhost:3001 with your domain.",
+        tip: "The URL shown matches your current environment. For production, add your domain as an additional redirect URI.",
       },
       {
         id: "google-credentials",
@@ -226,37 +233,76 @@ const platformWizards: PlatformWizard[] = [
     category: "ad-platform",
     steps: [
       {
-        id: "create-meta-app",
-        title: "Create a Meta App",
+        id: "go-to-meta-dev",
+        title: "Go to Meta for Developers",
         description:
-          'Go to Meta for Developers and create a new app. Choose "Business" type.',
+          "Open developers.facebook.com and log in with the Facebook account that owns or is admin of your business. If you don't have a developer account yet, click \"Get Started\" and follow the registration.",
         type: "info",
         link: {
           label: "Meta for Developers",
+          url: "https://developers.facebook.com/",
+        },
+      },
+      {
+        id: "create-meta-app",
+        title: "Create a New App — App Details",
+        description:
+          "Click \"My Apps\" > \"Create App\". In the first step (App Details), enter your app name (e.g. \"Kalit Marketing\") and your contact email.",
+        type: "info",
+        link: {
+          label: "Create New App",
           url: "https://developers.facebook.com/apps/creation/",
         },
       },
       {
-        id: "add-products",
-        title: "Add Products to Your App",
+        id: "meta-use-cases",
+        title: "Select Use Cases",
         description:
-          'In your app dashboard, click "Add Product" and add Facebook Login + Marketing API.',
+          "In the second step (Use Cases), you'll see a list of available APIs. Check the following:\n\n• \"Create and manage ads with the Marketing API\" — this is required for ad campaigns\n• Optionally: \"Authenticate and request data from users\" (Facebook Login) — for OAuth\n\nDo NOT select Gaming, WhatsApp, or Threads unless you need them. Click Next.",
+        type: "info",
+        tip: "The Marketing API use case is the most important one. It enables creating campaigns, ad sets, and ads programmatically.",
+      },
+      {
+        id: "meta-business-account",
+        title: "Associate a Business Account",
+        description:
+          "In the third step (Business), select your Meta Business Account (formerly Business Manager). If you don't have one, you'll be prompted to create it. This links your app to your business for ad account access and permissions. You must be an admin.",
+        type: "info",
+        link: {
+          label: "Meta Business Suite",
+          url: "https://business.facebook.com/",
+        },
+        warning: "You must be an admin of the Business Account to connect ad accounts and grant permissions.",
+      },
+      {
+        id: "meta-finalize-app",
+        title: "Review & Create the App",
+        description:
+          "Review the Requirements step (any prerequisites for your selected use cases), then complete the Overview to create the app. Once created, you'll land on the app dashboard.",
         type: "info",
       },
       {
         id: "meta-redirect",
         title: "Configure OAuth Redirect URI",
         description:
-          "Under Facebook Login > Settings, add this callback URL:",
+          "Go to Facebook Login > Settings. Under \"Valid OAuth Redirect URIs\", add this callback URL:",
         type: "redirect",
-        code: "http://localhost:3001/api/oauth/meta/callback",
-        tip: "For production, replace localhost:3001 with your domain.",
+        code: "{ORIGIN}/api/oauth/meta/callback",
+        tip: "The URL shown matches your current environment. For production, add your domain as an additional redirect URI.",
+      },
+      {
+        id: "meta-permissions",
+        title: "Understand Required Permissions",
+        description:
+          "The OAuth flow requests: ads_management (create/edit campaigns), ads_read (read performance), pages_manage_posts (publish to Pages), instagram_basic (IG account info), instagram_content_publish (post to IG). In development mode, app admins get all permissions without review.",
+        type: "info",
+        warning: "In development mode, only users listed as admins/developers/testers in your app's Roles settings can authorize. Add your team there.",
       },
       {
         id: "meta-credentials",
         title: "Enter Your App Credentials",
         description:
-          "Go to App Settings > Basic. Copy your App ID and App Secret.",
+          "Go to App Settings > Basic. Copy your App ID (numeric) and App Secret (click \"Show\" to reveal). Paste them below.",
         type: "credentials",
         fields: [
           {
@@ -272,12 +318,24 @@ const platformWizards: PlatformWizard[] = [
             secret: true,
           },
         ],
+        warning: "Never share your App Secret publicly. It grants full access to your app.",
+      },
+      {
+        id: "meta-ad-account",
+        title: "Create or Link an Ad Account",
+        description:
+          "In Meta Business Suite > Business Settings > Ad Accounts: create a new ad account or link an existing one. Set your currency and timezone. The Ad Account ID (starts with \"act_\") is used to push campaigns.",
+        type: "info",
+        link: {
+          label: "Business Settings — Ad Accounts",
+          url: "https://business.facebook.com/settings/ad-accounts",
+        },
       },
       {
         id: "connect-meta",
         title: "Connect Your Meta Account",
         description:
-          "Click below to authorize. Select your ad account and pages during the flow.",
+          "Click below to start the OAuth flow. You'll be redirected to Facebook to review permissions and select your ad account. After authorization, you'll be redirected back.",
         type: "action",
         actionLabel: "Connect Meta Ads",
         actionUrl: "/api/oauth/meta",
@@ -285,7 +343,7 @@ const platformWizards: PlatformWizard[] = [
       {
         id: "verify-meta",
         title: "Verify Connection",
-        description: "Let's verify everything is configured correctly.",
+        description: "Check that Meta appears with a green status and your account name. If it fails: 1) Verify App ID/Secret are correct, 2) Redirect URI matches exactly, 3) Your Facebook account has admin access to the Business Account.",
         type: "verify",
       },
     ],
@@ -300,8 +358,8 @@ const platformWizards: PlatformWizard[] = [
     steps: [
       {
         id: "tiktok-business",
-        title: "Create a TikTok Business Center Account",
-        description: "Sign up at TikTok Business Center.",
+        title: "Go to TikTok Business Center",
+        description: "Open business.tiktok.com and sign in. If you don't have an account, click \"Create an account\" — you'll need a business name, industry, and timezone.",
         type: "info",
         link: {
           label: "TikTok Business Center",
@@ -309,26 +367,34 @@ const platformWizards: PlatformWizard[] = [
         },
       },
       {
+        id: "tiktok-ad-account",
+        title: "Create an Ad Account",
+        description: "In TikTok Business Center, go to Assets > Ad Accounts and create one. Set your currency and timezone. You need an active ad account to run campaigns through the API.",
+        type: "info",
+        tip: "For testing, TikTok provides a sandbox environment. You can request sandbox access when creating your developer app.",
+      },
+      {
         id: "tiktok-dev-app",
         title: "Register a Developer App",
-        description: "Create a developer application at TikTok Marketing API portal.",
+        description: "Go to the TikTok Marketing API portal. Click \"My Apps\" > \"Create App\". Select Marketing API, choose scopes: Ad Management, Creative Management. Submit for review — sandbox access is usually granted quickly.",
         type: "info",
         link: {
-          label: "TikTok Marketing API",
+          label: "TikTok Marketing API Portal",
           url: "https://business-api.tiktok.com/portal/apps",
         },
+        warning: "TikTok requires app review before production API access. Sandbox mode is available immediately for testing.",
       },
       {
         id: "tiktok-redirect",
         title: "Configure OAuth Redirect URI",
-        description: "Set the callback URL in your app settings:",
+        description: "In your app settings, add the callback URL:",
         type: "redirect",
-        code: "http://localhost:3001/api/oauth/tiktok/callback",
+        code: "{ORIGIN}/api/oauth/tiktok/callback",
       },
       {
         id: "tiktok-credentials",
         title: "Enter Your Credentials",
-        description: "Copy your App ID and App Secret from the developer portal.",
+        description: "In the app dashboard, find your App ID and App Secret. Copy both values and paste them below.",
         type: "credentials",
         fields: [
           {
@@ -348,7 +414,7 @@ const platformWizards: PlatformWizard[] = [
       {
         id: "connect-tiktok",
         title: "Connect Your TikTok Account",
-        description: "Authorize via OAuth.",
+        description: "Click below to start the OAuth flow. Grant access to your ad account on TikTok's authorization page.",
         type: "action",
         actionLabel: "Connect TikTok",
         actionUrl: "/api/oauth/tiktok",
@@ -356,7 +422,7 @@ const platformWizards: PlatformWizard[] = [
       {
         id: "verify-tiktok",
         title: "Verify Connection",
-        description: "Let's verify everything is configured correctly.",
+        description: "Check that TikTok appears with a green status. If it fails, ensure your app has been approved and the redirect URI matches exactly.",
         type: "verify",
       },
     ],
@@ -370,47 +436,69 @@ const platformWizards: PlatformWizard[] = [
     category: "ad-platform",
     steps: [
       {
-        id: "x-dev-app",
-        title: "Create an X Developer App",
-        description: "Go to the X Developer Portal and create a new project + app.",
+        id: "x-console",
+        title: "Go to the X Developer Console",
+        description: "Open console.x.com and sign in with the X account you want to use for advertising. If you don't have a developer account yet, you'll be prompted to sign up.",
         type: "info",
         link: {
-          label: "X Developer Portal",
-          url: "https://developer.x.com/en/portal/dashboard",
+          label: "X Developer Console",
+          url: "https://console.x.com/",
         },
+        tip: "X uses a pay-per-use credit model. You can buy credits or enable auto-recharge from the Billing section.",
       },
       {
-        id: "x-oauth",
-        title: "Enable OAuth 2.0 with PKCE",
-        description: "In app settings, enable OAuth 2.0. Set the redirect URI:",
+        id: "x-create-app",
+        title: "Create an App",
+        description: "In the console, click \"Apps\" in the left sidebar, then \"Create App\". Enter a name (e.g. \"Kalit Marketing\") and save. You'll land on the app detail page showing a Bearer Token and OAuth 1.0 Keys. Ignore those for now — we need OAuth 2.0.",
+        type: "info",
+      },
+      {
+        id: "x-oauth-setup",
+        title: "Set Up User Authentication (OAuth 2.0)",
+        description: "On your app's detail page, scroll to \"User authentication settings\" and click \"Set up\". You'll go through 3 screens:\n\n1. App permissions → select \"Read and write\"\n2. Type of App → select \"Web App, Automated App or Bot\"\n3. App info — two required fields (copy each below). The other fields (Organization, Terms of Service, Privacy Policy) are optional.\n\nClick Save.",
         type: "redirect",
-        code: "http://localhost:3001/api/oauth/x/callback",
-        warning: "Ads API requires an approved X Ads account + Elevated developer access.",
+        codes: [
+          { label: "Callback URI / Redirect URL (required)", value: "{ORIGIN}/api/oauth/x/callback" },
+          { label: "Website URL (required)", value: "https://kalit.ai" },
+        ],
+        tip: "The Website URL is informational only — it doesn't affect the OAuth flow. Only the Callback URI must match exactly.",
       },
       {
         id: "x-credentials",
-        title: "Enter Your Credentials",
-        description: "Copy your Client ID and Client Secret.",
+        title: "Enter Your OAuth 2.0 Credentials",
+        description: "After saving User authentication settings, your OAuth 2.0 Client ID and Client Secret are generated. Copy them immediately — the Client Secret is only shown once.\n\nThey appear separately from the OAuth 1.0 keys (Consumer Key / Access Token) that were shown when you first created the app. Make sure you're copying from the OAuth 2.0 section.",
         type: "credentials",
         fields: [
           {
             key: "X_CLIENT_ID",
-            label: "Client ID",
+            label: "OAuth 2.0 Client ID",
             placeholder: "xxxxxxxxxxxxxxxxxxxxxxxx",
             secret: false,
           },
           {
             key: "X_CLIENT_SECRET",
-            label: "Client Secret",
+            label: "OAuth 2.0 Client Secret",
             placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             secret: true,
           },
         ],
+        warning: "The OAuth 2.0 Client ID & Secret are NOT the same as the Consumer Key & Access Token shown at the top of the page. Those are OAuth 1.0a credentials.",
+      },
+      {
+        id: "x-ads-access",
+        title: "Request Ads API Access",
+        description: "To run paid campaigns (promoted tweets, ad management, audience targeting), you need Ads API access:\n\n1. Go to ads.x.com and set up your advertising account with billing info\n2. Then go to ads.x.com/help and submit an Ads API access application\n3. Choose \"Standard Access\" for full campaign management (analytics, creatives, audiences)\n4. After approval, regenerate your user access tokens in the Developer Console\n\nApproval may take a few days. You can proceed to connect your account now — the OAuth connection works independently from Ads API access.",
+        type: "info",
+        link: {
+          label: "X Ads",
+          url: "https://ads.x.com/",
+        },
+        tip: "\"Standard Access\" is what you need for full campaign management. \"Conversion Only\" is limited to tracking only.",
       },
       {
         id: "connect-x",
         title: "Connect Your X Account",
-        description: "Authorize via OAuth.",
+        description: "Click below to start the OAuth flow. You'll be redirected to X to authorize the app. After approval, you'll be redirected back with a success message.",
         type: "action",
         actionLabel: "Connect X",
         actionUrl: "/api/oauth/x",
@@ -418,7 +506,7 @@ const platformWizards: PlatformWizard[] = [
       {
         id: "verify-x",
         title: "Verify Connection",
-        description: "Let's verify everything is configured correctly.",
+        description: "Check that X appears with a green status and your @handle. If it fails: 1) Callback URL must match exactly (no trailing slash mismatch), 2) Use OAuth 2.0 credentials (not API Key/Secret), 3) Ensure OAuth 2.0 is enabled in your app settings.",
         type: "verify",
       },
     ],
@@ -432,9 +520,9 @@ const platformWizards: PlatformWizard[] = [
     category: "ad-platform",
     steps: [
       {
-        id: "linkedin-app",
-        title: "Create a LinkedIn App",
-        description: "Create a new app at the LinkedIn Developer Portal.",
+        id: "linkedin-portal",
+        title: "Go to LinkedIn Developer Portal",
+        description: "Open linkedin.com/developers and sign in with the LinkedIn account that manages your company page. Click \"Create App\".",
         type: "info",
         link: {
           label: "LinkedIn Developers",
@@ -442,23 +530,30 @@ const platformWizards: PlatformWizard[] = [
         },
       },
       {
-        id: "linkedin-marketing",
-        title: "Request Marketing API Access",
-        description:
-          'Under "Products", request access to the Marketing Developer Platform for ads_management scopes.',
+        id: "linkedin-app",
+        title: "Create a LinkedIn App",
+        description: "Fill in: App name (e.g. \"Kalit Marketing\"), LinkedIn Page (select your company — required), Privacy policy URL, and App logo.",
         type: "info",
+        tip: "You must be an admin of the LinkedIn Company Page to associate it with the app.",
+      },
+      {
+        id: "linkedin-marketing",
+        title: "Request Marketing Developer Platform Access",
+        description: "In your app dashboard, go to the \"Products\" tab. Find \"Marketing Developer Platform\" and click \"Request access\". This grants the ads management scopes (r_ads, rw_ads). Approval can take a few days.",
+        type: "info",
+        warning: "Without Marketing Developer Platform access, you can only do organic posting. Ads management requires product approval.",
       },
       {
         id: "linkedin-redirect",
-        title: "Set Redirect URI",
-        description: "Add this callback URL to your app:",
+        title: "Configure OAuth Redirect URL",
+        description: "Go to the \"Auth\" tab. Under \"Authorized redirect URLs\", add:",
         type: "redirect",
-        code: "http://localhost:3001/api/oauth/linkedin/callback",
+        code: "{ORIGIN}/api/oauth/linkedin/callback",
       },
       {
         id: "linkedin-credentials",
         title: "Enter Your Credentials",
-        description: "Copy your Client ID and Client Secret.",
+        description: "In the \"Auth\" tab, copy your Client ID and Client Secret (click the eye icon to reveal). Paste them below.",
         type: "credentials",
         fields: [
           {
@@ -476,9 +571,19 @@ const platformWizards: PlatformWizard[] = [
         ],
       },
       {
+        id: "linkedin-campaign-manager",
+        title: "Set Up LinkedIn Campaign Manager",
+        description: "Go to linkedin.com/campaignmanager to create or access your Campaign Manager account. Set up billing to run paid sponsored content.",
+        type: "info",
+        link: {
+          label: "LinkedIn Campaign Manager",
+          url: "https://www.linkedin.com/campaignmanager/",
+        },
+      },
+      {
         id: "connect-linkedin",
         title: "Connect Your LinkedIn Account",
-        description: "Authorize via OAuth.",
+        description: "Click below to authorize. You'll be redirected to LinkedIn's consent screen.",
         type: "action",
         actionLabel: "Connect LinkedIn",
         actionUrl: "/api/oauth/linkedin",
@@ -486,7 +591,7 @@ const platformWizards: PlatformWizard[] = [
       {
         id: "verify-linkedin",
         title: "Verify Connection",
-        description: "Let's verify everything is configured correctly.",
+        description: "Check that LinkedIn appears with a green status. If it fails: 1) Redirect URL matches exactly, 2) Marketing Developer Platform is approved, 3) You're an admin of the associated Company Page.",
         type: "verify",
       },
     ],
@@ -800,9 +905,25 @@ function WizardStepContent({
       {step.code && (
         <div className="relative bg-black/40 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed">
           <div className="absolute top-2 right-2">
-            <CopyButton text={step.code} />
+            <CopyButton text={resolveOrigin(step.code)} />
           </div>
-          {step.code}
+          {resolveOrigin(step.code)}
+        </div>
+      )}
+
+      {step.codes && (
+        <div className="space-y-2">
+          {step.codes.map((c, i) => (
+            <div key={i}>
+              <p className="text-[10px] text-slate-500 font-medium mb-1">{c.label}</p>
+              <div className="relative bg-black/40 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed">
+                <div className="absolute top-2 right-2">
+                  <CopyButton text={resolveOrigin(c.value)} />
+                </div>
+                {resolveOrigin(c.value)}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

@@ -215,11 +215,12 @@ export function CampaignCreatePrompt({
           {/* Quick templates */}
           <div className="flex flex-wrap gap-1.5">
             {[
-              "High-intent search campaign for conversions",
-              "Competitor conquest campaign",
-              "Brand awareness display campaign",
-              "Retargeting campaign for cart abandoners",
-              "B2B lead generation campaign",
+              "X Ads awareness campaign targeting AI startup founders",
+              "X Ads traffic campaign to drive signups",
+              "Google Search campaign for high-intent conversions",
+              "Meta Ads campaign for B2C lead generation",
+              "LinkedIn Ads B2B campaign targeting CTOs",
+              "Reddit Ads campaign targeting developer communities",
             ].map((suggestion) => (
               <button
                 key={suggestion}
