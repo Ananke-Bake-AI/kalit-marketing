@@ -285,10 +285,10 @@ const platformWizards: PlatformWizard[] = [
         id: "meta-redirect",
         title: "Configure OAuth Redirect URI",
         description:
-          "Go to Facebook Login > Settings. Under \"Valid OAuth Redirect URIs\", add this callback URL:",
+          "Go to Facebook Login > Settings in the left sidebar (under \"Products\", not \"App Settings\"). Turn off \"Enforce HTTPS\" to allow localhost in development mode. Then under \"Valid OAuth Redirect URIs\", add this callback URL:",
         type: "redirect",
         code: "{ORIGIN}/api/oauth/meta/callback",
-        tip: "The URL shown matches your current environment. For production, add your domain as an additional redirect URI.",
+        tip: "HTTP localhost only works while your app is in Development mode. For production, keep Enforce HTTPS on and use your real domain (e.g. https://marketing.kalit.ai/api/oauth/meta/callback).",
       },
       {
         id: "meta-permissions",

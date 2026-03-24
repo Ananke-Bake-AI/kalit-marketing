@@ -567,6 +567,57 @@
   }
 
   /**
+   * Generate alternative search terms when the original doesn't match X's autocomplete.
+   * Uses two strategies:
+   *   1. Try the first word only (e.g. "Artificial intelligence" → "Artificial")
+   *   2. Try known mappings (e.g. "SaaS" → "Enterprise software", "Venture capital" → "Investors")
+   * This is a dynamic fallback — if X changes their taxonomy, shorter terms still work.
+   */
+  function getAlternativeSearchTerms(original) {
+    const lower = original.toLowerCase();
+    const alts = [];
+
+    // Known mappings for terms that don't exist in X's taxonomy
+    const mappings = {
+      "saas": ["Enterprise software", "Business software"],
+      "artificial intelligence": ["Tech news", "Computer programming"],
+      "ai": ["Tech news", "Computer programming"],
+      "developer tools": ["Computer programming", "Open source"],
+      "venture capital": ["Investors and patents", "Beginning investing"],
+      "product management": ["Leadership", "Business news"],
+      "growth hacking": ["Marketing", "Small business"],
+      "software development": ["Computer programming", "Open source"],
+      "machine learning": ["Tech news", "Science news"],
+      "cloud computing": ["Enterprise software", "Computer networking"],
+      "cybersecurity": ["Network security"],
+      "blockchain": ["Tech news", "Investing"],
+      "fintech": ["Financial news", "Tech news"],
+      "devops": ["Computer networking", "Computer programming"],
+      "ux design": ["Web design", "Design"],
+      "data science": ["Databases", "Science news"],
+      "e-commerce": ["Small business", "Shopping"],
+      "remote work": ["Career news and general info", "Small business"],
+    };
+
+    // Check exact mappings
+    if (mappings[lower]) {
+      alts.push(...mappings[lower]);
+    }
+
+    // Try first word if multi-word (e.g. "Artificial intelligence" → "Artificial")
+    const words = original.split(/\s+/);
+    if (words.length > 1 && words[0].length >= 4) {
+      alts.push(words[0]);
+    }
+
+    // Try without common suffixes
+    if (lower.endsWith("ing")) alts.push(original.slice(0, -3));
+    if (lower.endsWith("ment")) alts.push(original.slice(0, -4));
+
+    return alts.slice(0, 3); // Max 3 alternatives to keep it fast
+  }
+
+  /**
    * Score a dropdown suggestion to prefer exact/country matches over partial/region matches.
    * Higher score = better match. Used for both location and interest dropdowns.
    *
@@ -770,6 +821,56 @@
           found = true;
           break;
         }
+      }
+    }
+
+    // If not found, try a shorter/alternative search term (dynamic fallback)
+    // This handles cases where the AI-generated name doesn't exactly match X's taxonomy
+    if (!found && searchText.length > 4) {
+      const altTerms = getAlternativeSearchTerms(searchText);
+      for (const alt of altTerms) {
+        log(`  select: "${searchText}" not found, trying "${alt}"...`);
+
+        // Clear and retype with alternative term
+        el.focus();
+        const clearSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        if (clearSetter) clearSetter.call(el, "");
+        else el.value = "";
+        el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "deleteContentBackward" }));
+        await fillerLib.sleep(200);
+
+        // Type alternative term
+        const altSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+        for (let ci = 0; ci < alt.length; ci++) {
+          const ch = alt[ci];
+          el.dispatchEvent(new KeyboardEvent("keydown", { key: ch, code: `Key${ch.toUpperCase()}`, bubbles: true }));
+          if (altSetter) altSetter.call(el, alt.slice(0, ci + 1));
+          else el.value = alt.slice(0, ci + 1);
+          el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: ch }));
+          el.dispatchEvent(new KeyboardEvent("keyup", { key: ch, code: `Key${ch.toUpperCase()}`, bubbles: true }));
+          await fillerLib.sleep(50);
+        }
+
+        // Wait for dropdown
+        const altLower = alt.toLowerCase();
+        for (let wait = 0; wait < 8 && !found; wait++) {
+          await fillerLib.sleep(400);
+          const candidates = [];
+          for (const opt of document.querySelectorAll("[role='option']")) {
+            if (opt.textContent.toLowerCase().includes(altLower) && analyzer.isElementVisible(opt)) {
+              candidates.push(opt);
+            }
+          }
+          if (candidates.length > 0) {
+            const best = pickBestMatch(candidates, alt);
+            if (best) {
+              await fillerLib.clickElement(best);
+              found = true;
+              log(`  select: "${alt}" → CLICKED (fallback)`);
+            }
+          }
+        }
+        if (found) break;
       }
     }
 

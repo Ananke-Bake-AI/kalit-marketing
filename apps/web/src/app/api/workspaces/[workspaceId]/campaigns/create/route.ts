@@ -116,16 +116,36 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 - headline is the card title (appears below tweet with link preview): max 70 characters
 - cta options: "Learn More", "Sign Up", "Shop Now", "Download", "Visit Site", "Book Now"
 - destinationUrl should include UTM params: ?utm_source=x&utm_medium=paid&utm_campaign={slug}
-- Targeting MUST include:
-  - keywords: terms people tweet about, search for, or engage with on X (at least 10)
-  - interests: from X's interest taxonomy (e.g. "Technology", "Startups", "Artificial intelligence", "SaaS", "Venture capital")
-  - locations: full country names (e.g. "United States", "United Kingdom", "France") — NOT country codes
-  - ageMin/ageMax: realistic for the audience
-  - genders: ["all"] unless specific
-  - languages: ["English"] plus others if relevant
-  - devices: ["Desktop", "iOS", "Android"]
-  - followerLookalikes: 3-6 relevant X accounts (with @) whose followers match the target audience
-  - conversationTopics: trending or evergreen topics the audience engages with
+
+TARGETING:
+- keywords: real phrases people tweet about or search on X (at least 10). Be specific. NOT hashtags.
+- locations: full country names (e.g. "United States", "United Kingdom", "France") — NOT country codes
+- ageMin/ageMax: realistic for the audience
+- genders: ["all"] unless specific
+- languages: ["English"] plus others if relevant
+- devices: ["Desktop", "iOS", "Android"]
+
+INTERESTS — CRITICAL: You MUST only use interests from X's official taxonomy below. Do NOT invent interest names.
+Pick 5-10 that best match the target audience from these EXACT names:
+  Technology & Computing: Computer programming, Startups, Tech news, Enterprise software, Open source, Mobile, Web design, Databases, Computer networking, Network security, SEO, Graphics software, Linux, MacOS, Windows, Tablets, Cell phones
+  Business: Entrepreneurship, Small business, Marketing, Advertising, Leadership, Business news and general info, Business software, Technology, Green solutions, Investors and patents
+  Science: Biology, Chemistry, Space and astronomy, Science news, Physics
+  Personal Finance: Beginning investing, Investing, Stocks, Financial planning, Financial news, Real estate, Cryptocurrency
+  Careers: Career news and general info, Online education, Language learning, College life
+  Gaming: Computer games, Console games, Mobile games, Online games
+  Sports: Running and jogging, Cycling, Soccer, NBA basketball, NFL football
+  Health: Exercise and fitness
+  (For other categories: Automotive, Beauty, Books, Events, Food, Home, Movies, Music, Pets, Society, Sports, Style, Travel — use the exact subcategory names from X's taxonomy)
+
+FOLLOWER LOOKALIKES — CRITICAL: Only use real, active, verified X accounts with large followings (100K+). Format: @handle
+  - Pick 4-6 accounts whose followers match the target audience
+  - Use well-known accounts in the industry (founders, companies, media)
+  - Do NOT use obscure or potentially inactive accounts
+  - Good examples for tech: @ycombinator, @vercel, @openai, @stripe, @linear, @figma, @paulg, @levelsio, @sama
+  - Verify the account is a real, major account — if unsure, pick a safer well-known alternative
+
+CONVERSATION TOPICS: trending or evergreen topics the audience engages with on X
+
 - Create 2-3 ad groups with different targeting angles (e.g. keyword-based, interest-based, lookalike-based)
 - Each ad group should have 2-3 ad variations for A/B testing
 - Budget: set dailyBudget at ad group level too`,

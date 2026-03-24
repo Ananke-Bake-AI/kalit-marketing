@@ -209,9 +209,9 @@ const guides: Guide[] = [
       {
         title: "Configure Facebook Login — OAuth Redirect URI",
         content:
-          "Go to Facebook Login > Settings in the left sidebar. Under \"Valid OAuth Redirect URIs\", add your callback URL. For local development:",
+          "Make sure the Facebook Login product is added to your app (Add Product > Facebook Login). Then go to Facebook Login > Settings in the left sidebar (under \"Products\"). Turn off \"Enforce HTTPS\" to allow localhost during development. Under \"Valid OAuth Redirect URIs\", add your callback URL:",
         code: "{ORIGIN}/api/oauth/meta/callback",
-        tip: "The URL shown matches your current environment. For production (e.g. marketing.kalit.ai), add that domain as an additional redirect URI. You can add multiple URIs.",
+        tip: "HTTP localhost only works while your app is in Development mode with Enforce HTTPS turned off. For production, keep HTTPS enforced and use your real domain (e.g. https://marketing.kalit.ai/api/oauth/meta/callback). You can add multiple URIs.",
       },
       {
         title: "Configure App Permissions (Scopes)",
