@@ -357,17 +357,30 @@ const DomAnalyzer = (() => {
     return {
       url: window.location.href,
       title: document.title,
-      fields: pageMap.fields.map((f, i) => ({
-        tag: f.tagName,
-        type: f.type,
-        label: f.labelText || f.ariaLabel || f.placeholder || f.name || "(unknown)",
-        section: f.sectionHeading || f.nearbyText.slice(0, 2).join(" / ") || "",
-        id: f.id,
-        name: f.name,
-        placeholder: f.placeholder,
-        value: (f.element.value || f.element.textContent || "").slice(0, 50),
-        index: i,
-      })),
+      fields: pageMap.fields.map((f, i) => {
+        // Count existing tokens near this field (for location/keyword/interest fields)
+        // so the AI knows when items have already been selected
+        let tokenCount = 0;
+        let parent = f.element.parentElement;
+        for (let d = 0; d < 5 && parent; d++) {
+          const tokens = parent.querySelectorAll('[data-test-id-v2="token"]');
+          if (tokens.length > 0) { tokenCount = tokens.length; break; }
+          parent = parent.parentElement;
+        }
+
+        return {
+          tag: f.tagName,
+          type: f.type,
+          label: f.labelText || f.ariaLabel || f.placeholder || f.name || "(unknown)",
+          section: f.sectionHeading || f.nearbyText.slice(0, 2).join(" / ") || "",
+          id: f.id,
+          name: f.name,
+          placeholder: f.placeholder,
+          value: (f.element.value || f.element.textContent || "").slice(0, 50),
+          tokens: tokenCount > 0 ? tokenCount : undefined, // e.g. "tokens: 5" = 5 locations already selected
+          index: i,
+        };
+      }),
       // Keep original indices so getButtonByIndex works correctly
       // Filter out noise buttons that the AI doesn't need
       buttons: pageMap.buttons

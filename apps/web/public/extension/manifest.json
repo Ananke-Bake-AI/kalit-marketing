@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Kalit Marketing — Ad Deployer",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Deploy campaigns from Kalit Marketing directly into ad platform dashboards.",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
   "host_permissions": [
     "https://ads.x.com/*",
     "https://business.x.com/*",

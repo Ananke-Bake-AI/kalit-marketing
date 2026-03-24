@@ -345,6 +345,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true;
     }
 
+    case "FOCUS_TAB": {
+      // Ensure the ad platform tab is focused — dropdowns won't render in background tabs
+      if (sender.tab?.id) {
+        chrome.tabs.update(sender.tab.id, { active: true });
+        if (sender.tab.windowId) {
+          chrome.windows.update(sender.tab.windowId, { focused: true });
+        }
+      }
+      sendResponse({ status: "ok" });
+      break;
+    }
+
     case "SAVE_LOGS": {
       // Persist logs + AI interactions to the backend file
       chrome.storage.local.get("aiInteractions", (stored) => {

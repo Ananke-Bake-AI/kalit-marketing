@@ -36,12 +36,26 @@ const FormFiller = (() => {
     const isContentEditable = element.hasAttribute("contenteditable");
     const isInput = element.tagName === "INPUT" || element.tagName === "TEXTAREA";
 
-    // For contenteditable, set the full value at once (character-by-character is too slow for tweets)
+    // For contenteditable, use execCommand('insertText') to trigger proper input events
+    // (textContent doesn't trigger React/X's internal state updates)
     if (isContentEditable) {
-      element.textContent = value;
-      element.dispatchEvent(new Event("input", { bubbles: true }));
-      element.dispatchEvent(new Event("change", { bubbles: true }));
+      element.focus();
+      // Select all existing content
+      const selection = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      // Insert new text — triggers proper input events like real user typing
+      document.execCommand('insertText', false, value);
       await sleep(100);
+      // Fallback: if execCommand didn't work (some browsers), set directly
+      if ((element.textContent || "").trim().length === 0) {
+        element.textContent = value;
+        element.dispatchEvent(new Event("input", { bubbles: true }));
+        element.dispatchEvent(new Event("change", { bubbles: true }));
+        await sleep(100);
+      }
       return;
     }
 
@@ -72,7 +86,12 @@ const FormFiller = (() => {
         }
       }
 
-      element.dispatchEvent(new Event("input", { bubbles: true }));
+      // Use InputEvent with inputType — this is what React/X listens for
+      element.dispatchEvent(new InputEvent("input", {
+        bubbles: true,
+        inputType: "insertText",
+        data: char,
+      }));
 
       // KeyUp
       element.dispatchEvent(

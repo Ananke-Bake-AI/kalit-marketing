@@ -19,6 +19,7 @@ interface GeneratedCampaign {
   type: string;
   platform: string;
   objective: string;
+  conversionEvent?: string;
   targetAudience: string;
   messagingAngle: string;
   hypothesis: string;
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     x: `Platform: X (Twitter) Ads
 - type MUST be "paid_social"
 - platform MUST be "x"
+- conversionEvent MUST be set. Options: "lead generation", "purchase", "download", "add to cart". Pick the most relevant for the campaign objective.
 - Ad body is a tweet: compelling, conversational, max 280 characters. Use line breaks for readability. Can include emojis sparingly.
 - headline is the card title (appears below tweet with link preview): max 70 characters
 - cta options: "Learn More", "Sign Up", "Shop Now", "Download", "Visit Site", "Book Now"
@@ -199,6 +201,7 @@ JSON schema:
   "type": "paid_search | paid_social | display | video | retargeting",
   "platform": "${detectedPlatform}",
   "objective": "awareness | traffic | engagement | leads | conversions | sales",
+  "conversionEvent": "lead generation | purchase | download | add to cart — required for X/Twitter",
   "targetAudience": "string — detailed description of who we're targeting and why",
   "messagingAngle": "string — the core message and positioning",
   "hypothesis": "string — what we expect to happen and why",
@@ -260,6 +263,10 @@ Create 2-3 ad groups with 2-3 ads each. Be specific and ${detectedPlatform === "
         dailyBudget: generated.dailyBudget || 25,
         totalBudget: generated.totalBudget || 0,
         currency: config?.currency || "USD",
+        // Store conversionEvent in platformCampaignIds JSON (generic metadata)
+        platformCampaignIds: generated.conversionEvent
+          ? { conversionEvent: generated.conversionEvent }
+          : undefined,
       },
     });
 

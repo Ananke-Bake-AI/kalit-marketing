@@ -131,6 +131,7 @@ export function CampaignActions({
           campaign: {
             name: campaign.name,
             objective: campaign.objective,
+            conversionEvent: campaign.platformCampaignIds?.conversionEvent || "lead generation",
             dailyBudget: campaign.dailyBudget,
             totalBudget: campaign.totalBudget,
             currency: campaign.currency,

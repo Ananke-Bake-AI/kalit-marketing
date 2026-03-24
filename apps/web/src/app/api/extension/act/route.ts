@@ -32,7 +32,7 @@ async function appendInteraction(interaction: Record<string, unknown>) {
 }
 
 interface Action {
-  type: "fill" | "click" | "select" | "wait" | "done" | "navigate";
+  type: "fill" | "click" | "select" | "wait" | "done" | "navigate" | "clearTokens" | "clickOption" | string;
   fieldIndex?: number;
   buttonIndex?: number;
   value?: string;
@@ -51,11 +51,12 @@ export async function POST(req: NextRequest) {
 
   // Build field descriptions with section context
   const fields = (snapshot.fields || [])
-    .filter((f: Record<string, string>) => f.label !== "(unknown)" || f.placeholder || f.name || f.section)
-    .map((f: Record<string, string>) => {
-      const section = f.section ? ` [section: ${f.section.slice(0, 50)}]` : "";
-      const val = f.value ? ` val="${f.value.slice(0, 50)}"` : "";
-      return `[F${f.index}] ${f.label || f.placeholder || f.name || "?"}${section}${val}`;
+    .filter((f: Record<string, unknown>) => f.label !== "(unknown)" || f.placeholder || f.name || f.section)
+    .map((f: Record<string, unknown>) => {
+      const section = f.section ? ` [section: ${(f.section as string).slice(0, 50)}]` : "";
+      const val = f.value ? ` val="${(f.value as string).slice(0, 50)}"` : "";
+      const tokens = f.tokens ? ` [${f.tokens} items already selected]` : "";
+      return `[F${f.index}] ${f.label || f.placeholder || f.name || "?"}${section}${val}${tokens}`;
     })
     .join("\n");
 
@@ -79,11 +80,19 @@ export async function POST(req: NextRequest) {
     .map((h: { step: number; actions: string[] }) => `Step ${h.step}: ${h.actions.join(", ")}`)
     .join("\n");
 
-  // Detect review/final page
-  const isReviewPage = (snapshot.fields || []).length === 0 &&
-    (snapshot.buttons || []).some((b: Record<string, string>) =>
-      (b.text || "").toLowerCase().includes("launch") || (b.text || "").toLowerCase().includes("save draft")
-    );
+  // Detect review/final page — must match URL OR have zero fillable fields + launch button
+  const urlLower = (snapshot.url || "").toLowerCase();
+  const buttonTexts = (snapshot.buttons || []).map((b: Record<string, string>) => (b.text || "").toLowerCase());
+  const hasLaunchBtn = buttonTexts.some(t =>
+    t.includes("launch campaign") || t.includes("launch")
+  );
+  const hasSaveDraftBtn = buttonTexts.some(t =>
+    t.includes("save draft") || t.includes("save as draft")
+  );
+  const isReviewPage =
+    urlLower.includes("/review") ||
+    // Zero editable fields + has Launch button = definitely review page
+    ((snapshot.fields || []).length === 0 && (hasLaunchBtn || hasSaveDraftBtn));
 
   // Detect stuck (same actions repeated)
   const isStuck = (history || []).length >= 2 &&
@@ -96,25 +105,78 @@ export async function POST(req: NextRequest) {
   let system: string;
   let prompt: string;
 
-  if (isStuck) {
+  if (mode === "user_correction") {
+    // User typed a correction in the overlay — process it
+    const userMessage = body.userMessage || "";
+    system = `You are helping a user fix an ad campaign form. The user typed a correction.
+Return ONLY a JSON array of commands to apply the fix.
+Use {"cmd":"fill","selector":"data-test-id-v2","value":"text"} for fills.
+Use {"cmd":"click","selector":"data-test-id-v2"} for clicks.
+Use {"cmd":"select","selector":"data-test-id-v2","value":"search term"} for dropdowns.
+If the user's instruction doesn't require any page changes, return [{"type":"done","reason":"no changes needed"}].
+${skill ? "\nPlatform knowledge:\n" + skill.slice(0, 2000) + "\n" : ""}
+Return ONLY raw JSON array. No markdown.`;
+
+    prompt = `USER SAYS: "${userMessage}"
+
+CAMPAIGN:
+${campaignBrief}
+
+CURRENT PAGE: ${snapshot.url}
+
+FIELDS:
+${fields || "(none)"}
+
+BUTTONS:
+${buttons}
+
+What commands should we execute to address the user's instruction? JSON array only.`;
+  } else if (isStuck) {
     // Break the loop
     system = "Return only: [{\"type\":\"done\",\"reason\":\"complete\"}]";
     prompt = "Stop.";
   } else if (isReviewPage) {
-    // Final page — save and done
+    // Final page — find and click Save Draft/Launch button, then done
+    // Try to find the exact button index for Save Draft
+    const saveDraftBtn = (snapshot.buttons || []).find((b: Record<string, string>) => {
+      const t = (b.text || "").toLowerCase();
+      return t.includes("save draft") || t.includes("save as draft");
+    });
+    const launchBtn = (snapshot.buttons || []).find((b: Record<string, string>) => {
+      const t = (b.text || "").toLowerCase();
+      return t.includes("launch") || t.includes("publish") || t.includes("submit");
+    });
+    const targetBtn = saveDraftBtn || launchBtn;
+    if (targetBtn) {
+      // Skip AI entirely — directly return the click action
+      const elapsed = Date.now() - start;
+      return NextResponse.json({
+        actions: [
+          { type: "click", buttonIndex: (targetBtn as Record<string, unknown>).index, reason: "save draft" },
+          { type: "done", reason: "review page — saved" },
+        ],
+        elapsed, step: (history || []).length + 1, mode: mode || "plan",
+      });
+    }
     system = "Return a JSON array: click Save Draft button, then done.";
     prompt = `BUTTONS:\n${buttons}\nClick "Save draft" and return done. JSON array only.`;
   } else if (mode === "verify") {
-    // VERIFY MODE — keep it simple, no full skill needed
-    system = `You verify a filled form. Check if fields match the campaign data.
+    // VERIFY MODE
+    system = `You verify a filled ad form. Check fields match campaign data.
 
 Return ONLY a JSON array:
-- If everything looks correct: [{"type":"click","buttonIndex":N,"reason":"all correct, next"},{"type":"done","reason":"page verified"}]
-  (The "done" here means this page is done — the extension will handle the navigation)
-- If there are errors or missing fields: return fill/select actions to fix them
-- If you see error messages in the field values, return fixes
+- If ALL fields have correct values → click Next: [{"type":"click","buttonIndex":N,"reason":"correct"}]
+- ONLY return fixes for fields that are EMPTY or have WRONG values
+- Do NOT re-fill fields that already contain the right text, even if truncated in the display
+- A field showing val="You're the founder, the gro..." with full value "You're the founder, the growth lead..." is CORRECT — do NOT re-fill it
+- If there are page errors like "You need to add one photo or video" that you CANNOT fix, just click Next anyway — do not try to fix unrelated fields
+- CREATIVE PAGE (Page 3) special handling:
+  a. If tweet body is empty: {"cmd":"fill","selector":"tweetTextInput","value":"full tweet text"}
+  b. If headline/URL fields are empty and visible: fill them
+  c. After filling: click Next
+- For daily budget: use selector "dailyBudget"
 
-Use "type" key. JSON array only.`;
+Use "cmd" key for selector-based commands. JSON array only, no markdown.`;
 
     // Include before-snapshot field values so AI can see what changed
     const beforeFields = (body.beforeSnapshot?.fields || [])
@@ -129,6 +191,9 @@ ${skill ? "\n" + skill + "\n" : ""}
 COMMANDS:
 {"cmd":"fill","selector":"exact-data-test-id-v2","value":"text"}
 {"cmd":"select","selector":"exact-data-test-id-v2","value":"one search term"}
+{"cmd":"click","selector":"exact-data-test-id-v2"}
+{"cmd":"clearTokens","selector":"field-selector"} — removes all existing tokens/chips from a field
+{"cmd":"clickOption","value":"visible text of the option to click"} — clicks a visible option by text
 
 RULES:
 1. Use EXACT data-test-id-v2 selectors from platform knowledge
@@ -136,11 +201,27 @@ RULES:
 3. SKIP fields in collapsed/hidden sections (Advanced, Measurement)
 4. For targeting: "select" with ONE value per command
 5. Budget fields are on Page 2, NOT Page 1
-6. Page 1 only needs: campaign name (CampaignName-campaignNameField)
-7. Page 2 needs: ad group name, daily budget, total budget, locations, keywords, interests, follower lookalikes
-8. Page 3 needs: tweet body text (contenteditable), then click Website destination, then headline + URL
-9. COPY text exactly from campaign data — never rewrite
-10. Ad group name = campaign "Ad Group Name", NOT campaign name
+6. Page 1 only needs: campaign name via {"cmd":"fill","selector":"CampaignName-campaignNameField","value":"..."}
+7. Page 2 needs: ad group name (AdGroupName-input), budgets, locations, keywords, interests, follower lookalikes
+   For daily budget, use selector "dailyBudget" — the extension finds it by label text (no data-test-id exists for this field)
+8. LOCATIONS: X Ads pre-fills a default country. ALWAYS clear it first before adding campaign locations:
+   {"cmd":"clearTokens","selector":"targeting_criteria_location-input"}
+   Then add each location with select commands.
+9. CONVERSION EVENT (Goal section on Page 2): If the campaign specifies a conversion event, first click "Select an event" to open the dropdown, then click the right option:
+   {"cmd":"click","selector":"Select an event"} — or the relevant button/dropdown trigger
+   {"cmd":"clickOption","value":"lead generation"} — match campaign conversionEvent
+   Valid options: "purchase", "lead generation", "download", "add to cart"
+10. Page 3 (creative) — MUST follow this exact order:
+   a. Fill tweet body: {"cmd":"fill","selector":"tweetTextInput","value":"full tweet text from creative body"}
+   b. Click Website destination: {"cmd":"click","selector":"card-type-dropdown-WEBSITE"} — this REVEALS headline/URL fields
+   c. Wait 500ms for fields to render: {"cmd":"wait","value":"500"}
+   d. Then headline and URL fields will appear — but you WON'T see them in this snapshot. Return ONLY steps a-c for now. The verify step will handle the rest after the fields appear.
+11. COPY text exactly from campaign data — never rewrite or truncate
+12. Ad group name = campaign "Ad Group Name", NOT campaign name
+13. Do NOT invent selector names. Only use selectors from the platform knowledge or the field list.
+14. SKIP fields that already have the correct value (check the val= in the field list). Do NOT re-fill already-filled fields.
+15. Fields showing "[N items already selected]" already have tokens — SKIP them unless the count doesn't match.
+16. If ALL fields on this page already have correct values, return: [{"type":"done","reason":"already filled"}]
 
 Return ONLY raw JSON array. No markdown fences, no backticks, no explanation.`;
 
@@ -155,12 +236,15 @@ ${fields || "(none)"}
 ${recentHistory ? `PREVIOUS:\n${recentHistory}\n\n` : ""}Return commands to fill this page. ONLY fill fields with campaign data. Skip readonly/disabled fields. JSON array, no markdown fences.`;
   }
 
+  // Use lower token limit for verify (it just needs to say OK or return small fixes)
+  const tokenLimit = mode === "verify" ? 1024 : 2048;
+
   try {
     const response = await llmComplete({
       model: "claude-sonnet-4-6",
       system,
       prompt,
-      maxTokens: 2048,
+      maxTokens: tokenLimit,
     });
 
     const elapsed = Date.now() - start;
@@ -170,31 +254,38 @@ ${recentHistory ? `PREVIOUS:\n${recentHistory}\n\n` : ""}Return commands to fill
     // Parse response — always JSON (commands or actions)
     let commands: Record<string, unknown>[] = [];
     try {
-      commands = parseJSON<Record<string, unknown>[]>(responseText);
+      const parsed = parseJSON<unknown>(responseText);
+      commands = Array.isArray(parsed) ? parsed : [parsed]; // Wrap single object in array
     } catch {
       // Try stripping markdown fences
       const cleaned = responseText.trim().replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
       try {
-        commands = parseJSON<Record<string, unknown>[]>(cleaned);
+        const parsed = parseJSON<unknown>(cleaned);
+        commands = Array.isArray(parsed) ? parsed : [parsed];
       } catch {
         commands = [];
       }
     }
 
-    // Normalize: support both {cmd,selector,value} and {type,fieldIndex,value} formats
-    const actions: Action[] = commands.map((c) => {
-      if (c.cmd) {
-        // New command format with selectors
+    // Normalize: support {cmd,selector}, {type,selector}, and {type,fieldIndex} formats
+    const actions: Action[] = commands.map((c: Record<string, unknown>) => {
+      // Determine if this uses selector-based format (either cmd or type key with a selector)
+      const hasSelector = !!(c.selector || c.cmd);
+      if (hasSelector) {
+        const cmdType = (c.cmd || c.type || "fill") as string;
+        // Pass through the type as-is for custom commands (clearTokens, clickOption, etc.)
+        const knownTypes = ["fill", "select", "click", "wait", "done"];
+        const resolvedType = knownTypes.includes(cmdType) ? cmdType : cmdType;
         return {
-          type: (c.cmd === "select" ? "select" : c.cmd === "click" ? "click" : "fill") as Action["type"],
+          type: resolvedType as Action["type"],
           value: c.value as string | undefined,
           reason: (c.reason || c.selector || "") as string,
           selector: c.selector as string | undefined,
         } as Action & { selector?: string };
       }
-      // Legacy format
+      // Legacy index-based format (no selector)
       return {
-        type: (c.type || c.action) as Action["type"],
+        type: (c.type || c.action || "done") as Action["type"],
         fieldIndex: c.fieldIndex as number | undefined,
         buttonIndex: c.buttonIndex as number | undefined,
         value: c.value as string | undefined,
@@ -216,7 +307,10 @@ ${recentHistory ? `PREVIOUS:\n${recentHistory}\n\n` : ""}Return commands to fill
       errors: body.errors || [],
     });
 
-    return NextResponse.json({ actions, elapsed, step, mode: mode || "plan" });
+    // Generate human-readable feedback from the actions
+    const feedback = generateFeedback(actions, mode || "plan", snapshot.url);
+
+    return NextResponse.json({ actions, elapsed, step, mode: mode || "plan", feedback });
   } catch (err) {
     const elapsed = Date.now() - start;
     console.error("[extension/act] Error:", err);
@@ -241,6 +335,8 @@ function buildCampaignSummary(campaign: Record<string, unknown>): string {
   const lines: string[] = [];
   lines.push(`Campaign Name: ${campaign.name}`);
   lines.push(`Objective: ${campaign.objective} | Budget: ${campaign.dailyBudget} ${campaign.currency}/day, ${campaign.totalBudget || "none"} total`);
+  if (campaign.conversionEvent) lines.push(`Conversion Event: ${campaign.conversionEvent}`);
+  if (campaign.goal) lines.push(`Goal: ${campaign.goal}`);
 
   const adGroups = campaign.adGroups as Array<Record<string, unknown>> | undefined;
   if (adGroups && adGroups.length > 0) {
@@ -279,23 +375,14 @@ function buildCampaignSummary(campaign: Record<string, unknown>): string {
 function extractRelevantSkill(fullSkill: string, url: string, mode: string | undefined): string {
   if (!fullSkill) return "";
 
-  // For verify mode on simple pages (few fields), use minimal context
+  // For verify mode: minimal context — the AI just needs to compare field values vs campaign data.
+  // Sending the full skill causes timeouts on large pages (Page 2: 26 buttons, 15 fields).
   if (mode === "verify") {
-    // Just the quick-lookup table and budget/error rules
-    const sections: string[] = [];
-
+    // Only include field lookup table (truncated) — no interaction rules, no step-by-step guides
     const lookupMatch = fullSkill.match(/## \d+\. FIELD IDENTIFICATION[\s\S]*?(?=\n## \d+\.)/i);
-    if (lookupMatch) sections.push(lookupMatch[0].slice(0, 2000));
-
-    const budgetMatch = fullSkill.match(/## \d+\. BUDGET[\s\S]*?(?=\n## \d+\.)/i);
-    if (budgetMatch) sections.push(budgetMatch[0].slice(0, 1000));
-
-    const errorMatch = fullSkill.match(/## \d+\. ERROR[\s\S]*?(?=\n## \d+\.)/i);
-    if (errorMatch) sections.push(errorMatch[0].slice(0, 1000));
-
-    if (sections.length > 0) return sections.join("\n\n");
-    // Fallback: first 3000 chars
-    return fullSkill.slice(0, 3000);
+    if (lookupMatch) return lookupMatch[0].slice(0, 1500);
+    // Absolute minimal fallback
+    return fullSkill.slice(0, 1500);
   }
 
   // For plan mode, extract the relevant page section + shared rules
@@ -365,4 +452,64 @@ function extractSection(text: string, pattern: RegExp): string {
 
   if (startIdx === -1) return "";
   return lines.slice(startIdx, endIdx).join("\n").slice(0, 8000);
+}
+
+/**
+ * Generate a human-readable feedback message from the AI actions.
+ */
+function generateFeedback(actions: Action[], mode: string, url: string): string {
+  const urlLower = (url || "").toLowerCase();
+
+  // Determine which page we're on
+  let page = "form";
+  if (urlLower.includes("/campaign/new") || urlLower.includes("/campaign/edit")) page = "campaign details";
+  else if (urlLower.includes("/adgroup")) page = "ad group targeting";
+  else if (urlLower.includes("/creative")) page = "ad creative";
+  else if (urlLower.includes("/review")) page = "review";
+
+  if (mode === "plan") {
+    const fills = actions.filter(a => a.type === "fill");
+    const selects = actions.filter(a => a.type === "select");
+    const clicks = actions.filter(a => a.type === "click");
+    const clears = actions.filter(a => a.type === "clearTokens");
+    const done = actions.find(a => a.type === "done");
+
+    if (done && fills.length === 0 && selects.length === 0) {
+      return page === "review" ? "Saving campaign draft..." : "Page already filled, moving on.";
+    }
+
+    const parts: string[] = [];
+    if (fills.length > 0) parts.push(`Filling ${fills.length} field${fills.length > 1 ? "s" : ""}`);
+    if (selects.length > 0) parts.push(`selecting ${selects.length} option${selects.length > 1 ? "s" : ""}`);
+    if (clicks.length > 0) parts.push(`clicking ${clicks.length} button${clicks.length > 1 ? "s" : ""}`);
+    if (clears.length > 0) parts.push("clearing default values");
+
+    return parts.length > 0
+      ? `Setting up ${page}: ${parts.join(", ")}...`
+      : `Analyzing ${page}...`;
+  }
+
+  if (mode === "verify") {
+    const fixes = actions.filter(a => a.type === "fill" || a.type === "select");
+    const nav = actions.find(a => a.type === "click");
+    const done = actions.find(a => a.type === "done");
+
+    if (fixes.length > 0) {
+      return `Fixing ${fixes.length} field${fixes.length > 1 ? "s" : ""} on ${page}...`;
+    }
+    if (nav || done) {
+      return `${page.charAt(0).toUpperCase() + page.slice(1)} verified. Moving to next step.`;
+    }
+    return `Checking ${page}...`;
+  }
+
+  if (mode === "user_correction") {
+    const exec = actions.filter(a => a.type !== "done");
+    if (exec.length > 0) {
+      return `Got it! Applying ${exec.length} change${exec.length > 1 ? "s" : ""}...`;
+    }
+    return "No changes needed for that.";
+  }
+
+  return `Working on ${page}...`;
 }
