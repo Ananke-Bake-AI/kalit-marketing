@@ -88,6 +88,49 @@ export function writePlatformKeys(updates: PlatformKeys): PlatformKeys {
 }
 
 /**
+ * Get a key value from saved keys OR environment variables.
+ */
+export function getKey(key: string): string | undefined {
+  const keys = readPlatformKeys();
+  return keys[key] || process.env[key] || undefined;
+}
+
+/**
+ * Detect which ad platforms are connected based on configured credentials.
+ * Returns a list of platform IDs that have the required keys set up.
+ */
+export function getConnectedAdPlatforms(): string[] {
+  const platforms: string[] = [];
+
+  // Google Ads — needs service account key + developer token
+  if (getKey("GOOGLE_SERVICE_ACCOUNT_KEY") && getKey("GOOGLE_ADS_DEVELOPER_TOKEN")) {
+    platforms.push("google");
+  }
+
+  // Meta — needs system user token + ad account ID
+  if (getKey("META_ACCESS_TOKEN") && getKey("META_AD_ACCOUNT_ID")) {
+    platforms.push("meta");
+  }
+
+  // TikTok — needs access token + advertiser ID
+  if (getKey("TIKTOK_ACCESS_TOKEN") && getKey("TIKTOK_ADVERTISER_ID")) {
+    platforms.push("tiktok");
+  }
+
+  // X (Twitter) — uses browser extension, always "connected" (no keys needed)
+  // We check for the extension on the client side, but for campaign generation
+  // we include X since deployment is handled by the extension
+  platforms.push("x");
+
+  // LinkedIn — needs OAuth client ID + secret
+  if (getKey("LINKEDIN_CLIENT_ID") && getKey("LINKEDIN_CLIENT_SECRET")) {
+    platforms.push("linkedin");
+  }
+
+  return platforms;
+}
+
+/**
  * Get a platform key value.
  * Priority: saved file → environment variable → fallback
  */

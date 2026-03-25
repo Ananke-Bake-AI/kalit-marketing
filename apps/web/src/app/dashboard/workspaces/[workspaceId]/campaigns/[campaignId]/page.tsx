@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { CampaignAdGroupCard } from "@/components/dashboard/campaign-ad-group-card";
 import { CampaignActions } from "@/components/dashboard/campaign-actions";
+import { CampaignPlatformAdapt } from "@/components/dashboard/campaign-platform-adapt";
 import { CampaignEditPrompt } from "@/components/dashboard/campaign-edit-prompt";
 import { CampaignBudgetBreakdown } from "@/components/dashboard/campaign-budget-breakdown";
 import { RecommendationsPanel } from "@/components/dashboard/recommendations-panel";
@@ -210,6 +211,13 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                 Objective: <span className="text-slate-300">{campaign.objective}</span>
               </p>
             )}
+            <CampaignPlatformAdapt
+              campaignPlatform={campaignPlatform}
+              workspaceId={workspaceId}
+              campaignName={campaign.name}
+              campaignObjective={campaign.objective}
+              campaignBudget={campaign.dailyBudget}
+            />
           </div>
 
           {/* Budget card */}

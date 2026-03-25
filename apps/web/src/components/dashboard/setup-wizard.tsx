@@ -67,6 +67,7 @@ interface WizardField {
   placeholder: string;
   secret?: boolean;
   link?: { label: string; url: string };
+  fileUpload?: { accept: string; label: string }; // Allow file upload (e.g. JSON key)
 }
 
 interface WizardStep {
@@ -134,7 +135,7 @@ const platformWizards: PlatformWizard[] = [
         id: "service-account",
         title: "Create a Service Account",
         description:
-          "A service account lets Kalit manage Google Ads without OAuth redirects or user login.\n\n1. Go to IAM & Admin > Service Accounts\n2. Click \"Create Service Account\"\n3. Name it \"Kalit Marketing\"\n4. Click \"Create and Continue\"\n5. Skip optional role assignment, click \"Done\"\n6. Click on the new service account > Keys tab > Add Key > Create New Key > JSON\n7. Download the JSON key file — you'll paste its contents below",
+          "A service account lets Kalit manage Google Ads without OAuth redirects or user login.\n\n1. Go to IAM & Admin > Service Accounts\n2. Click \"Create Service Account\"\n3. Name it \"Kalit Marketing\"\n4. Click \"Create and Continue\"\n5. Skip the \"Grant this service account access\" step (not needed — Ads permissions are granted in Google Ads, not GCP)\n6. Click \"Done\"\n7. Click on the new service account > Keys tab > Add Key > Create New Key > JSON\n8. Download the JSON key file — you'll paste its contents below",
         type: "info",
         link: {
           label: "Service Accounts",
@@ -146,7 +147,7 @@ const platformWizards: PlatformWizard[] = [
         id: "invite-service-account",
         title: "Invite Service Account to Google Ads",
         description:
-          "Give the service account access to your Google Ads account:\n\n1. Log into Google Ads (ads.google.com)\n2. Go to Tools & Settings (wrench icon) > Access and security\n3. Click the \"+\" button to add a user\n4. Paste the service account email (from the JSON key, looks like: kalit-marketing@your-project.iam.gserviceaccount.com)\n5. Set access level to \"Standard\" or \"Admin\"\n6. Click \"Send invitation\"",
+          "Give the service account access to your Google Ads account:\n\n1. Log into Google Ads (ads.google.com)\n2. Click the Admin icon (wrench) in the left sidebar\n3. Click \"Access and security\" (under Setup)\n4. Click the \"+\" button to add a user\n5. Paste the service account email (from the JSON key file, looks like: kalit-marketing@your-project.iam.gserviceaccount.com)\n6. Set access level to \"Standard\" or \"Admin\"\n7. Click \"Send invitation\"",
         type: "info",
         link: {
           label: "Google Ads",
@@ -157,7 +158,7 @@ const platformWizards: PlatformWizard[] = [
         id: "developer-token",
         title: "Get a Developer Token",
         description:
-          "You need a developer token for API access:\n\n1. Sign into Google Ads (ads.google.com)\n2. Go to Tools & Settings > API Center\n3. Copy your developer token\n\nBasic access works with test accounts. Apply for Standard access for production.",
+          "You need a developer token for API access. This requires a Google Ads Manager Account (MCC):\n\n1. Sign into your Manager Account at ads.google.com\n2. Click the Admin icon (wrench) in the left sidebar\n3. Click \"API Center\" (under Setup)\n4. Copy your developer token (22-character alphanumeric string)\n\nIf you don't see API Center, you may need a Manager Account — create one at ads.google.com/home/tools/manager-accounts/",
         type: "credentials",
         fields: [
           {
@@ -184,6 +185,7 @@ const platformWizards: PlatformWizard[] = [
             label: "Service Account JSON Key",
             placeholder: '{"type":"service_account","project_id":"..."}',
             secret: true,
+            fileUpload: { accept: ".json", label: "Import JSON file" },
           },
           {
             key: "GOOGLE_ADS_CUSTOMER_ID",
@@ -892,6 +894,44 @@ function WizardStepContent({
                       : "border-white/10 focus:border-accent/30"
                   } text-white`}
                 />
+                {field.fileUpload && (
+                  <div className="mt-1.5">
+                    <input
+                      type="file"
+                      accept={field.fileUpload.accept}
+                      id={`file-${field.key}`}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const content = reader.result as string;
+                          setFieldValues((prev) => ({
+                            ...prev,
+                            [field.key]: content.trim(),
+                          }));
+                        };
+                        reader.readAsText(file);
+                        // Reset so same file can be re-selected
+                        e.target.value = "";
+                      }}
+                    />
+                    <label
+                      htmlFor={`file-${field.key}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider cursor-pointer border border-white/10 bg-white/[0.03] text-slate-400 hover:border-accent/20 hover:text-accent transition-colors"
+                    >
+                      <ArrowRight className="h-3 w-3 rotate-90" />
+                      {field.fileUpload.label}
+                    </label>
+                    {currentValue && currentValue.startsWith("{") && (
+                      <span className="ml-2 text-[10px] text-emerald-400">
+                        <Check className="h-3 w-3 inline mr-0.5" />
+                        JSON loaded
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -1120,6 +1160,47 @@ export function SetupWizard() {
       // ignore
     }
   }, []);
+
+  // Auto-verify all platforms that have keys configured (so state persists on refresh)
+  useEffect(() => {
+    if (loading || !selectedWorkspace) return;
+    platformWizards.forEach(async (platform) => {
+      // Skip if no keys to verify
+      if (platform.verifyKeys.length === 0 && !platform.extensionRequired) return;
+      // Check if keys are configured
+      const hasKeys = platform.verifyKeys.every((k) => keyStatuses[k]?.set);
+      if (!hasKeys && !platform.extensionRequired) return;
+
+      // Auto-run verify
+      try {
+        if (platform.extensionRequired) {
+          const detected = document.documentElement.getAttribute("data-kalit-extension") === "true";
+          setVerificationResults((prev) => ({
+            ...prev,
+            [platform.id]: {
+              keysConfigured: { "Kalit Extension": detected },
+              allKeysConfigured: detected,
+              oauthRequired: false,
+              oauthConnected: false,
+              accountName: null,
+              ready: detected,
+            },
+          }));
+        } else {
+          const res = await fetch("/api/platform-keys/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ platform: platform.id, workspaceId: selectedWorkspace }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setVerificationResults((prev) => ({ ...prev, [platform.id]: data }));
+          }
+        }
+      } catch { /* ignore */ }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, selectedWorkspace, keyStatuses]);
 
   async function handleSaveKeys(keys: Record<string, string>) {
     setSaving(true);

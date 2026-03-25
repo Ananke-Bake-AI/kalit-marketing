@@ -26,21 +26,31 @@ export async function GET() {
 
   // Also check env vars for keys not saved to file
   const envKeys = [
+    // Google (service account)
+    "GOOGLE_SERVICE_ACCOUNT_KEY",
+    "GOOGLE_ADS_DEVELOPER_TOKEN",
+    "GOOGLE_ADS_CUSTOMER_ID",
+    // Meta (system user token)
+    "META_ACCESS_TOKEN",
+    "META_AD_ACCOUNT_ID",
+    // TikTok (long-lived token)
+    "TIKTOK_ACCESS_TOKEN",
+    "TIKTOK_ADVERTISER_ID",
+    // LinkedIn (OAuth — still needed)
+    "LINKEDIN_CLIENT_ID",
+    "LINKEDIN_CLIENT_SECRET",
+    // Legacy OAuth keys (for backwards compat)
     "GOOGLE_CLIENT_ID",
     "GOOGLE_CLIENT_SECRET",
-    "GOOGLE_ADS_DEVELOPER_TOKEN",
     "META_CLIENT_ID",
     "META_CLIENT_SECRET",
     "TIKTOK_CLIENT_ID",
     "TIKTOK_CLIENT_SECRET",
     "X_CLIENT_ID",
     "X_CLIENT_SECRET",
-    "LINKEDIN_CLIENT_ID",
-    "LINKEDIN_CLIENT_SECRET",
     "REDDIT_CLIENT_ID",
     "REDDIT_CLIENT_SECRET",
-    "HUBSPOT_CLIENT_ID",
-    "HUBSPOT_CLIENT_SECRET",
+    // Other
     "ENCRYPTION_KEY",
     "ANTHROPIC_API_KEY",
   ];

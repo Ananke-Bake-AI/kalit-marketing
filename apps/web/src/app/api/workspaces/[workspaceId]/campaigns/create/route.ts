@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@kalit/db";
 import { llmComplete, parseJSON } from "@/lib/llm/client";
 import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
+import { getConnectedAdPlatforms } from "@/lib/platform-keys";
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -82,19 +83,37 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   const productDesc = config?.productDescription || "";
   const industry = config?.industry || "technology";
 
-  // Detect target platform from prompt
+  // Determine target platforms:
+  // 1. If user explicitly mentions a platform in the prompt, use only that one
+  // 2. If body.platform is specified (adapt mode), use that
+  // 3. Otherwise, generate for ALL connected ad platforms
   const promptLower = prompt.toLowerCase();
-  let detectedPlatform = "google"; // default
-  if (promptLower.includes("x ads") || promptLower.includes("twitter") || promptLower.includes("promoted tweet") || promptLower.includes("x campaign") || promptLower.includes("on x")) {
-    detectedPlatform = "x";
+  const connectedPlatforms = getConnectedAdPlatforms();
+
+  let targetPlatforms: string[] = [];
+
+  if (body.platform) {
+    // Explicit platform (e.g. "adapt for google" button)
+    targetPlatforms = [body.platform];
+  } else if (promptLower.includes("x ads") || promptLower.includes("twitter") || promptLower.includes("on x")) {
+    targetPlatforms = ["x"];
   } else if (promptLower.includes("meta") || promptLower.includes("facebook") || promptLower.includes("instagram")) {
-    detectedPlatform = "meta";
+    targetPlatforms = ["meta"];
   } else if (promptLower.includes("linkedin")) {
-    detectedPlatform = "linkedin";
+    targetPlatforms = ["linkedin"];
   } else if (promptLower.includes("tiktok")) {
-    detectedPlatform = "tiktok";
-  } else if (promptLower.includes("reddit")) {
-    detectedPlatform = "reddit";
+    targetPlatforms = ["tiktok"];
+  } else if (promptLower.includes("google")) {
+    targetPlatforms = ["google"];
+  } else {
+    // No platform specified — generate for all connected platforms
+    targetPlatforms = connectedPlatforms.length > 0 ? connectedPlatforms : [];
+  }
+
+  if (targetPlatforms.length === 0) {
+    return NextResponse.json({
+      error: "No ad platforms connected. Go to Settings > Connections to set up at least one ad platform before creating a campaign.",
+    }, { status: 400 });
   }
 
   // Platform-specific instructions
@@ -184,13 +203,17 @@ CONVERSATION TOPICS: trending or evergreen topics the audience engages with on X
 - headline max 300 characters`,
   };
 
-  const platformGuide = platformInstructions[detectedPlatform] || platformInstructions.google;
-
   const targetGeos = config?.targetGeographies?.join(", ") || "US, UK";
   const icpDescription = config?.icpDescription || "";
   const brandVoice = config?.brandVoice || "";
 
-  const systemPrompt = `You are an elite growth marketing architect. You create complete, ready-to-launch ad campaigns for any platform.
+  const createdCampaigns: { id: string; name: string; platform: string; adGroups: number; totalAds: number }[] = [];
+
+  // Generate a campaign for each target platform
+  for (const targetPlatform of targetPlatforms) {
+    const platformGuide = platformInstructions[targetPlatform] || platformInstructions.google;
+
+    const systemPrompt = `You are an elite growth marketing architect. You create complete, ready-to-launch ad campaigns for any platform.
 
 Given a campaign brief, generate a full campaign structure with ad groups, targeting, and ads.
 
@@ -203,7 +226,7 @@ General rules:
 - Destination URL should use the product website with appropriate UTM parameters
 - Return ONLY valid JSON, no markdown fences
 - Every field in the targeting object should be populated — the more specific the better
-- The campaign must be fully deployable to ${detectedPlatform} without any manual additions
+- The campaign must be fully deployable to ${targetPlatform} without any manual additions
 
 Product context:
 - Name: ${productName}
@@ -219,7 +242,7 @@ JSON schema:
 {
   "name": "string — campaign name prefixed with '${productName} — '",
   "type": "paid_search | paid_social | display | video | retargeting",
-  "platform": "${detectedPlatform}",
+  "platform": "${targetPlatform}",
   "objective": "awareness | traffic | engagement | leads | conversions | sales",
   "conversionEvent": "lead generation | purchase | download | add to cart — required for X/Twitter",
   "targetAudience": "string — detailed description of who we're targeting and why",
@@ -248,7 +271,7 @@ JSON schema:
       "headlines": ["string — multiple variants for A/B testing"],
       "body": "string — the main ad copy",
       "cta": "string",
-      "destinationUrl": "${websiteUrl}?utm_source=${detectedPlatform}&utm_medium=paid&utm_campaign=...",
+      "destinationUrl": "${websiteUrl}?utm_source=${targetPlatform}&utm_medium=paid&utm_campaign=...",
       "descriptions": ["string — multiple variants"],
       "messagingAngle": "string",
       "tags": ["string — categories for internal tracking"]
@@ -256,7 +279,30 @@ JSON schema:
   }]
 }
 
-Create 2-3 ad groups with 2-3 ads each. Be specific and ${detectedPlatform === "x" ? "conversational — this is Twitter, not a landing page" : "conversion-focused"}.`;
+DEFAULT CAMPAIGN STRUCTURE (use these ONLY if the user's brief doesn't specify a different structure):
+${targetPlatform === "google" ? `Google Ads defaults:
+- 1 campaign, 1-2 ad groups (one per keyword theme — tight grouping)
+- Each ad group: 1 RSA with 10-15 headlines and 4 descriptions — Google rotates
+- 10-20 tightly related keywords per group` :
+targetPlatform === "x" ? `X Ads defaults:
+- 1 ad group, 2-3 promoted tweet variations (different hooks, same targeting)
+- Conversational, punchy — this is Twitter, not a landing page
+- Combined targeting: keywords + interests + lookalikes in one group` :
+targetPlatform === "meta" ? `Meta Ads defaults:
+- 1-2 ad sets (audiences), 3-5 ad variations per set
+- Meta's algorithm optimizes delivery — give it creative options
+- Broad audiences work better than many narrow ones` :
+targetPlatform === "linkedin" ? `LinkedIn Ads defaults:
+- 1 ad group, 2-4 ad variations
+- Professional value proposition, tight targeting` :
+targetPlatform === "tiktok" ? `TikTok Ads defaults:
+- 1-2 ad groups, 3-5 variations per group
+- Short, authentic, attention-grabbing copy` :
+`1-2 ad groups, 2-3 ads each.`}
+
+IMPORTANT: If the user's brief specifies a number of ads, ad groups, or a specific structure, follow their instructions exactly — do NOT override with the defaults above. The defaults are only for when the user doesn't specify.
+
+Return ONLY valid JSON matching the schema above.`;
 
   try {
     const response = await llmComplete({
@@ -274,7 +320,7 @@ Create 2-3 ad groups with 2-3 ads each. Be specific and ${detectedPlatform === "
         workspaceId,
         name: generated.name,
         type: (generated.type || "paid_search") as never,
-        platform: generated.platform || detectedPlatform,
+        platform: generated.platform || targetPlatform,
         objective: generated.objective || "conversions",
         status: "draft",
         targetAudience: generated.targetAudience,
@@ -341,6 +387,7 @@ Create 2-3 ad groups with 2-3 ads each. Be specific and ${detectedPlatform === "
         data: {
           action: "campaign_created_from_prompt",
           campaignId: campaign.id,
+          platform: targetPlatform,
           prompt,
           adGroups: generated.adGroups.length,
           totalAds,
@@ -348,14 +395,22 @@ Create 2-3 ad groups with 2-3 ads each. Be specific and ${detectedPlatform === "
       },
     });
 
+    createdCampaigns.push({
+      id: campaign.id,
+      name: campaign.name,
+      platform: targetPlatform,
+      adGroups: generated.adGroups.length,
+      totalAds,
+    });
+
+    } // end for (targetPlatforms)
+
     return NextResponse.json({
       success: true,
-      campaign: {
-        id: campaign.id,
-        name: campaign.name,
-        adGroups: generated.adGroups.length,
-        totalAds,
-      },
+      platforms: targetPlatforms,
+      campaigns: createdCampaigns,
+      // Backwards-compatible: return first campaign as "campaign"
+      campaign: createdCampaigns[0] || null,
     });
   } catch (err) {
     console.error("[campaign-create] Error:", err);
