@@ -339,6 +339,7 @@ Return ONLY valid JSON matching the schema above.`;
         data: {
           campaignId: campaign.id,
           name: agData.name,
+          platform: targetPlatform,
           targeting: (agData.targeting ?? {}) as object,
           placements: agData.placements ?? [],
           dailyBudget: agData.dailyBudget ?? null,

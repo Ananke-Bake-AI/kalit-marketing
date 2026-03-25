@@ -141,8 +141,11 @@ export default async function CampaignDetailPage({ params }: PageProps) {
     linkedin: { bg: "bg-sky-500/15", text: "text-sky-400", label: "LinkedIn Ads" },
     x: { bg: "bg-zinc-500/15", text: "text-zinc-300", label: "X Ads" },
   };
-  const campaignPlatform = campaign.platform ?? null;
+  // Detect all platforms from ad groups
+  const adGroupPlatforms = [...new Set(campaign.adGroups.map(ag => ag.platform).filter(Boolean))] as string[];
+  const campaignPlatform = campaign.platform ?? (adGroupPlatforms.length === 1 ? adGroupPlatforms[0] : null);
   const platformInfo = campaignPlatform ? platformColors[campaignPlatform] : null;
+  const isMultiPlatform = adGroupPlatforms.length > 1;
   const hasMatchingConnection = connectedAccounts.some(
     (a) => a.platform === campaignPlatform
   );
@@ -188,12 +191,20 @@ export default async function CampaignDetailPage({ params }: PageProps) {
               <h1 className="text-xl font-bold tracking-[-0.04em] text-white">
                 {campaign.name}
               </h1>
-              {platformInfo && (
+              {isMultiPlatform ? (
+                adGroupPlatforms.map(p => {
+                  const pi = platformColors[p];
+                  return pi ? (
+                    <span key={p} className={`badge ${pi.bg} ${pi.text} border-current/30`}>
+                      {pi.label}
+                    </span>
+                  ) : null;
+                })
+              ) : platformInfo ? (
                 <span className={`badge ${platformInfo.bg} ${platformInfo.text} border-current/30`}>
                   {platformInfo.label}
                 </span>
-              )}
-              {!campaignPlatform && (
+              ) : (
                 <span className="badge bg-yellow-500/15 text-yellow-400 border-yellow-500/30">
                   No platform assigned
                 </span>
@@ -212,6 +223,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
               </p>
             )}
             <CampaignPlatformAdapt
+              campaignId={campaignId}
               campaignPlatform={campaignPlatform}
               workspaceId={workspaceId}
               campaignName={campaign.name}

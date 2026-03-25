@@ -22,6 +22,7 @@ const platformColors: Record<string, string> = {
 };
 
 interface Props {
+  campaignId: string;
   campaignPlatform: string | null;
   workspaceId: string;
   campaignName: string;
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function CampaignPlatformAdapt({
+  campaignId,
   campaignPlatform,
   workspaceId,
   campaignName,
@@ -59,13 +61,10 @@ export function CampaignPlatformAdapt({
     setAdapting(platformId);
     setError(null);
     try {
-      const res = await fetch(`/api/workspaces/${workspaceId}/campaigns/create`, {
+      const res = await fetch(`/api/workspaces/${workspaceId}/campaigns/${campaignId}/adapt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: platformId,
-          prompt: `Adapt the campaign "${campaignName}" for ${platformLabels[platformId] || platformId}. Objective: ${campaignObjective || "conversions"}. Daily budget: $${campaignBudget || 50}. Keep the same messaging angle and target audience but adapt the ad format, copy style, and targeting to match ${platformLabels[platformId] || platformId} best practices.`,
-        }),
+        body: JSON.stringify({ platform: platformId }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

@@ -334,6 +334,9 @@ model AdGroup {
   campaignId String @map("campaign_id")
   name       String
 
+  // Platform — which ad platform this ad group targets (x, google, meta, etc.)
+  platform   String?
+
   // Targeting
   audienceId  String? @map("audience_id")
   targeting   Json?   // platform-agnostic targeting spec
