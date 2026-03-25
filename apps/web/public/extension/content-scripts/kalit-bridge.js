@@ -93,6 +93,17 @@
         })
       );
     }
+
+    if (message.type === "DEPLOY_CONFIRMED") {
+      console.log("[Kalit Extension] Deploy confirmed:", message.platform);
+
+      // User confirmed the campaign is live on the ad platform
+      window.dispatchEvent(
+        new CustomEvent("kalit-deploy-confirmed", {
+          detail: { platform: message.platform },
+        })
+      );
+    }
   });
 
   // Handle log retrieval requests from the dashboard page

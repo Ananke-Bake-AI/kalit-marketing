@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   ExternalLink,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 
 interface ConnectedAccount {
@@ -77,6 +78,8 @@ export function CampaignActions({
   const [showPlatformWarning, setShowPlatformWarning] = useState(false);
   const [extensionDetected, setExtensionDetected] = useState(false);
   const [browserDeployStatus, setBrowserDeployStatus] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<{ campaignCount: number; metricsFound: number } | null>(null);
 
   const matchingAccounts = connectedAccounts.filter(a => a.platform === campaignPlatform);
   const otherAccounts = connectedAccounts.filter(a => a.platform !== campaignPlatform);
@@ -92,16 +95,54 @@ export function CampaignActions({
     const handler = () => setExtensionDetected(true);
     window.addEventListener("kalit-extension-ready", handler);
 
-    // Listen for deploy results
+    // Listen for deploy results (form filled on ad platform)
     const resultHandler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setBrowserDeployStatus(detail.success ? "success" : "failed");
     };
     window.addEventListener("kalit-deploy-result", resultHandler);
 
+    // Listen for deploy confirmation (user confirmed campaign is live)
+    const confirmedHandler = async () => {
+      setBrowserDeployStatus("confirmed");
+      try {
+        const res = await fetch(
+          `/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "browser_deployed" }),
+          }
+        );
+        if (res.ok) {
+          setStatus("active");
+        }
+      } catch {
+        // Status update failed silently
+      }
+    };
+    window.addEventListener("kalit-deploy-confirmed", confirmedHandler);
+
+    // Listen for sync results
+    const syncQueuedHandler = () => setSyncStatus("syncing");
+    const syncResultHandler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.success) {
+        setSyncStatus("success");
+        setSyncResult(detail.summary || null);
+      } else {
+        setSyncStatus("failed");
+      }
+    };
+    window.addEventListener("kalit-sync-queued", syncQueuedHandler);
+    window.addEventListener("kalit-sync-result", syncResultHandler);
+
     return () => {
       window.removeEventListener("kalit-extension-ready", handler);
       window.removeEventListener("kalit-deploy-result", resultHandler);
+      window.removeEventListener("kalit-deploy-confirmed", confirmedHandler);
+      window.removeEventListener("kalit-sync-queued", syncQueuedHandler);
+      window.removeEventListener("kalit-sync-result", syncResultHandler);
     };
   }, []);
 
@@ -168,6 +209,22 @@ export function CampaignActions({
     } catch {
       setBrowserDeployStatus("failed");
     }
+  }
+
+  // Sync performance data from ad platform via browser extension
+  function handleBrowserSync(platform: string) {
+    setSyncStatus("opening");
+    setSyncResult(null);
+
+    window.postMessage(
+      {
+        type: "KALIT_SYNC",
+        platform,
+        workspaceId,
+        apiEndpoint: `${window.location.origin}/api/workspaces/${workspaceId}/sync/browser`,
+      },
+      window.location.origin
+    );
   }
 
   // Platforms that support browser deploy (no API needed)
@@ -456,7 +513,10 @@ export function CampaignActions({
                 <span className="text-[10px] text-accent">Opening ads.x.com...</span>
               )}
               {browserDeployStatus === "success" && (
-                <span className="text-[10px] text-emerald-400">Fields filled — review and submit on X</span>
+                <span className="text-[10px] text-emerald-400">Fields filled — review and launch on X, then confirm in the extension overlay</span>
+              )}
+              {browserDeployStatus === "confirmed" && (
+                <span className="text-[10px] text-accent">Campaign is live — status updated</span>
               )}
               {browserDeployStatus === "failed" && (
                 <span className="text-[10px] text-red-400">Browser deploy failed</span>
@@ -474,6 +534,110 @@ export function CampaignActions({
             {extensionDetected && (
               <p className="text-[10px] text-slate-600">
                 Opens {platformLabels[campaignPlatform || "x"]} in a new tab and auto-fills the campaign form. You review and submit.
+              </p>
+            )}
+          </div>
+        )}
+
+      {/* Mark as Live — for browser-deploy platforms where user launched manually on the ad platform */}
+      {["draft", "pending_approval", "approved", "failed"].includes(status) &&
+        browserDeployPlatforms.includes(campaignPlatform || "") && (
+          <div className="card p-3 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              Already live on {platformLabels[campaignPlatform || "x"] || "X"}?
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const res = await fetch(
+                      `/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`,
+                      {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ action: "browser_deployed" }),
+                      }
+                    );
+                    if (res.ok) {
+                      setStatus("active");
+                    } else {
+                      const data = await res.json();
+                      setError(data.error || "Failed to update status");
+                    }
+                  } catch {
+                    setError("Network error");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-50"
+              >
+                {loading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-3.5 w-3.5" />
+                )}
+                Mark as Live
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-600">
+              If you launched this campaign directly on {platformLabels[campaignPlatform || "x"] || "X"} (or saved a draft and launched it later), mark it as live to enable performance syncing.
+            </p>
+          </div>
+        )}
+
+      {/* Sync performance data from browser (for platforms without API like X) */}
+      {["active", "paused", "optimizing", "scaling", "launching", "monitoring"].includes(status) &&
+        browserDeployPlatforms.includes(campaignPlatform || "") && (
+          <div className="card p-3 space-y-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+              Sync performance data
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleBrowserSync(campaignPlatform || "x")}
+                disabled={!extensionDetected || syncStatus === "opening" || syncStatus === "syncing"}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30 hover:bg-sky-500/25 transition-colors disabled:opacity-50"
+              >
+                {syncStatus === "opening" || syncStatus === "syncing" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                Sync from {platformLabels[campaignPlatform || "x"] || "X"}
+              </button>
+              {syncStatus === "opening" && (
+                <span className="text-[10px] text-sky-400">Opening ads.x.com...</span>
+              )}
+              {syncStatus === "syncing" && (
+                <span className="text-[10px] text-sky-400 animate-pulse">Extracting campaign data...</span>
+              )}
+              {syncStatus === "success" && syncResult && (
+                <span className="text-[10px] text-emerald-400">
+                  Synced {syncResult.campaignCount} campaign{syncResult.campaignCount !== 1 ? "s" : ""}, {syncResult.metricsFound} metrics
+                </span>
+              )}
+              {syncStatus === "success" && !syncResult && (
+                <span className="text-[10px] text-emerald-400">Sync complete — refresh to see updated data</span>
+              )}
+              {syncStatus === "failed" && (
+                <span className="text-[10px] text-red-400">Sync failed — check the extension overlay for details</span>
+              )}
+            </div>
+            {!extensionDetected && (
+              <p className="text-[10px] text-slate-500">
+                Requires the{" "}
+                <a href="/dashboard/connections" className="text-sky-400 underline hover:text-sky-300">
+                  Kalit extension
+                </a>
+                . Opens {platformLabels[campaignPlatform || "x"]} and extracts campaign performance metrics.
+              </p>
+            )}
+            {extensionDetected && !syncStatus && (
+              <p className="text-[10px] text-slate-600">
+                Opens {platformLabels[campaignPlatform || "x"]} in a new tab, scrapes campaign metrics (impressions, clicks, spend, conversions), and updates your dashboard.
               </p>
             )}
           </div>

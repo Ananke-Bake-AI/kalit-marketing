@@ -134,6 +134,10 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
       from: ["active", "paused", "optimizing", "scaling", "failed", "completed"],
       to: "archived",
     },
+    browser_deployed: {
+      from: ["draft", "pending_approval", "approved", "failed"],
+      to: "active",
+    },
   };
 
   const transition = transitions[action];
@@ -203,6 +207,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     pause: "campaign_paused",
     resume: "campaign_launched",
     remove: "campaign_paused",
+    browser_deployed: "campaign_launched",
   };
 
   await prisma.event.create({

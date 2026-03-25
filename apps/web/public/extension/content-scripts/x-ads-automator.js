@@ -472,6 +472,13 @@
   async function clickVisibleOptionByText(text) {
     const textLower = text.toLowerCase();
 
+    /** Check if an element is a token/chip (clicking it would REMOVE it) */
+    function isToken(el) {
+      if (el.closest('[data-test-id-v2="token"]')) return true;
+      if (el.closest('[class*="Token"], [class*="tag"], [class*="chip"]')) return true;
+      return false;
+    }
+
     // Look through common option containers
     const selectors = [
       "[role='option']", "[role='menuitem']", "[role='listbox'] > *",
@@ -481,7 +488,7 @@
 
     for (const sel of selectors) {
       for (const el of document.querySelectorAll(sel)) {
-        if (el.textContent.toLowerCase().includes(textLower) && analyzer.isElementVisible(el)) {
+        if (el.textContent.toLowerCase().includes(textLower) && analyzer.isElementVisible(el) && !isToken(el)) {
           await fillerLib.clickElement(el);
           await fillerLib.sleep(300);
           return true;
@@ -489,10 +496,10 @@
       }
     }
 
-    // Broader search: any visible element with matching text
+    // Broader search: any visible element with matching text (skip tokens)
     for (const el of document.querySelectorAll("div, span, button, a, p")) {
       const elText = el.textContent.trim().toLowerCase();
-      if (elText.includes(textLower) && elText.length < 100 && analyzer.isElementVisible(el) && el.offsetHeight < 80) {
+      if (elText.includes(textLower) && elText.length < 100 && analyzer.isElementVisible(el) && el.offsetHeight < 80 && !isToken(el)) {
         await fillerLib.clickElement(el);
         await fillerLib.sleep(300);
         return true;
@@ -1700,7 +1707,7 @@
     // Update status
     const statusEl = document.getElementById("kd-status");
     if (statusEl) {
-      statusEl.textContent = reason;
+      statusEl.textContent = "Form filled — review and launch the campaign on X, then confirm below.";
       statusEl.style.color = "#10b981";
     }
 
@@ -1711,31 +1718,600 @@
       row.style.background = "rgba(16,185,129,0.04)";
     }
 
-    // Add done button
+    // Add confirmation buttons — user decides if they launched the campaign
     const body = overlayEl?.querySelector(".kd-body");
     if (body) {
-      const btn = document.createElement("button");
-      btn.className = "kd-done-btn";
-      btn.textContent = "Close";
-      btn.addEventListener("click", () => overlayEl.remove());
-      body.appendChild(btn);
+      const prompt = document.createElement("div");
+      prompt.style.cssText = "margin-top:14px;padding:12px;background:rgba(200,255,0,0.04);border:1px solid rgba(200,255,0,0.12);";
+
+      const label = document.createElement("p");
+      label.style.cssText = "font-size:12px;color:#cbd5e1;margin-bottom:10px;line-height:1.5;";
+      label.textContent = "Did you launch the campaign on X?";
+      prompt.appendChild(label);
+
+      const btnRow = document.createElement("div");
+      btnRow.style.cssText = "display:flex;gap:8px;";
+
+      // "Yes, it's live" button
+      const liveBtn = document.createElement("button");
+      liveBtn.style.cssText = "flex:1;padding:10px;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all 0.15s;background:linear-gradient(135deg,#d9ff63 0%,#c8ff00 38%,#7dd3fc 100%);color:#0a0a0f;box-shadow:0 4px 12px rgba(200,255,0,0.15);";
+      liveBtn.textContent = "Yes, it\u2019s live";
+      liveBtn.addEventListener("click", () => {
+        chrome.runtime.sendMessage({
+          type: "DEPLOY_CONFIRMED",
+          platform: _currentPlatform || "x",
+        });
+        prompt.innerHTML = '<p style="font-size:12px;color:#10b981;text-align:center;padding:4px 0;">Campaign marked as live on your dashboard.</p>';
+        // Auto-close after a moment
+        setTimeout(() => { if (overlayEl) overlayEl.remove(); }, 2000);
+      });
+      liveBtn.addEventListener("mouseenter", () => { liveBtn.style.opacity = "0.9"; liveBtn.style.transform = "translateY(-1px)"; });
+      liveBtn.addEventListener("mouseleave", () => { liveBtn.style.opacity = "1"; liveBtn.style.transform = "none"; });
+      btnRow.appendChild(liveBtn);
+
+      // "Not yet" button
+      const laterBtn = document.createElement("button");
+      laterBtn.className = "kd-done-btn";
+      laterBtn.style.cssText += "flex:1;margin-top:0;";
+      laterBtn.textContent = "Not yet";
+      laterBtn.addEventListener("click", () => overlayEl.remove());
+      btnRow.appendChild(laterBtn);
+
+      prompt.appendChild(btnRow);
+      body.appendChild(prompt);
     }
   }
 
   function esc(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
 
   // ============================================================
-  // Sync
+  // Sync — Extract performance data from ad platform
   // ============================================================
 
+  let syncOverlayEl = null;
+
+  const MAX_CRAWL_PAGES = 8;
+
+  /**
+   * Multi-page AI-driven sync crawl.
+   *
+   * 1. Analyze current page (extract data + discover navigation links)
+   * 2. Navigate to each recommended page via SPA link clicks
+   * 3. Extract data from every useful page
+   * 4. Normalize all collected data into canonical format
+   * 5. Send canonical data to backend
+   */
   async function handleSync(syncRequest) {
-    if (!scraper) return;
-    // (sync UI unchanged — abbreviated here)
-    const data = scraper.scrape();
-    chrome.runtime.sendMessage({
-      type: "SYNC_DATA",
-      syncData: { ...data, workspaceId: syncRequest.workspaceId },
-      apiEndpoint: syncRequest.apiEndpoint,
+    const platform = syncRequest.platform || "x";
+    showSyncOverlay(platform);
+
+    const visited = new Set();
+    const collectedPages = [];
+
+    try {
+      // ── Phase 1: Crawl pages ──────────────────────────────────
+      syncStatus("Waiting for page to load...");
+      await waitForPageReady();
+
+      // Analyze the first page (whatever ads.x.com loaded)
+      const firstResult = await analyzePage(platform, visited);
+      visited.add(window.location.href);
+
+      if (firstResult && firstResult.useful) {
+        collectedPages.push({
+          url: window.location.href,
+          pageType: firstResult.pageType,
+          data: firstResult.data,
+          scrapedAt: new Date().toISOString(),
+        });
+        syncAddStep(`${firstResult.pageType}: data extracted`);
+      } else {
+        syncAddStep(`${firstResult?.pageType || "page"}: no useful data`, false);
+      }
+
+      // Build navigation queue from AI suggestions
+      const urlQueue = [...(firstResult?.nextPages || [])];
+      syncLog(`AI suggests ${urlQueue.length} more page(s) to crawl`);
+
+      // ── Phase 2: Visit each recommended page ──────────────────
+      let pageNum = 1;
+      while (urlQueue.length > 0 && visited.size < MAX_CRAWL_PAGES) {
+        const nextUrl = urlQueue.shift();
+        if (!nextUrl || visited.has(nextUrl)) continue;
+
+        pageNum++;
+        const label = getPageLabel(nextUrl);
+        syncStatus(`Navigating to ${label} (${pageNum}/${Math.min(urlQueue.length + pageNum, MAX_CRAWL_PAGES)})...`);
+
+        const navigated = await navigateInSPA(nextUrl);
+        if (!navigated) {
+          syncLog(`Could not navigate to ${nextUrl}`);
+          visited.add(nextUrl);
+          continue;
+        }
+
+        visited.add(window.location.href);
+        await waitForPageReady();
+        await fillerLib.sleep(1500); // extra settle for async data
+
+        const pageResult = await analyzePage(platform, visited);
+
+        if (pageResult && pageResult.useful) {
+          collectedPages.push({
+            url: window.location.href,
+            pageType: pageResult.pageType,
+            data: pageResult.data,
+            scrapedAt: new Date().toISOString(),
+          });
+          syncAddStep(`${pageResult.pageType}: data extracted`);
+        } else {
+          syncAddStep(`${pageResult?.pageType || label}: skipped (no useful data)`, false);
+        }
+
+        // Add newly discovered pages to the queue
+        for (const u of (pageResult?.nextPages || [])) {
+          if (!visited.has(u) && !urlQueue.includes(u)) {
+            urlQueue.push(u);
+          }
+        }
+      }
+
+      syncAddStep(`Crawled ${visited.size} page${visited.size !== 1 ? "s" : ""}, ${collectedPages.length} had data`);
+
+      if (collectedPages.length === 0) {
+        syncStatus("No useful data found on any page");
+        showSyncDone({ campaigns: [] });
+        return;
+      }
+
+      // ── Phase 3: Normalize all collected data ─────────────────
+      syncStatus("Normalizing collected data...");
+      const canonical = await callCrawlAPI("normalize", {
+        platform,
+        pages: collectedPages,
+      });
+
+      if (canonical.error) {
+        syncAddStep(`Normalization failed: ${canonical.error}`, false);
+        // Fallback: send raw collected pages
+        syncStatus("Sending raw data to Kalit...");
+        const fallback = buildFallbackPayload(platform, collectedPages);
+        chrome.runtime.sendMessage({
+          type: "SYNC_DATA",
+          syncData: { ...fallback, workspaceId: syncRequest.workspaceId },
+          apiEndpoint: syncRequest.apiEndpoint,
+        });
+      } else {
+        const cc = (canonical.campaigns || []).length;
+        syncAddStep(`Normalized: ${cc} campaign${cc !== 1 ? "s" : ""}`);
+
+        // ── Phase 4: Send to backend ──────────────────────────────
+        syncStatus("Sending to Kalit...");
+        chrome.runtime.sendMessage({
+          type: "SYNC_DATA",
+          syncData: { ...canonical, workspaceId: syncRequest.workspaceId },
+          apiEndpoint: syncRequest.apiEndpoint,
+        });
+      }
+
+      syncAddStep("Data sent to Kalit backend");
+      showSyncDone(canonical || { campaigns: [] });
+
+    } catch (err) {
+      syncStatus(`Error: ${err.message}`);
+      syncAddStep(`Sync failed: ${err.message}`, false);
+    }
+  }
+
+  /**
+   * Analyze a single page: extract nav links, send to AI for triage + extraction.
+   */
+  async function analyzePage(platform, visited) {
+    const pageText = scraper?.getCompactPageText
+      ? scraper.getCompactPageText(15000)
+      : (document.body.innerText || "").replace(/\s+/g, " ").trim().slice(0, 15000);
+
+    const navLinks = extractNavigationLinks();
+    syncLog(`Page: ${window.location.pathname} — ${navLinks.length} nav links found`);
+
+    try {
+      const result = await callCrawlAPI("analyze", {
+        url: window.location.href,
+        pageText,
+        navLinks,
+        platform,
+        visited: [...visited],
+      });
+      return result;
+    } catch (err) {
+      syncLog(`Page analysis failed: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Extract all navigation links from the current page.
+   * Returns deduped array of { url, text } for same-domain links.
+   */
+  function extractNavigationLinks() {
+    const domain = window.location.hostname;
+    const seen = new Set();
+    const links = [];
+
+    for (const a of document.querySelectorAll("a[href]")) {
+      try {
+        const url = new URL(a.href, window.location.origin);
+        if (url.hostname !== domain) continue;
+        if (url.href === window.location.href) continue;
+        if (seen.has(url.href)) continue;
+
+        const text = (a.textContent || "").trim();
+        if (text.length < 2 || text.length > 100) continue;
+
+        // Skip non-data links (help, settings, logout, etc.)
+        const lower = text.toLowerCase();
+        if (["help", "support", "log out", "sign out", "terms", "privacy", "settings"].some(s => lower.includes(s))) continue;
+
+        seen.add(url.href);
+        links.push({ url: url.href, text });
+      } catch { /* invalid URL */ }
+    }
+
+    return links.slice(0, 50); // cap at 50 to keep payload reasonable
+  }
+
+  /**
+   * Navigate within an SPA by clicking the matching link element.
+   * Falls back to window.location for non-SPA pages.
+   * Returns true if URL changed.
+   */
+  async function navigateInSPA(targetUrl) {
+    // Find and click the matching anchor
+    for (const a of document.querySelectorAll("a[href]")) {
+      try {
+        if (new URL(a.href, window.location.origin).href === targetUrl) {
+          if (analyzer && !analyzer.isElementVisible(a)) continue;
+          await fillerLib.clickElement(a);
+          // Wait for URL to change (SPA routing)
+          const startUrl = window.location.href;
+          for (let i = 0; i < 30; i++) {
+            await fillerLib.sleep(200);
+            if (window.location.href !== startUrl) return true;
+          }
+          // URL didn't change — might have triggered a view update without URL change
+          // Check if page content changed significantly
+          return false;
+        }
+      } catch { /* skip invalid */ }
+    }
+
+    // No matching link found — try direct navigation
+    // (will reload page, but background persists crawl state)
+    syncLog(`No clickable link for ${targetUrl} — trying direct navigation`);
+    try {
+      // Store crawl state before navigating
+      chrome.runtime.sendMessage({
+        type: "SAVE_CRAWL_STATE",
+        state: { visited: [...arguments[1] || []], url: targetUrl },
+      });
+      window.location.href = targetUrl;
+      // Script will die here — background will resume crawl on next page load
+      await fillerLib.sleep(10000);
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Get a short label for a URL (for display in overlay). */
+  function getPageLabel(url) {
+    try {
+      const path = new URL(url).pathname;
+      const parts = path.split("/").filter(Boolean);
+      return parts.length > 0 ? parts[parts.length - 1] : "home";
+    } catch {
+      return url.slice(0, 40);
+    }
+  }
+
+  /** Send request to /api/extension/crawl via background proxy. */
+  async function callCrawlAPI(mode, payload) {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage({
+        type: "AI_CRAWL",
+        payload: { mode, ...payload },
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else if (response?.error && !response.campaigns) {
+          reject(new Error(response.error));
+        } else {
+          resolve(response);
+        }
+      });
     });
+  }
+
+  /** Build a basic sync payload from raw collected pages when normalization fails. */
+  function buildFallbackPayload(platform, collectedPages) {
+    const allCampaigns = [];
+    const summary = {};
+
+    for (const page of collectedPages) {
+      const data = page.data || {};
+      if (data.campaigns) {
+        for (const c of data.campaigns) {
+          // Dedupe by name
+          const existing = allCampaigns.find(e => e.name?.toLowerCase() === c.name?.toLowerCase());
+          if (existing) {
+            Object.assign(existing.metrics || {}, c.metrics || {});
+          } else {
+            allCampaigns.push(c);
+          }
+        }
+      }
+      if (data.accountMetrics) {
+        Object.assign(summary, data.accountMetrics);
+      }
+    }
+
+    return {
+      platform,
+      syncedAt: new Date().toISOString(),
+      campaigns: allCampaigns.map(c => ({
+        name: c.name,
+        ...(c.metrics || {}),
+      })),
+      summary,
+      crawledPages: collectedPages.map(p => ({
+        url: p.url,
+        pageType: p.pageType,
+        scrapedAt: p.scrapedAt,
+      })),
+    };
+  }
+
+  /** Wait for the page to be ready (no loading spinners). */
+  async function waitForPageReady() {
+    const maxWait = 15000;
+    const start = Date.now();
+
+    while (Date.now() - start < maxWait) {
+      const spinners = document.querySelectorAll(
+        "[class*='spinner'], [class*='Spinner'], [class*='loading'], [class*='Loading'], " +
+        "[class*='skeleton'], [class*='Skeleton'], [role='progressbar']"
+      );
+
+      let hasVisibleSpinner = false;
+      for (const s of spinners) {
+        if (analyzer && analyzer.isElementVisible(s)) {
+          hasVisibleSpinner = true;
+          break;
+        }
+      }
+
+      if (!hasVisibleSpinner) {
+        const bodyText = document.body.innerText || "";
+        if (bodyText.length > 200) return;
+      }
+
+      await fillerLib.sleep(500);
+    }
+    syncLog("Page load wait timed out — proceeding");
+  }
+
+  // ---- Sync Overlay UI ----
+
+  function syncLog(msg) {
+    const time = new Date().toLocaleTimeString("en", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    console.log(`[Kalit Sync] ${msg}`);
+    const logEl = document.getElementById("ks-debug-log");
+    if (logEl) {
+      logEl.textContent += `${time} ${msg}\n`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+  }
+
+  function syncStatus(msg) {
+    syncLog(msg);
+    const el = document.getElementById("ks-status");
+    if (el) el.textContent = msg;
+  }
+
+  function syncAddStep(text, success = true) {
+    syncLog(text);
+    const list = document.getElementById("ks-steps");
+    if (!list) return;
+    const li = document.createElement("div");
+    li.style.cssText = "padding:7px 0;font-size:13px;color:#94a3b8;border-bottom:1px solid rgba(148,163,184,0.06);display:flex;align-items:flex-start;gap:8px;";
+    const icon = document.createElement("span");
+    icon.style.cssText = `flex-shrink:0;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px;color:${success ? "#10b981" : "#f59e0b"};background:${success ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)"};border:1px solid ${success ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)"};`;
+    icon.textContent = success ? "\u2713" : "!";
+    li.appendChild(icon);
+    const txt = document.createElement("span");
+    txt.textContent = text;
+    li.appendChild(txt);
+    list.appendChild(li);
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function showSyncOverlay(platform) {
+    if (syncOverlayEl) syncOverlayEl.remove();
+    syncOverlayEl = document.createElement("div");
+    syncOverlayEl.id = "kalit-sync-overlay";
+
+    const platformLabel = { x: "X Ads", meta: "Meta Ads", tiktok: "TikTok Ads" }[platform] || platform;
+
+    syncOverlayEl.innerHTML = `
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        #kalit-sync-overlay {
+          position:fixed; top:20px; right:20px; width:400px;
+          background: linear-gradient(180deg,rgba(255,255,255,0.03),transparent 40%),
+                      linear-gradient(155deg,rgba(15,23,42,0.97),rgba(8,13,27,0.94));
+          border:1px solid rgba(148,163,184,0.14); color:#f8fafc;
+          font-family:'Space Grotesk',-apple-system,sans-serif;
+          font-size:14px; z-index:999999;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.06),
+                      0 32px 90px rgba(2,6,23,0.6),
+                      0 0 0 1px rgba(0,0,0,0.3);
+          backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+        }
+        #kalit-sync-overlay * { box-sizing:border-box; margin:0; padding:0; }
+        .ks-hdr {
+          padding:16px 20px; border-bottom:1px solid rgba(148,163,184,0.1);
+          display:flex; align-items:center; justify-content:space-between;
+          background:linear-gradient(180deg,rgba(255,255,255,0.04),transparent);
+        }
+        .ks-hdr-left { display:flex; align-items:center; gap:12px; }
+        .ks-logo {
+          width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+          border:1px solid rgba(56,189,248,0.15); background:rgba(56,189,248,0.04);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,0.06),0 0 20px rgba(56,189,248,0.06);
+        }
+        .ks-logo svg { width:18px; height:18px; }
+        .ks-eyebrow {
+          font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:500;
+          text-transform:uppercase; letter-spacing:0.28em; color:#64748b; margin-bottom:2px;
+        }
+        .ks-title { font-size:16px; font-weight:700; color:#f8fafc; letter-spacing:-0.03em; }
+        .ks-close {
+          background:none; border:1px solid rgba(148,163,184,0.1); color:#64748b;
+          cursor:pointer; font-size:16px; line-height:1; width:28px; height:28px;
+          display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+        }
+        .ks-close:hover { color:#f8fafc; border-color:rgba(148,163,184,0.25); background:rgba(255,255,255,0.04); }
+        .ks-body { padding:16px 20px; }
+        .ks-platform {
+          font-size:12px; font-weight:500; color:#38bdf8; margin-bottom:14px; padding:8px 12px;
+          background:rgba(56,189,248,0.04); border:1px solid rgba(56,189,248,0.08);
+          font-family:'IBM Plex Mono',monospace; letter-spacing:0.01em;
+        }
+        .ks-status-row {
+          display:flex; align-items:center; gap:12px; margin-bottom:16px; padding:12px 14px;
+          background:rgba(15,23,42,0.72); border:1px solid rgba(148,163,184,0.1);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        .ks-spinner {
+          width:18px; height:18px; border:2px solid rgba(56,189,248,0.15);
+          border-top-color:#38bdf8; border-radius:50%;
+          animation:ks-spin 0.7s linear infinite; flex-shrink:0;
+        }
+        .ks-spinner-done {
+          width:18px; height:18px; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+          background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25);
+          color:#10b981; font-size:12px; font-weight:700;
+        }
+        @keyframes ks-spin { to { transform:rotate(360deg); } }
+        .ks-status-text { font-size:13px; color:#cbd5e1; line-height:1.4; }
+        .ks-steps { max-height:220px; overflow-y:auto; margin-bottom:14px; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,0.1) transparent; }
+        .ks-debug {
+          font-size:10px; color:#475569; max-height:160px; overflow-y:auto;
+          font-family:'IBM Plex Mono',monospace; line-height:1.6;
+          background:rgba(0,0,0,0.3); padding:10px; border:1px solid rgba(148,163,184,0.06);
+          display:none; margin-top:10px; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,0.1) transparent;
+        }
+        .ks-footer {
+          display:flex; align-items:center; justify-content:space-between;
+          padding-top:10px; border-top:1px solid rgba(148,163,184,0.06);
+        }
+        .ks-toggle {
+          background:none; border:1px solid rgba(148,163,184,0.08); cursor:pointer;
+          padding:4px 10px; font-family:'IBM Plex Mono',monospace; font-size:10px;
+          font-weight:500; text-transform:uppercase; letter-spacing:0.12em;
+          color:#475569; transition:all 0.15s;
+        }
+        .ks-toggle:hover { color:#94a3b8; border-color:rgba(148,163,184,0.2); background:rgba(255,255,255,0.02); }
+        .ks-version { font-family:'IBM Plex Mono',monospace; font-size:10px; color:#334155; letter-spacing:0.06em; }
+        .ks-done-btn {
+          width:100%; padding:12px; margin-top:12px;
+          font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;
+          border:1px solid rgba(148,163,184,0.12); background:rgba(15,23,42,0.72);
+          color:#94a3b8; cursor:pointer; transition:all 0.15s;
+          box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);
+        }
+        .ks-done-btn:hover { border-color:rgba(56,189,248,0.2); color:#38bdf8; background:rgba(56,189,248,0.04); }
+        .ks-live {
+          display:inline-flex; align-items:center; gap:6px;
+          font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:500;
+          color:#64748b; text-transform:uppercase; letter-spacing:0.16em;
+        }
+        .ks-live-dot { position:relative; width:6px; height:6px; }
+        .ks-live-dot::before {
+          content:''; position:absolute; inset:0; background:#38bdf8; border-radius:50%;
+          animation:ks-pulse 2s ease-in-out infinite;
+        }
+        .ks-live-dot::after { content:''; position:absolute; inset:0; background:#38bdf8; border-radius:50%; }
+        @keyframes ks-pulse { 0%,100%{opacity:0;transform:scale(1);} 50%{opacity:0.6;transform:scale(2.5);} }
+      </style>
+      <div class="ks-hdr">
+        <div class="ks-hdr-left">
+          <div class="ks-logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div>
+            <div class="ks-eyebrow">Sync Agent</div>
+            <div class="ks-title">Kalit</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="ks-live"><span class="ks-live-dot"></span> Live</div>
+          <button class="ks-close" id="ks-close">&times;</button>
+        </div>
+      </div>
+      <div class="ks-body">
+        <div class="ks-platform">Syncing from ${esc(platformLabel)}</div>
+        <div class="ks-status-row" id="ks-status-row">
+          <div class="ks-spinner" id="ks-spinner"></div>
+          <div class="ks-status-text" id="ks-status">Starting sync...</div>
+        </div>
+        <div class="ks-steps" id="ks-steps"></div>
+        <div class="ks-footer">
+          <button class="ks-toggle" id="ks-toggle-debug">Debug</button>
+          <span class="ks-version">${BUILD_VERSION}</span>
+        </div>
+        <div class="ks-debug" id="ks-debug-log"></div>
+      </div>
+    `;
+    document.body.appendChild(syncOverlayEl);
+
+    document.getElementById("ks-close").addEventListener("click", () => syncOverlayEl.remove());
+    document.getElementById("ks-toggle-debug").addEventListener("click", () => {
+      const dbg = document.getElementById("ks-debug-log");
+      const btn = document.getElementById("ks-toggle-debug");
+      if (dbg.style.display === "none") { dbg.style.display = "block"; btn.textContent = "Hide debug"; }
+      else { dbg.style.display = "none"; btn.textContent = "Debug"; }
+    });
+  }
+
+  function showSyncDone(data) {
+    const spinner = document.getElementById("ks-spinner");
+    if (spinner) spinner.outerHTML = '<div class="ks-spinner-done">&#10003;</div>';
+
+    const statusEl = document.getElementById("ks-status");
+    if (statusEl) {
+      const cc = data.campaigns.length;
+      statusEl.textContent = cc > 0
+        ? `Synced ${cc} campaign${cc !== 1 ? "s" : ""} — check your dashboard`
+        : "Sync complete — no campaign data found on this page";
+      statusEl.style.color = cc > 0 ? "#10b981" : "#f59e0b";
+    }
+
+    const row = document.getElementById("ks-status-row");
+    if (row) {
+      row.style.borderColor = "rgba(16,185,129,0.15)";
+      row.style.background = "rgba(16,185,129,0.04)";
+    }
+
+    const body = syncOverlayEl?.querySelector(".ks-body");
+    if (body) {
+      const btn = document.createElement("button");
+      btn.className = "ks-done-btn";
+      btn.textContent = "Close";
+      btn.addEventListener("click", () => syncOverlayEl.remove());
+      body.appendChild(btn);
+    }
   }
 })();

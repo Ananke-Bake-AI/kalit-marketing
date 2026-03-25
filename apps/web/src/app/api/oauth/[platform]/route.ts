@@ -57,9 +57,10 @@ export async function GET(
   const nonce = randomBytes(16).toString("hex");
   const state = `${nonce}:${workspaceId}`;
 
+  // Use the actual request URL so it works automatically with ngrok, localhost, or production
+  // Only override if NEXT_PUBLIC_BASE_URL is explicitly set (not NEXTAUTH_URL which is always localhost)
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ??
-    process.env.NEXTAUTH_URL ??
     `${request.nextUrl.protocol}//${request.nextUrl.host}`;
 
   const redirectUri = `${baseUrl}/api/oauth/${platform}/callback`;

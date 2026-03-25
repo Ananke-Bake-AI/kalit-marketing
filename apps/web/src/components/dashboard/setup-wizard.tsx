@@ -25,10 +25,36 @@ import {
   Circle,
 } from "lucide-react";
 
-/** Replace {ORIGIN} placeholders with the current browser origin */
+/** Replace {ORIGIN} and {IS_LOCALHOST?trueText|falseText} placeholders */
 function resolveOrigin(text: string): string {
   if (typeof window === "undefined") return text;
-  return text.replace(/\{ORIGIN\}/g, window.location.origin);
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  // Replace {IS_LOCALHOST?trueContent|falseContent} — use greedy match to handle nested {ORIGIN}
+  let resolved = text.replace(/\{IS_LOCALHOST\?([\s\S]*?)\|([\s\S]*?)\}(?![^{]*\})/g, (_match, ifTrue, ifFalse) =>
+    isLocalhost ? ifTrue : ifFalse
+  );
+  // Simpler approach: split on the pattern manually if regex is tricky
+  while (resolved.includes("{IS_LOCALHOST?")) {
+    const start = resolved.indexOf("{IS_LOCALHOST?");
+    const pipeIdx = resolved.indexOf("|", start + 14);
+    // Find the matching closing } — skip nested {ORIGIN}
+    let depth = 0;
+    let endIdx = -1;
+    for (let i = pipeIdx + 1; i < resolved.length; i++) {
+      if (resolved[i] === "{") depth++;
+      else if (resolved[i] === "}") {
+        if (depth === 0) { endIdx = i; break; }
+        depth--;
+      }
+    }
+    if (pipeIdx === -1 || endIdx === -1) break;
+    const ifTrue = resolved.slice(start + 14, pipeIdx);
+    const ifFalse = resolved.slice(pipeIdx + 1, endIdx);
+    resolved = resolved.slice(0, start) + (isLocalhost ? ifTrue : ifFalse) + resolved.slice(endIdx + 1);
+  }
+  // Replace {ORIGIN}
+  resolved = resolved.replace(/\{ORIGIN\}/g, window.location.origin);
+  return resolved;
 }
 
 // ============================================================
@@ -66,6 +92,7 @@ interface PlatformWizard {
   category: "ad-platform" | "ai-service" | "infrastructure";
   steps: WizardStep[];
   verifyKeys: string[];
+  extensionRequired?: boolean;
 }
 
 // ============================================================
@@ -84,10 +111,10 @@ const platformWizards: PlatformWizard[] = [
         id: "gcp-project",
         title: "Create a Google Cloud Project",
         description:
-          "You need a GCP project to hold your OAuth credentials. Create one or use an existing project.",
+          "Go to Google Cloud Console and create a project (or use an existing one). This project will hold your service account credentials.",
         type: "info",
         link: {
-          label: "Open Google Cloud Console",
+          label: "Google Cloud Console",
           url: "https://console.cloud.google.com/projectcreate",
         },
         tip: "If you already have a GCP project, skip to the next step.",
@@ -96,64 +123,41 @@ const platformWizards: PlatformWizard[] = [
         id: "enable-api",
         title: "Enable Google Ads API",
         description:
-          'In your GCP project, go to APIs & Services > Library. Search for "Google Ads API" and click Enable.',
+          "In your GCP project:\n\n1. Go to APIs & Services > Library\n2. Search for \"Google Ads API\"\n3. Click Enable",
         type: "info",
         link: {
-          label: "Open API Library",
+          label: "Enable Google Ads API",
           url: "https://console.cloud.google.com/apis/library/googleads.googleapis.com",
         },
       },
       {
-        id: "oauth-consent",
-        title: "Configure OAuth Consent Screen",
+        id: "service-account",
+        title: "Create a Service Account",
         description:
-          'Set up the consent screen: go to APIs & Services > OAuth consent screen. Select "External" user type, fill in your app name, and add your email as a test user.',
+          "A service account lets Kalit manage Google Ads without OAuth redirects or user login.\n\n1. Go to IAM & Admin > Service Accounts\n2. Click \"Create Service Account\"\n3. Name it \"Kalit Marketing\"\n4. Click \"Create and Continue\"\n5. Skip optional role assignment, click \"Done\"\n6. Click on the new service account > Keys tab > Add Key > Create New Key > JSON\n7. Download the JSON key file — you'll paste its contents below",
         type: "info",
         link: {
-          label: "OAuth Consent Screen",
-          url: "https://console.cloud.google.com/apis/credentials/consent",
+          label: "Service Accounts",
+          url: "https://console.cloud.google.com/iam-admin/serviceaccounts",
         },
-        tip: 'Stay in "Testing" mode — no Google verification needed for test accounts.',
+        warning: "Store the JSON key securely. It grants full access to your Google Ads through this service account.",
       },
       {
-        id: "create-oauth",
-        title: "Create OAuth 2.0 Credentials",
+        id: "invite-service-account",
+        title: "Invite Service Account to Google Ads",
         description:
-          'Go to Credentials > Create Credentials > OAuth 2.0 Client ID. Select "Web application". Add the redirect URI shown below.',
-        type: "redirect",
-        code: "{ORIGIN}/api/oauth/google/callback",
+          "Give the service account access to your Google Ads account:\n\n1. Log into Google Ads (ads.google.com)\n2. Go to Tools & Settings (wrench icon) > Access and security\n3. Click the \"+\" button to add a user\n4. Paste the service account email (from the JSON key, looks like: kalit-marketing@your-project.iam.gserviceaccount.com)\n5. Set access level to \"Standard\" or \"Admin\"\n6. Click \"Send invitation\"",
+        type: "info",
         link: {
-          label: "Create Credentials",
-          url: "https://console.cloud.google.com/apis/credentials",
+          label: "Google Ads",
+          url: "https://ads.google.com",
         },
-        tip: "The URL shown matches your current environment. For production, add your domain as an additional redirect URI.",
-      },
-      {
-        id: "google-credentials",
-        title: "Enter Your OAuth Credentials",
-        description:
-          "Paste the Client ID and Client Secret from the credentials you just created.",
-        type: "credentials",
-        fields: [
-          {
-            key: "GOOGLE_CLIENT_ID",
-            label: "Client ID",
-            placeholder: "xxxxx.apps.googleusercontent.com",
-            secret: false,
-          },
-          {
-            key: "GOOGLE_CLIENT_SECRET",
-            label: "Client Secret",
-            placeholder: "GOCSPX-...",
-            secret: true,
-          },
-        ],
       },
       {
         id: "developer-token",
         title: "Get a Developer Token",
         description:
-          "Sign into Google Ads, go to Tools & Settings > API Center. Copy your developer token.",
+          "You need a developer token for API access:\n\n1. Sign into Google Ads (ads.google.com)\n2. Go to Tools & Settings > API Center\n3. Copy your developer token\n\nBasic access works with test accounts. Apply for Standard access for production.",
         type: "credentials",
         fields: [
           {
@@ -167,37 +171,20 @@ const platformWizards: PlatformWizard[] = [
             },
           },
         ],
-        warning:
-          "Basic access tokens work only with test accounts. Apply for Standard access for production.",
       },
       {
-        id: "test-account",
-        title: "Create a Test Account (Optional)",
+        id: "google-credentials",
+        title: "Enter Your Credentials",
         description:
-          'For safe testing without spending real money, create a test account: Google Ads > Tools > Account Manager > Create test account. You get a $5,000 simulated balance.',
-        type: "info",
-        link: {
-          label: "Google Ads Manager",
-          url: "https://ads.google.com/aw/accountmanager",
-        },
-        tip: "Test accounts simulate everything but cannot serve real ads. Perfect for development.",
-      },
-      {
-        id: "connect-google",
-        title: "Connect Your Google Account",
-        description:
-          "Click the button below to authorize via OAuth. You'll be redirected to Google, then back here.",
-        type: "action",
-        actionLabel: "Connect Google Ads",
-        actionUrl: "/api/oauth/google",
-      },
-      {
-        id: "google-customer-id",
-        title: "Enter Your Google Ads Customer ID",
-        description:
-          "Your Customer ID is the 10-digit number shown in the top-right of Google Ads (format: xxx-xxx-xxxx). This tells us which Ads account to push campaigns to.",
-        type: "account-config",
+          "Paste your service account JSON key contents and Google Ads Customer ID (10-digit number from the top-right of Google Ads, format: xxx-xxx-xxxx).",
+        type: "credentials",
         fields: [
+          {
+            key: "GOOGLE_SERVICE_ACCOUNT_KEY",
+            label: "Service Account JSON Key",
+            placeholder: '{"type":"service_account","project_id":"..."}',
+            secret: true,
+          },
           {
             key: "GOOGLE_ADS_CUSTOMER_ID",
             label: "Customer ID",
@@ -209,19 +196,18 @@ const platformWizards: PlatformWizard[] = [
             },
           },
         ],
-        tip: "If you have a test account under an MCC, use the test account's Customer ID (not the MCC ID).",
+        tip: "If you have a test account under an MCC, use the test account's Customer ID (not the MCC ID). Test accounts get a $5,000 simulated balance.",
       },
       {
         id: "verify-google",
         title: "Verify Connection",
         description:
-          "Let's verify everything is configured correctly.",
+          "Let's verify the service account can access your Google Ads account. If it fails:\n\n1. Check the service account email was invited in Google Ads > Access and security\n2. Verify the JSON key is complete (starts with { and ends with })\n3. Check the developer token from API Center\n4. Ensure the Customer ID matches your account",
         type: "verify",
       },
     ],
     verifyKeys: [
-      "GOOGLE_CLIENT_ID",
-      "GOOGLE_CLIENT_SECRET",
+      "GOOGLE_SERVICE_ACCOUNT_KEY",
       "GOOGLE_ADS_DEVELOPER_TOKEN",
     ],
   },
@@ -233,98 +219,21 @@ const platformWizards: PlatformWizard[] = [
     category: "ad-platform",
     steps: [
       {
-        id: "go-to-meta-dev",
-        title: "Go to Meta for Developers",
+        id: "meta-business-suite",
+        title: "Open Meta Business Settings",
         description:
-          "Open developers.facebook.com and log in with the Facebook account that owns or is admin of your business. If you don't have a developer account yet, click \"Get Started\" and follow the registration.",
+          "Go to Meta Business Suite and open Business Settings. You need admin access to the Business Account that owns your ad accounts.\n\nAll Meta Ads configuration (ad accounts, system users, tokens) happens here — NOT in the developer portal.",
         type: "info",
         link: {
-          label: "Meta for Developers",
-          url: "https://developers.facebook.com/",
+          label: "Meta Business Settings",
+          url: "https://business.facebook.com/settings/",
         },
-      },
-      {
-        id: "create-meta-app",
-        title: "Create a New App — App Details",
-        description:
-          "Click \"My Apps\" > \"Create App\". In the first step (App Details), enter your app name (e.g. \"Kalit Marketing\") and your contact email.",
-        type: "info",
-        link: {
-          label: "Create New App",
-          url: "https://developers.facebook.com/apps/creation/",
-        },
-      },
-      {
-        id: "meta-use-cases",
-        title: "Select Use Cases",
-        description:
-          "In the second step (Use Cases), you'll see a list of available APIs. Check the following:\n\n• \"Create and manage ads with the Marketing API\" — this is required for ad campaigns\n• Optionally: \"Authenticate and request data from users\" (Facebook Login) — for OAuth\n\nDo NOT select Gaming, WhatsApp, or Threads unless you need them. Click Next.",
-        type: "info",
-        tip: "The Marketing API use case is the most important one. It enables creating campaigns, ad sets, and ads programmatically.",
-      },
-      {
-        id: "meta-business-account",
-        title: "Associate a Business Account",
-        description:
-          "In the third step (Business), select your Meta Business Account (formerly Business Manager). If you don't have one, you'll be prompted to create it. This links your app to your business for ad account access and permissions. You must be an admin.",
-        type: "info",
-        link: {
-          label: "Meta Business Suite",
-          url: "https://business.facebook.com/",
-        },
-        warning: "You must be an admin of the Business Account to connect ad accounts and grant permissions.",
-      },
-      {
-        id: "meta-finalize-app",
-        title: "Review & Create the App",
-        description:
-          "Review the Requirements step (any prerequisites for your selected use cases), then complete the Overview to create the app. Once created, you'll land on the app dashboard.",
-        type: "info",
-      },
-      {
-        id: "meta-redirect",
-        title: "Configure OAuth Redirect URI",
-        description:
-          "Go to Facebook Login > Settings in the left sidebar (under \"Products\", not \"App Settings\"). Turn off \"Enforce HTTPS\" to allow localhost in development mode. Then under \"Valid OAuth Redirect URIs\", add this callback URL:",
-        type: "redirect",
-        code: "{ORIGIN}/api/oauth/meta/callback",
-        tip: "HTTP localhost only works while your app is in Development mode. For production, keep Enforce HTTPS on and use your real domain (e.g. https://marketing.kalit.ai/api/oauth/meta/callback).",
-      },
-      {
-        id: "meta-permissions",
-        title: "Understand Required Permissions",
-        description:
-          "The OAuth flow requests: ads_management (create/edit campaigns), ads_read (read performance), pages_manage_posts (publish to Pages), instagram_basic (IG account info), instagram_content_publish (post to IG). In development mode, app admins get all permissions without review.",
-        type: "info",
-        warning: "In development mode, only users listed as admins/developers/testers in your app's Roles settings can authorize. Add your team there.",
-      },
-      {
-        id: "meta-credentials",
-        title: "Enter Your App Credentials",
-        description:
-          "Go to App Settings > Basic. Copy your App ID (numeric) and App Secret (click \"Show\" to reveal). Paste them below.",
-        type: "credentials",
-        fields: [
-          {
-            key: "META_CLIENT_ID",
-            label: "App ID",
-            placeholder: "123456789012345",
-            secret: false,
-          },
-          {
-            key: "META_CLIENT_SECRET",
-            label: "App Secret",
-            placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            secret: true,
-          },
-        ],
-        warning: "Never share your App Secret publicly. It grants full access to your app.",
       },
       {
         id: "meta-ad-account",
-        title: "Create or Link an Ad Account",
+        title: "Link or Create an Ad Account",
         description:
-          "In Meta Business Suite > Business Settings > Ad Accounts: create a new ad account or link an existing one. Set your currency and timezone. The Ad Account ID (starts with \"act_\") is used to push campaigns.",
+          "In Business Settings:\n\n1. Left sidebar > Accounts > Ad Accounts\n2. Add an existing ad account or create a new one\n3. Set your currency and timezone\n4. Note the Ad Account ID (numeric, starts with \"act_\") — you'll need it in the next steps",
         type: "info",
         link: {
           label: "Business Settings — Ad Accounts",
@@ -332,22 +241,62 @@ const platformWizards: PlatformWizard[] = [
         },
       },
       {
-        id: "connect-meta",
-        title: "Connect Your Meta Account",
+        id: "meta-system-user",
+        title: "Create a System User",
         description:
-          "Click below to start the OAuth flow. You'll be redirected to Facebook to review permissions and select your ad account. After authorization, you'll be redirected back.",
-        type: "action",
-        actionLabel: "Connect Meta Ads",
-        actionUrl: "/api/oauth/meta",
+          "A System User is a service account that lets Kalit manage ads on your behalf. No OAuth or login flow needed — just a token.\n\nIn Business Settings:\n1. Left sidebar > Users > System Users\n2. Click \"Add\" to create a new system user\n3. Name it \"Kalit Marketing\" (or similar)\n4. Set role to \"Admin\"\n5. Click \"Create System User\"",
+        type: "info",
+        link: {
+          label: "Business Settings — System Users",
+          url: "https://business.facebook.com/settings/system-users",
+        },
+        warning: "You must be an admin of the Business Account to create system users.",
+      },
+      {
+        id: "meta-assign-assets",
+        title: "Assign Ad Account to System User",
+        description:
+          "Give the system user access to your ad account:\n\n1. Click on the system user you just created\n2. Click \"Assign Assets\"\n3. Select \"Ad Accounts\" on the left\n4. Find and select your ad account\n5. Toggle ON \"Full control\" (needed to create/edit campaigns)\n6. Click \"Save Changes\"",
+        type: "info",
+      },
+      {
+        id: "meta-generate-token",
+        title: "Generate Access Token",
+        description:
+          "Generate a long-lived token for the system user:\n\n1. On the System Users page, click your system user\n2. Click \"Generate New Token\"\n3. Select the app you created (or any app linked to this business)\n4. Select these permissions:\n   • ads_management\n   • ads_read\n   • business_management\n5. Click \"Generate Token\"\n6. Copy the token immediately — it won't be shown again",
+        type: "info",
+        warning: "Save the token somewhere secure. It grants full access to your ad accounts and never expires.",
+      },
+      {
+        id: "meta-credentials",
+        title: "Enter Your Credentials",
+        description:
+          "Paste the System User access token and your Ad Account ID below. You can find the Ad Account ID in Business Settings > Ad Accounts (starts with \"act_\").",
+        type: "credentials",
+        fields: [
+          {
+            key: "META_ACCESS_TOKEN",
+            label: "System User Access Token",
+            placeholder: "EAAxxxxxxxxxxxxxxxxxxxxxxxx...",
+            secret: true,
+          },
+          {
+            key: "META_AD_ACCOUNT_ID",
+            label: "Ad Account ID",
+            placeholder: "act_123456789",
+            secret: false,
+          },
+        ],
+        tip: "The System User token never expires. No OAuth flow or HTTPS setup needed — Kalit connects directly using this token.",
       },
       {
         id: "verify-meta",
         title: "Verify Connection",
-        description: "Check that Meta appears with a green status and your account name. If it fails: 1) Verify App ID/Secret are correct, 2) Redirect URI matches exactly, 3) Your Facebook account has admin access to the Business Account.",
+        description: "Let's verify the token works and can access your ad account. If it fails:\n\n1. Token invalid — regenerate it from Business Settings > System Users\n2. No ad account access — make sure you assigned the ad account to the system user with Full Control\n3. Wrong Ad Account ID — check it starts with \"act_\" and matches the account in Business Settings",
         type: "verify",
       },
     ],
-    verifyKeys: ["META_CLIENT_ID", "META_CLIENT_SECRET"],
+    verifyKeys: ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"],
   },
   {
     id: "tiktok",
@@ -358,8 +307,8 @@ const platformWizards: PlatformWizard[] = [
     steps: [
       {
         id: "tiktok-business",
-        title: "Go to TikTok Business Center",
-        description: "Open business.tiktok.com and sign in. If you don't have an account, click \"Create an account\" — you'll need a business name, industry, and timezone.",
+        title: "Open TikTok Business Center",
+        description: "Go to business.tiktok.com and log in. You need admin access to manage ad accounts and generate API tokens.",
         type: "info",
         link: {
           label: "TikTok Business Center",
@@ -368,65 +317,57 @@ const platformWizards: PlatformWizard[] = [
       },
       {
         id: "tiktok-ad-account",
-        title: "Create an Ad Account",
-        description: "In TikTok Business Center, go to Assets > Ad Accounts and create one. Set your currency and timezone. You need an active ad account to run campaigns through the API.",
+        title: "Create or Link an Ad Account",
+        description: "In TikTok Business Center:\n\n1. Go to Assets > Ad Accounts\n2. Create a new ad account or link an existing one\n3. Set your currency and timezone\n4. Note the Advertiser ID (numeric)",
         type: "info",
-        tip: "For testing, TikTok provides a sandbox environment. You can request sandbox access when creating your developer app.",
+        tip: "For testing, TikTok provides a sandbox environment via the Marketing API portal.",
       },
       {
         id: "tiktok-dev-app",
         title: "Register a Developer App",
-        description: "Go to the TikTok Marketing API portal. Click \"My Apps\" > \"Create App\". Select Marketing API, choose scopes: Ad Management, Creative Management. Submit for review — sandbox access is usually granted quickly.",
+        description: "Go to the TikTok Marketing API portal:\n\n1. Click \"My Apps\" > \"Create App\"\n2. Select Marketing API\n3. Choose scopes: Ad Management, Creative Management\n4. Submit for review — sandbox access is usually granted quickly",
         type: "info",
         link: {
           label: "TikTok Marketing API Portal",
           url: "https://business-api.tiktok.com/portal/apps",
         },
-        warning: "TikTok requires app review before production API access. Sandbox mode is available immediately for testing.",
+        warning: "TikTok requires app review before production API access. Sandbox mode is available immediately.",
       },
       {
-        id: "tiktok-redirect",
-        title: "Configure OAuth Redirect URI",
-        description: "In your app settings, add the callback URL:",
-        type: "redirect",
-        code: "{ORIGIN}/api/oauth/tiktok/callback",
+        id: "tiktok-generate-token",
+        title: "Generate a Long-Lived Access Token",
+        description: "TikTok advertiser access tokens never expire — no OAuth redirect needed.\n\n1. In the Marketing API portal, go to your app\n2. Click \"Get Authorization\" to connect your advertiser account\n3. Complete the one-time authorization\n4. Copy the Access Token — it's permanent unless you revoke it",
+        type: "info",
+        tip: "Unlike OAuth tokens that expire, TikTok advertiser tokens are permanent. You only need to do this once.",
       },
       {
         id: "tiktok-credentials",
         title: "Enter Your Credentials",
-        description: "In the app dashboard, find your App ID and App Secret. Copy both values and paste them below.",
+        description: "Paste your Access Token and Advertiser ID below.",
         type: "credentials",
         fields: [
           {
-            key: "TIKTOK_CLIENT_ID",
-            label: "App ID",
-            placeholder: "xxxxxxxxxx",
-            secret: false,
-          },
-          {
-            key: "TIKTOK_CLIENT_SECRET",
-            label: "App Secret",
+            key: "TIKTOK_ACCESS_TOKEN",
+            label: "Access Token",
             placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
             secret: true,
+          },
+          {
+            key: "TIKTOK_ADVERTISER_ID",
+            label: "Advertiser ID",
+            placeholder: "1234567890123",
+            secret: false,
           },
         ],
       },
       {
-        id: "connect-tiktok",
-        title: "Connect Your TikTok Account",
-        description: "Click below to start the OAuth flow. Grant access to your ad account on TikTok's authorization page.",
-        type: "action",
-        actionLabel: "Connect TikTok",
-        actionUrl: "/api/oauth/tiktok",
-      },
-      {
         id: "verify-tiktok",
         title: "Verify Connection",
-        description: "Check that TikTok appears with a green status. If it fails, ensure your app has been approved and the redirect URI matches exactly.",
+        description: "Check that TikTok appears with a green status. If it fails:\n\n1. Token invalid — regenerate from the Marketing API portal\n2. Wrong Advertiser ID — check in Business Center > Assets > Ad Accounts\n3. App not approved — check review status in the portal",
         type: "verify",
       },
     ],
-    verifyKeys: ["TIKTOK_CLIENT_ID", "TIKTOK_CLIENT_SECRET"],
+    verifyKeys: ["TIKTOK_ACCESS_TOKEN", "TIKTOK_ADVERTISER_ID"],
   },
   {
     id: "x",
@@ -436,81 +377,35 @@ const platformWizards: PlatformWizard[] = [
     category: "ad-platform",
     steps: [
       {
-        id: "x-console",
-        title: "Go to the X Developer Console",
-        description: "Open console.x.com and sign in with the X account you want to use for advertising. If you don't have a developer account yet, you'll be prompted to sign up.",
+        id: "x-ads-account",
+        title: "Set Up Your X Ads Account",
+        description: "Go to ads.x.com and set up your advertising account with billing info. You need an active ads account to create campaigns.",
         type: "info",
         link: {
-          label: "X Developer Console",
-          url: "https://console.x.com/",
-        },
-        tip: "X uses a pay-per-use credit model. You can buy credits or enable auto-recharge from the Billing section.",
-      },
-      {
-        id: "x-create-app",
-        title: "Create an App",
-        description: "In the console, click \"Apps\" in the left sidebar, then \"Create App\". Enter a name (e.g. \"Kalit Marketing\") and save. You'll land on the app detail page showing a Bearer Token and OAuth 1.0 Keys. Ignore those for now — we need OAuth 2.0.",
-        type: "info",
-      },
-      {
-        id: "x-oauth-setup",
-        title: "Set Up User Authentication (OAuth 2.0)",
-        description: "On your app's detail page, scroll to \"User authentication settings\" and click \"Set up\". You'll go through 3 screens:\n\n1. App permissions → select \"Read and write\"\n2. Type of App → select \"Web App, Automated App or Bot\"\n3. App info — two required fields (copy each below). The other fields (Organization, Terms of Service, Privacy Policy) are optional.\n\nClick Save.",
-        type: "redirect",
-        codes: [
-          { label: "Callback URI / Redirect URL (required)", value: "{ORIGIN}/api/oauth/x/callback" },
-          { label: "Website URL (required)", value: "https://kalit.ai" },
-        ],
-        tip: "The Website URL is informational only — it doesn't affect the OAuth flow. Only the Callback URI must match exactly.",
-      },
-      {
-        id: "x-credentials",
-        title: "Enter Your OAuth 2.0 Credentials",
-        description: "After saving User authentication settings, your OAuth 2.0 Client ID and Client Secret are generated. Copy them immediately — the Client Secret is only shown once.\n\nThey appear separately from the OAuth 1.0 keys (Consumer Key / Access Token) that were shown when you first created the app. Make sure you're copying from the OAuth 2.0 section.",
-        type: "credentials",
-        fields: [
-          {
-            key: "X_CLIENT_ID",
-            label: "OAuth 2.0 Client ID",
-            placeholder: "xxxxxxxxxxxxxxxxxxxxxxxx",
-            secret: false,
-          },
-          {
-            key: "X_CLIENT_SECRET",
-            label: "OAuth 2.0 Client Secret",
-            placeholder: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-            secret: true,
-          },
-        ],
-        warning: "The OAuth 2.0 Client ID & Secret are NOT the same as the Consumer Key & Access Token shown at the top of the page. Those are OAuth 1.0a credentials.",
-      },
-      {
-        id: "x-ads-access",
-        title: "Request Ads API Access",
-        description: "To run paid campaigns (promoted tweets, ad management, audience targeting), you need Ads API access:\n\n1. Go to ads.x.com and set up your advertising account with billing info\n2. Then go to ads.x.com/help and submit an Ads API access application\n3. Choose \"Standard Access\" for full campaign management (analytics, creatives, audiences)\n4. After approval, regenerate your user access tokens in the Developer Console\n\nApproval may take a few days. You can proceed to connect your account now — the OAuth connection works independently from Ads API access.",
-        type: "info",
-        link: {
-          label: "X Ads",
+          label: "X Ads Manager",
           url: "https://ads.x.com/",
         },
-        tip: "\"Standard Access\" is what you need for full campaign management. \"Conversion Only\" is limited to tracking only.",
       },
       {
-        id: "connect-x",
-        title: "Connect Your X Account",
-        description: "Click below to start the OAuth flow. You'll be redirected to X to authorize the app. After approval, you'll be redirected back with a success message.",
-        type: "action",
-        actionLabel: "Connect X",
-        actionUrl: "/api/oauth/x",
+        id: "x-extension",
+        title: "Install the Kalit Extension",
+        description: "X Ads doesn't provide API access to third parties. Kalit deploys campaigns using a browser extension that automates the X Ads Manager.\n\n1. Download the extension ZIP below\n2. Extract the ZIP to a folder\n3. Open Chrome → chrome://extensions\n4. Enable \"Developer mode\" (top right toggle)\n5. Click \"Load unpacked\" and select the extracted folder\n6. The Kalit icon should appear in your toolbar",
+        type: "info",
+        link: {
+          label: "Download Kalit Extension",
+          url: "/api/extension/download",
+        },
+        tip: "No API keys or OAuth needed for X. The extension fills campaign forms automatically — you review and submit.",
       },
       {
         id: "verify-x",
-        title: "Verify Connection",
-        description: "Check that X appears with a green status and your @handle. If it fails: 1) Callback URL must match exactly (no trailing slash mismatch), 2) Use OAuth 2.0 credentials (not API Key/Secret), 3) Ensure OAuth 2.0 is enabled in your app settings.",
+        title: "Verify Extension",
+        description: "Click the Kalit extension icon in your browser toolbar — it should show \"Status: Ready\". Then create a campaign in the dashboard and click \"Deploy to X\".\n\nIf the icon doesn't appear, check chrome://extensions and make sure the extension is enabled.",
         type: "verify",
       },
     ],
-    verifyKeys: ["X_CLIENT_ID", "X_CLIENT_SECRET"],
+    verifyKeys: [],
+    extensionRequired: true,
   },
   {
     id: "linkedin",
@@ -520,40 +415,35 @@ const platformWizards: PlatformWizard[] = [
     category: "ad-platform",
     steps: [
       {
-        id: "linkedin-portal",
-        title: "Go to LinkedIn Developer Portal",
-        description: "Open linkedin.com/developers and sign in with the LinkedIn account that manages your company page. Click \"Create App\".",
+        id: "linkedin-app",
+        title: "Create a LinkedIn App",
+        description: "Go to linkedin.com/developers and sign in:\n\n1. Click \"Create App\"\n2. App name: \"Kalit Marketing\"\n3. LinkedIn Page: select your company page (required)\n4. Add a Privacy Policy URL and logo\n5. Click Create",
         type: "info",
         link: {
           label: "LinkedIn Developers",
           url: "https://www.linkedin.com/developers/apps/new",
         },
-      },
-      {
-        id: "linkedin-app",
-        title: "Create a LinkedIn App",
-        description: "Fill in: App name (e.g. \"Kalit Marketing\"), LinkedIn Page (select your company — required), Privacy policy URL, and App logo.",
-        type: "info",
-        tip: "You must be an admin of the LinkedIn Company Page to associate it with the app.",
+        warning: "You must be an admin of the LinkedIn Company Page to create the app.",
       },
       {
         id: "linkedin-marketing",
-        title: "Request Marketing Developer Platform Access",
-        description: "In your app dashboard, go to the \"Products\" tab. Find \"Marketing Developer Platform\" and click \"Request access\". This grants the ads management scopes (r_ads, rw_ads). Approval can take a few days.",
+        title: "Request Marketing API Access",
+        description: "In your app dashboard:\n\n1. Go to the \"Products\" tab\n2. Find \"Marketing Developer Platform\"\n3. Click \"Request access\"\n\nThis grants ads management scopes (r_ads, rw_ads). Approval can take a few days.",
         type: "info",
-        warning: "Without Marketing Developer Platform access, you can only do organic posting. Ads management requires product approval.",
+        warning: "Without Marketing Developer Platform approval, you can only do organic posting. Ads management requires it.",
       },
       {
         id: "linkedin-redirect",
-        title: "Configure OAuth Redirect URL",
-        description: "Go to the \"Auth\" tab. Under \"Authorized redirect URLs\", add:",
+        title: "Configure Redirect URL",
+        description: "Go to the \"Auth\" tab in your app dashboard. Under \"Authorized redirect URLs\", add the URL below. LinkedIn requires OAuth for ad management — there's no service account option.",
         type: "redirect",
         code: "{ORIGIN}/api/oauth/linkedin/callback",
+        tip: "LinkedIn supports http://localhost for development — no HTTPS tunnel needed.",
       },
       {
         id: "linkedin-credentials",
         title: "Enter Your Credentials",
-        description: "In the \"Auth\" tab, copy your Client ID and Client Secret (click the eye icon to reveal). Paste them below.",
+        description: "In the \"Auth\" tab, copy your Client ID and Client Secret (click the eye icon to reveal).",
         type: "credentials",
         fields: [
           {
@@ -571,19 +461,9 @@ const platformWizards: PlatformWizard[] = [
         ],
       },
       {
-        id: "linkedin-campaign-manager",
-        title: "Set Up LinkedIn Campaign Manager",
-        description: "Go to linkedin.com/campaignmanager to create or access your Campaign Manager account. Set up billing to run paid sponsored content.",
-        type: "info",
-        link: {
-          label: "LinkedIn Campaign Manager",
-          url: "https://www.linkedin.com/campaignmanager/",
-        },
-      },
-      {
         id: "connect-linkedin",
         title: "Connect Your LinkedIn Account",
-        description: "Click below to authorize. You'll be redirected to LinkedIn's consent screen.",
+        description: "Click below to authorize. You'll be redirected to LinkedIn to grant permissions, then back here. Make sure you have a Campaign Manager account at linkedin.com/campaignmanager with billing set up.",
         type: "action",
         actionLabel: "Connect LinkedIn",
         actionUrl: "/api/oauth/linkedin",
@@ -591,7 +471,7 @@ const platformWizards: PlatformWizard[] = [
       {
         id: "verify-linkedin",
         title: "Verify Connection",
-        description: "Check that LinkedIn appears with a green status. If it fails: 1) Redirect URL matches exactly, 2) Marketing Developer Platform is approved, 3) You're an admin of the associated Company Page.",
+        description: "Check that LinkedIn appears with a green status. If it fails:\n\n1. Redirect URL mismatch — check the Auth tab\n2. Marketing Developer Platform not approved yet\n3. Not an admin of the Company Page\n4. No Campaign Manager account at linkedin.com/campaignmanager",
         type: "verify",
       },
     ],
@@ -898,8 +778,8 @@ function WizardStepContent({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-400 leading-relaxed">
-        {step.description}
+      <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-line">
+        {resolveOrigin(step.description)}
       </p>
 
       {step.code && (
@@ -1164,7 +1044,7 @@ function WizardStepContent({
       {step.warning && (
         <div className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[11px] mt-2">
           <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
-          <p>{step.warning}</p>
+          <p>{resolveOrigin(step.warning)}</p>
         </div>
       )}
 
@@ -1172,7 +1052,7 @@ function WizardStepContent({
       {step.tip && (
         <div className="flex items-start gap-2 p-2 bg-accent/5 border border-accent/20 text-accent/80 text-[11px] mt-2">
           <Zap className="h-3 w-3 shrink-0 mt-0.5" />
-          <p>{step.tip}</p>
+          <p>{resolveOrigin(step.tip)}</p>
         </div>
       )}
     </div>
@@ -1262,6 +1142,34 @@ export function SetupWizard() {
   async function handleVerify() {
     setVerifying(true);
     try {
+      const platform = platformWizards.find((p) => p.id === activePlatform);
+
+      // For extension-based platforms (X), check extension instead of API keys
+      if (platform?.extensionRequired) {
+        // The bridge sets data-kalit-extension="true" on <html> when loaded
+        let extensionDetected = document.documentElement.getAttribute("data-kalit-extension") === "true";
+        // Fallback: listen for the event in case it fires late
+        if (!extensionDetected) {
+          extensionDetected = await new Promise<boolean>((resolve) => {
+            const handler = () => { resolve(true); window.removeEventListener("kalit-extension-ready", handler); };
+            window.addEventListener("kalit-extension-ready", handler);
+            setTimeout(() => { resolve(false); window.removeEventListener("kalit-extension-ready", handler); }, 1500);
+          });
+        }
+        setVerificationResults((prev) => ({
+          ...prev,
+          [activePlatform]: {
+            keysConfigured: { "Kalit Extension": extensionDetected },
+            allKeysConfigured: extensionDetected,
+            oauthRequired: false,
+            oauthConnected: false,
+            accountName: null,
+            ready: extensionDetected,
+          },
+        }));
+        return;
+      }
+
       const res = await fetch("/api/platform-keys/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

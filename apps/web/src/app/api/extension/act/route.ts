@@ -105,6 +105,103 @@ export async function POST(req: NextRequest) {
   let system: string;
   let prompt: string;
 
+  // EXTRACT MODE — AI-powered campaign data extraction from ad platform pages
+  if (mode === "extract") {
+    const pageText = snapshot.pageText || "";
+
+    system = `You extract campaign performance data from ad platform pages.
+Return ONLY a JSON object with this exact structure:
+{
+  "campaigns": [
+    {
+      "name": "Campaign Name",
+      "status": "active",
+      "impressions": 12345,
+      "clicks": 678,
+      "spend": 123.45,
+      "ctr": 5.5,
+      "cpc": 0.18,
+      "conversions": 23,
+      "cpa": 5.37,
+      "roas": 2.1,
+      "engagements": 456,
+      "followers": 12,
+      "retweets": 34,
+      "likes": 56,
+      "replies": 7,
+      "videoViews": 890,
+      "reach": 5000,
+      "frequency": 1.5
+    }
+  ],
+  "summary": {
+    "impressions": 50000,
+    "clicks": 2000,
+    "spend": 500.00
+  }
+}
+
+Rules:
+- Extract EVERY campaign visible in the page text
+- Use raw numbers only (convert "$1,234" to 1234, "5.5%" to 5.5, "12.5K" to 12500, "3.2M" to 3200000)
+- Omit metrics that are not available (don't use null or 0 for missing data)
+- "summary" = account-level totals if visible at the top of the page
+- "status" should be: active, paused, completed, draft, or removed
+- Return ONLY raw JSON. No markdown fences, no explanation.`;
+
+    prompt = `PAGE URL: ${snapshot.url}\nPLATFORM: ${platform || "unknown"}\n\nPAGE CONTENT:\n${pageText.slice(0, 14000)}\n\nExtract all campaign performance data. JSON only.`;
+
+    try {
+      const response = await llmComplete({
+        model: "claude-sonnet-4-6",
+        system,
+        prompt,
+        maxTokens: 4096,
+      });
+
+      const elapsed = Date.now() - start;
+      const responseText = response.text;
+
+      // Parse the JSON response
+      let result: { campaigns?: unknown[]; summary?: Record<string, unknown> } = {};
+      try {
+        const cleaned = responseText.trim().replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
+        result = parseJSON<{ campaigns?: unknown[]; summary?: Record<string, unknown> }>(cleaned) || {};
+      } catch {
+        try {
+          result = parseJSON<{ campaigns?: unknown[]; summary?: Record<string, unknown> }>(responseText) || {};
+        } catch {
+          result = { campaigns: [], summary: {} };
+        }
+      }
+
+      await appendInteraction({
+        step: 0,
+        mode: "extract",
+        timestamp: new Date().toISOString(),
+        elapsed,
+        tokens: response.usage?.output_tokens || 0,
+        page: snapshot.url,
+        campaignsFound: (result.campaigns || []).length,
+        summaryKeys: Object.keys(result.summary || {}).length,
+      });
+
+      return NextResponse.json({
+        campaigns: result.campaigns || [],
+        summary: result.summary || {},
+        elapsed,
+        mode: "extract",
+      });
+    } catch (err) {
+      console.error("[extension/act] Extract error:", err);
+      return NextResponse.json({
+        campaigns: [],
+        summary: {},
+        error: err instanceof Error ? err.message : "AI extraction failed",
+      }, { status: 500 });
+    }
+  }
+
   if (mode === "user_correction") {
     // User typed a correction in the overlay — process it
     const userMessage = body.userMessage || "";
@@ -193,7 +290,7 @@ COMMANDS:
 {"cmd":"select","selector":"exact-data-test-id-v2","value":"one search term"}
 {"cmd":"click","selector":"exact-data-test-id-v2"}
 {"cmd":"clearTokens","selector":"field-selector"} — removes all existing tokens/chips from a field
-{"cmd":"clickOption","value":"visible text of the option to click"} — clicks a visible option by text
+{"cmd":"clickOption","value":"visible text of the option to click"} — clicks a visible option by text (ONLY for conversion event dropdown, NOT for locations/keywords/interests/lookalikes — those use "select" which handles the dropdown automatically)
 
 RULES:
 1. Use EXACT data-test-id-v2 selectors from platform knowledge

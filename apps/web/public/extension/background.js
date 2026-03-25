@@ -82,6 +82,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true; // async response
     }
 
+    case "AI_CRAWL": {
+      // Proxy the crawl AI request through the background worker (bypasses CORS)
+      const { payload: crawlPayload } = message;
+
+      fetch(`${apiOrigin}/api/extension/crawl`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(crawlPayload),
+      })
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then((text) => {
+              throw new Error(`API ${res.status}: ${text.slice(0, 200)}`);
+            });
+          }
+          return res.json();
+        })
+        .then((data) => sendResponse(data))
+        .catch((err) => sendResponse({ error: err.message }));
+
+      return true; // async response
+    }
+
     case "KALIT_DEPLOY": {
       // Received campaign data from the Kalit dashboard bridge
       pendingDeployment = {
@@ -136,6 +159,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
       });
       return true; // async response
+    }
+
+    case "DEPLOY_CONFIRMED": {
+      // User confirmed the campaign is live on the ad platform
+      chrome.tabs.query(
+        { url: ["http://localhost:3002/*", "https://marketing.kalit.ai/*"] },
+        (tabs) => {
+          for (const tab of tabs) {
+            chrome.tabs.sendMessage(tab.id, {
+              type: "DEPLOY_CONFIRMED",
+              platform: message.platform,
+            });
+          }
+        }
+      );
+      sendResponse({ status: "ok" });
+      break;
     }
 
     case "DEPLOY_COMPLETE": {

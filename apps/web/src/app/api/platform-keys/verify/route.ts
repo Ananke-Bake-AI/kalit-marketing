@@ -20,37 +20,31 @@ interface PlatformRequirement {
 
 const platformRequirements: Record<string, PlatformRequirement> = {
   google: {
-    keys: ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_ADS_DEVELOPER_TOKEN"],
+    keys: ["GOOGLE_SERVICE_ACCOUNT_KEY", "GOOGLE_ADS_DEVELOPER_TOKEN", "GOOGLE_ADS_CUSTOMER_ID"],
     labels: {
-      GOOGLE_CLIENT_ID: "Client ID",
-      GOOGLE_CLIENT_SECRET: "Client Secret",
+      GOOGLE_SERVICE_ACCOUNT_KEY: "Service Account Key",
       GOOGLE_ADS_DEVELOPER_TOKEN: "Developer Token",
+      GOOGLE_ADS_CUSTOMER_ID: "Customer ID",
     },
-    oauthRequired: true,
   },
   meta: {
-    keys: ["META_CLIENT_ID", "META_CLIENT_SECRET"],
+    keys: ["META_ACCESS_TOKEN", "META_AD_ACCOUNT_ID"],
     labels: {
-      META_CLIENT_ID: "App ID",
-      META_CLIENT_SECRET: "App Secret",
+      META_ACCESS_TOKEN: "System User Token",
+      META_AD_ACCOUNT_ID: "Ad Account ID",
     },
-    oauthRequired: true,
   },
   tiktok: {
-    keys: ["TIKTOK_CLIENT_ID", "TIKTOK_CLIENT_SECRET"],
+    keys: ["TIKTOK_ACCESS_TOKEN", "TIKTOK_ADVERTISER_ID"],
     labels: {
-      TIKTOK_CLIENT_ID: "App ID",
-      TIKTOK_CLIENT_SECRET: "App Secret",
+      TIKTOK_ACCESS_TOKEN: "Access Token",
+      TIKTOK_ADVERTISER_ID: "Advertiser ID",
     },
-    oauthRequired: true,
   },
   x: {
-    keys: ["X_CLIENT_ID", "X_CLIENT_SECRET"],
-    labels: {
-      X_CLIENT_ID: "Client ID",
-      X_CLIENT_SECRET: "Client Secret",
-    },
-    oauthRequired: true,
+    keys: [],
+    labels: {},
+    // X uses browser extension — no API keys or OAuth needed
   },
   linkedin: {
     keys: ["LINKEDIN_CLIENT_ID", "LINKEDIN_CLIENT_SECRET"],
@@ -58,7 +52,7 @@ const platformRequirements: Record<string, PlatformRequirement> = {
       LINKEDIN_CLIENT_ID: "Client ID",
       LINKEDIN_CLIENT_SECRET: "Client Secret",
     },
-    oauthRequired: true,
+    oauthRequired: true, // LinkedIn is the only platform that requires OAuth
   },
   anthropic: {
     keys: ["ANTHROPIC_API_KEY"],

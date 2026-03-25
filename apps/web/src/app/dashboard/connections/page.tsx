@@ -164,103 +164,64 @@ const guides: Guide[] = [
       "Connect Meta Business to run paid social campaigns on Facebook and Instagram.",
     icon: Megaphone,
     category: "Ad Platforms",
-    difficulty: "intermediate",
-    timeEstimate: "20-30 min",
+    difficulty: "beginner",
+    timeEstimate: "10 min",
     steps: [
       {
-        title: "Go to Meta for Developers",
+        title: "Open Meta Business Settings",
         content:
-          "Open developers.facebook.com and log in with the Facebook account that owns (or is admin of) your business. If you don't have a Meta developer account yet, click \"Get Started\" and follow the registration steps.",
+          "Go to Meta Business Suite and open Business Settings. You need admin access to the Business Account that owns your ad accounts.\n\nAll configuration (ad accounts, system users, access tokens) happens here.",
         link: {
-          label: "Meta for Developers",
-          url: "https://developers.facebook.com/",
+          label: "Meta Business Settings",
+          url: "https://business.facebook.com/settings/",
         },
       },
       {
-        title: "Create a New App — App Details",
+        title: "Link or Create an Ad Account",
         content:
-          "Click \"My Apps\" in the top-right, then \"Create App\". In the first step (App Details), enter your app name (e.g. \"Kalit Marketing\") and your contact email. Click Next.",
-        link: {
-          label: "Create a New App",
-          url: "https://developers.facebook.com/apps/creation/",
-        },
-      },
-      {
-        title: "Select Use Cases",
-        content:
-          "In the second step (Use Cases), you'll see a list of available APIs with checkboxes. Select:\n\n• \"Create and manage ads with the Marketing API\" — required for ad campaigns, ad sets, performance data\n• Optionally: \"Authenticate and request data from users\" (Facebook Login) — for the OAuth login flow\n\nDo NOT select Gaming, WhatsApp, Threads, or other unrelated use cases. Click Next.",
-        tip: "The Marketing API use case is the most important one. It enables creating campaigns, ad sets, and ads programmatically. If you also need Instagram publishing, the Marketing API covers it.",
-      },
-      {
-        title: "Associate a Business Account",
-        content:
-          "In the third step (Business), select your Meta Business Account (formerly Business Manager). If you don't have one, you'll be prompted to create it at business.facebook.com. This links your app to your business for ad account access and permissions.",
-        link: {
-          label: "Meta Business Suite",
-          url: "https://business.facebook.com/",
-        },
-        warning: "You must be an admin of the Business Account to connect ad accounts and grant permissions to your app.",
-      },
-      {
-        title: "Review & Create the App",
-        content:
-          "Review the Requirements step (any prerequisites for your selected use cases), then complete the Overview to finalize. Once created, you'll land on the app dashboard where you can configure settings.",
-      },
-      {
-        title: "Configure Facebook Login — OAuth Redirect URI",
-        content:
-          "Make sure the Facebook Login product is added to your app (Add Product > Facebook Login). Then go to Facebook Login > Settings in the left sidebar (under \"Products\"). Turn off \"Enforce HTTPS\" to allow localhost during development. Under \"Valid OAuth Redirect URIs\", add your callback URL:",
-        code: "{ORIGIN}/api/oauth/meta/callback",
-        tip: "HTTP localhost only works while your app is in Development mode with Enforce HTTPS turned off. For production, keep HTTPS enforced and use your real domain (e.g. https://marketing.kalit.ai/api/oauth/meta/callback). You can add multiple URIs.",
-      },
-      {
-        title: "Configure App Permissions (Scopes)",
-        content:
-          "The OAuth flow will request these permissions automatically:\n\n• ads_management — create/edit/pause campaigns, ad sets, and ads\n• ads_read — read campaign performance and reporting data\n• pages_manage_posts — publish organic posts on connected Pages\n• instagram_basic — access basic Instagram account info\n• instagram_content_publish — publish content to Instagram\n\nIn development mode, app admins and developers get all permissions without review. For production, you'll need to submit each permission for App Review.",
-        warning: "If your app is in \"Development\" mode, only users listed as admins/developers/testers in the app's Roles settings can authorize. Add your team members there.",
-      },
-      {
-        title: "Get Your App ID and App Secret",
-        content:
-          "Go to App Settings > Basic in the left sidebar. You'll find:\n\n• App ID — the public identifier (numeric, e.g. 123456789012345)\n• App Secret — click \"Show\" and confirm your password to reveal it\n\nCopy both values — you'll need them in the next step.",
-        link: {
-          label: "App Settings > Basic",
-          url: "https://developers.facebook.com/apps/",
-        },
-        warning: "Never share your App Secret publicly. It grants full access to your app.",
-      },
-      {
-        title: "Create or Link an Ad Account",
-        content:
-          "You need a Meta Ad Account to run campaigns. In Meta Business Suite, go to Business Settings > Ad Accounts:\n\n• If you already have one: make sure it's linked to your Business Account\n• To create a new one: Click \"Add\" > \"Create a new ad account\", set your currency and timezone\n• For testing: You can create a sandbox ad account under Business Settings > Ad Accounts\n\nNote: the Ad Account ID (starts with \"act_\") will be used by the adapter to push campaigns.",
+          "In Business Settings:\n\n1. Left sidebar > Accounts > Ad Accounts\n2. Add an existing ad account or create a new one\n3. Set your currency and timezone\n4. Note the Ad Account ID (starts with \"act_\")",
         link: {
           label: "Business Settings — Ad Accounts",
           url: "https://business.facebook.com/settings/ad-accounts",
         },
-        tip: "You can connect multiple ad accounts later. The initial OAuth flow will let you select which account to use.",
+      },
+      {
+        title: "Create a System User",
+        content:
+          "A System User is a service account that lets Kalit manage ads on your behalf. No OAuth or login redirect needed — just a long-lived token.\n\n1. Left sidebar > Users > System Users\n2. Click \"Add\" to create a new system user\n3. Name it \"Kalit Marketing\"\n4. Set role to \"Admin\"\n5. Click \"Create System User\"",
+        link: {
+          label: "Business Settings — System Users",
+          url: "https://business.facebook.com/settings/system-users",
+        },
+        warning: "You must be an admin of the Business Account to create system users.",
+      },
+      {
+        title: "Assign Ad Account to System User",
+        content:
+          "Give the system user access to your ad account:\n\n1. Click on the system user you just created\n2. Click \"Assign Assets\"\n3. Select \"Ad Accounts\" on the left\n4. Find and select your ad account\n5. Toggle ON \"Full control\" (needed to create/edit campaigns)\n6. Click \"Save Changes\"",
+      },
+      {
+        title: "Generate Access Token",
+        content:
+          "Generate a long-lived token for the system user:\n\n1. On the System Users page, click your system user\n2. Click \"Generate New Token\"\n3. Select your app (if prompted)\n4. Select permissions: ads_management, ads_read, business_management\n5. Click \"Generate Token\"\n6. Copy the token immediately — it won't be shown again",
+        warning: "Save the token somewhere secure. It never expires and grants full access to your ad accounts.",
       },
       {
         title: "Add Your Credentials to Kalit",
         content:
-          "Go to Settings in the Kalit Marketing dashboard and paste your App ID and App Secret in the Meta section. Or add them to your .env file:",
-        code: 'META_CLIENT_ID="your-app-id"\nMETA_CLIENT_SECRET="your-app-secret"',
-        tip: "Using the dashboard Settings page is recommended — credentials are stored securely on your server and you don't need to restart the app.",
-      },
-      {
-        title: "Connect Your Meta Account",
-        content:
-          "Go to Settings > Connected Platforms (or the onboarding wizard) and click \"Connect\" on Meta. You'll be redirected to Facebook's authorization screen. Log in, review the permissions, and click \"Continue\". After authorization, you'll be redirected back to the dashboard with a success message.",
+          "Paste the System User access token and Ad Account ID below:",
+        code: 'META_ACCESS_TOKEN="EAAxxxxxxx..."\nMETA_AD_ACCOUNT_ID="act_123456789"',
+        tip: "The System User token never expires. No OAuth, no HTTPS redirect, no ngrok needed. Kalit connects directly using this token.",
       },
       {
         title: "Verify the Connection",
         content:
-          "After connecting, check Settings > Connected Platforms — Meta should appear with a green status dot and your account name. You can now create campaigns targeting Facebook and Instagram audiences directly from the Growth Console.",
-        tip: "If the connection fails, check: 1) App ID/Secret are correct, 2) Redirect URI matches exactly, 3) Your Facebook account has admin access to the Business Account and Ad Account.",
+          "Check that Meta appears with a green status. If it fails:\n\n1. Token invalid — regenerate from Business Settings > System Users\n2. No access — assign the ad account to the system user with Full Control\n3. Wrong Ad Account ID — must start with \"act_\"",
       },
     ],
     envVars: [
-      { key: "META_CLIENT_ID", description: "Meta App ID from App Settings > Basic" },
-      { key: "META_CLIENT_SECRET", description: "Meta App Secret from App Settings > Basic" },
+      { key: "META_ACCESS_TOKEN", description: "System User access token from Business Settings" },
+      { key: "META_AD_ACCOUNT_ID", description: "Ad Account ID (starts with act_)" },
     ],
   },
   {
@@ -829,10 +790,31 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-/** Replace {ORIGIN} placeholders with the current browser origin */
+/** Replace {ORIGIN} and {IS_LOCALHOST?trueText|falseText} placeholders */
 function resolveOrigin(text: string): string {
   if (typeof window === "undefined") return text;
-  return text.replace(/\{ORIGIN\}/g, window.location.origin);
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  let resolved = text;
+  // Parse {IS_LOCALHOST?trueContent|falseContent} with nested {} support
+  while (resolved.includes("{IS_LOCALHOST?")) {
+    const start = resolved.indexOf("{IS_LOCALHOST?");
+    const pipeIdx = resolved.indexOf("|", start + 14);
+    let depth = 0;
+    let endIdx = -1;
+    for (let i = pipeIdx + 1; i < resolved.length; i++) {
+      if (resolved[i] === "{") depth++;
+      else if (resolved[i] === "}") {
+        if (depth === 0) { endIdx = i; break; }
+        depth--;
+      }
+    }
+    if (pipeIdx === -1 || endIdx === -1) break;
+    const ifTrue = resolved.slice(start + 14, pipeIdx);
+    const ifFalse = resolved.slice(pipeIdx + 1, endIdx);
+    resolved = resolved.slice(0, start) + (isLocalhost ? ifTrue : ifFalse) + resolved.slice(endIdx + 1);
+  }
+  resolved = resolved.replace(/\{ORIGIN\}/g, window.location.origin);
+  return resolved;
 }
 
 function GuideCard({ guide }: { guide: Guide }) {
@@ -892,8 +874,8 @@ function GuideCard({ guide }: { guide: Guide }) {
                 {step.title}
               </h4>
               {step.content && (
-                <p className="text-xs text-slate-400 leading-relaxed mb-2">
-                  {step.content}
+                <p className="text-xs text-slate-400 leading-relaxed mb-2 whitespace-pre-line">
+                  {resolveOrigin(step.content)}
                 </p>
               )}
 
@@ -933,14 +915,14 @@ function GuideCard({ guide }: { guide: Guide }) {
               {step.warning && (
                 <div className="flex items-start gap-2 p-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[11px] mt-2">
                   <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
-                  <p>{step.warning}</p>
+                  <p>{resolveOrigin(step.warning)}</p>
                 </div>
               )}
 
               {step.tip && (
                 <div className="flex items-start gap-2 p-2 bg-accent/5 border border-accent/20 text-accent/80 text-[11px] mt-2">
                   <Zap className="h-3 w-3 shrink-0 mt-0.5" />
-                  <p>{step.tip}</p>
+                  <p>{resolveOrigin(step.tip)}</p>
                 </div>
               )}
             </div>

@@ -364,6 +364,38 @@ const PageScraper = (() => {
     };
   }
 
+  /**
+   * Get compact page text for AI extraction fallback.
+   * Strips excess whitespace, returns first N characters.
+   */
+  function getCompactPageText(maxLength = 15000) {
+    const text = document.body.innerText || "";
+    return text.replace(/\s+/g, " ").trim().slice(0, maxLength);
+  }
+
+  /**
+   * Wait for data to appear on the page (tables, metric cards, campaign rows).
+   * Returns true if data was found, false if timed out.
+   */
+  async function waitForData(timeoutMs = 10000) {
+    const start = Date.now();
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    while (Date.now() - start < timeoutMs) {
+      // Look for tables
+      if (document.querySelectorAll("table, [role='grid'], [role='table']").length > 0) return true;
+      // Look for metric cards
+      if (document.querySelectorAll("[class*='metric'], [class*='stat'], [class*='kpi']").length > 0) return true;
+      // Look for campaign row elements
+      if (document.querySelectorAll("[role='row']").length > 2) return true;
+      // Look for numeric content in structured containers
+      if (document.querySelectorAll("[class*='campaign'], [class*='Campaign']").length > 0) return true;
+
+      await sleep(500);
+    }
+    return false;
+  }
+
   return {
     identifyPageType,
     extractMetricCards,
@@ -371,6 +403,8 @@ const PageScraper = (() => {
     parseMetricValue,
     resolveMetricName,
     scrape,
+    getCompactPageText,
+    waitForData,
   };
 })();
 

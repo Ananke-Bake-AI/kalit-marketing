@@ -68,9 +68,9 @@ export async function GET(
   const workspaceId = state.substring(colonIdx + 1);
 
   // Exchange code for tokens
+  // Use the actual request URL so it works automatically with ngrok, localhost, or production
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ??
-    process.env.NEXTAUTH_URL ??
     `${request.nextUrl.protocol}//${request.nextUrl.host}`;
 
   const redirectUri = `${baseUrl}/api/oauth/${platform}/callback`;
