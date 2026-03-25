@@ -9,7 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@kalit/db";
 import { llmComplete, parseJSON } from "@/lib/llm/client";
 import { requireWorkspaceMember, isAuthError } from "@/lib/api-auth";
-import { getConnectedAdPlatforms } from "@/lib/platform-keys";
+// Platform detection is handled client-side via /api/platform-keys/connected
+// The client passes targetPlatforms in the request body
 
 interface RouteContext {
   params: Promise<{ workspaceId: string }>;
@@ -84,17 +85,18 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   const industry = config?.industry || "technology";
 
   // Determine target platforms:
-  // 1. If user explicitly mentions a platform in the prompt, use only that one
-  // 2. If body.platform is specified (adapt mode), use that
-  // 3. Otherwise, generate for ALL connected ad platforms
+  // 1. If body.platform is specified (adapt mode or explicit), use that
+  // 2. If body.platforms is an array (from frontend connected platforms check), use those
+  // 3. If user mentions a platform in the prompt, use that
+  // 4. Otherwise, default to ["x"] (always available via extension)
   const promptLower = prompt.toLowerCase();
-  const connectedPlatforms = getConnectedAdPlatforms();
 
   let targetPlatforms: string[] = [];
 
   if (body.platform) {
-    // Explicit platform (e.g. "adapt for google" button)
     targetPlatforms = [body.platform];
+  } else if (Array.isArray(body.platforms) && body.platforms.length > 0) {
+    targetPlatforms = body.platforms;
   } else if (promptLower.includes("x ads") || promptLower.includes("twitter") || promptLower.includes("on x")) {
     targetPlatforms = ["x"];
   } else if (promptLower.includes("meta") || promptLower.includes("facebook") || promptLower.includes("instagram")) {
@@ -106,14 +108,8 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   } else if (promptLower.includes("google")) {
     targetPlatforms = ["google"];
   } else {
-    // No platform specified — generate for all connected platforms
-    targetPlatforms = connectedPlatforms.length > 0 ? connectedPlatforms : [];
-  }
-
-  if (targetPlatforms.length === 0) {
-    return NextResponse.json({
-      error: "No ad platforms connected. Go to Settings > Connections to set up at least one ad platform before creating a campaign.",
-    }, { status: 400 });
+    // No platform specified and no platforms passed — default to x (always available)
+    targetPlatforms = ["x"];
   }
 
   // Platform-specific instructions
@@ -403,20 +399,30 @@ Return ONLY valid JSON matching the schema above.`;
       totalAds,
     });
 
-    } // end for (targetPlatforms)
+    } catch (err) {
+      console.error(`[campaign-create] Error for ${targetPlatform}:`, err);
+      // Continue with other platforms even if one fails
+      createdCampaigns.push({
+        id: "",
+        name: `Failed: ${targetPlatform}`,
+        platform: targetPlatform,
+        adGroups: 0,
+        totalAds: 0,
+      });
+    }
+  } // end for (targetPlatforms)
 
-    return NextResponse.json({
-      success: true,
-      platforms: targetPlatforms,
-      campaigns: createdCampaigns,
-      // Backwards-compatible: return first campaign as "campaign"
-      campaign: createdCampaigns[0] || null,
-    });
-  } catch (err) {
-    console.error("[campaign-create] Error:", err);
+  if (createdCampaigns.length === 0 || createdCampaigns.every(c => !c.id)) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Creation failed" },
+      { error: "Campaign creation failed for all platforms" },
       { status: 500 }
     );
   }
+
+  return NextResponse.json({
+    success: true,
+    platforms: targetPlatforms,
+    campaigns: createdCampaigns.filter(c => c.id),
+    campaign: createdCampaigns.find(c => c.id) || null,
+  });
 }

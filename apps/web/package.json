@@ -17,6 +17,7 @@
     "@htdangkhoa/google-ads": "^0.23.0",
     "@kalit/core": "workspace:*",
     "@kalit/db": "workspace:*",
+    "@prisma/client": "^5.22.0",
     "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.71.0",

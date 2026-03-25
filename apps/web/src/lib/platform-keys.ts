@@ -57,7 +57,7 @@ export function readPlatformKeys(): PlatformKeys {
     if (!existsSync(KEYS_FILE)) return {};
     const raw = readFileSync(KEYS_FILE, "utf-8");
     return JSON.parse(raw) as PlatformKeys;
-  } catch {
+  } catch (_e) {
     return {};
   }
 }

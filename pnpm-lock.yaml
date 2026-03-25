@@ -28,6 +28,9 @@ importers:
       '@kalit/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
       '@sendgrid/mail':
         specifier: ^8.1.6
         version: 8.1.6
