@@ -27,6 +27,7 @@ interface CampaignActionsProps {
   platformCampaignIds: Record<string, string> | null;
   hasConnectedAccounts: boolean;
   campaignPlatform?: string | null;
+  adGroupPlatforms?: string[]; // All platforms that have ad groups in this campaign
   connectedAccounts?: ConnectedAccount[];
 }
 
@@ -65,6 +66,7 @@ export function CampaignActions({
   platformCampaignIds,
   hasConnectedAccounts,
   campaignPlatform,
+  adGroupPlatforms = [],
   connectedAccounts = [],
 }: CampaignActionsProps) {
   const [status, setStatus] = useState(initialStatus);
@@ -295,10 +297,10 @@ export function CampaignActions({
     meta: "https://business.facebook.com/adsmanager/manage/campaigns",
   };
 
-  const isBrowserPlatform = browserDeployPlatforms.includes(campaignPlatform || "");
+  // All platforms in this campaign (from ad groups)
+  const platforms = adGroupPlatforms.length > 0 ? adGroupPlatforms : (campaignPlatform ? [campaignPlatform] : []);
   const isDeployable = ["draft", "pending_approval", "approved", "failed"].includes(status);
   const isLive = ["active", "paused", "optimizing", "scaling", "launching", "monitoring"].includes(status);
-  const pLabel = platformLabels[campaignPlatform || ""] || campaignPlatform || "—";
 
   return (
     <div className="space-y-4">
@@ -309,106 +311,81 @@ export function CampaignActions({
           {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />}
         </div>
 
-        {/* Platform row — current platform */}
-        <div className="flex items-center justify-between py-2 border-b border-white/5">
-          <div className="flex items-center gap-2.5">
-            <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-400" : status === "failed" ? "bg-red-400" : "bg-zinc-500"}`} />
-            <span className="text-sm font-medium text-white">{pLabel}</span>
-            <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 ${
-              isLive ? "bg-emerald-500/15 text-emerald-400" :
-              status === "failed" ? "bg-red-500/15 text-red-400" :
-              "bg-zinc-500/15 text-zinc-400"
-            }`}>
-              {status.replace(/_/g, " ")}
-            </span>
-          </div>
+        {/* Platform rows — one per platform */}
+        {platforms.map((platform) => {
+          const isBrowser = browserDeployPlatforms.includes(platform);
+          const pLabel = platformLabels[platform] || platform;
 
-          <div className="flex items-center gap-2">
-            {/* Deploy action */}
-            {isDeployable && isBrowserPlatform && (
-              <button
-                onClick={() => handleBrowserDeploy(campaignPlatform || "x")}
-                disabled={!extensionDetected || browserDeployStatus === "deploying"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-40"
-              >
-                {browserDeployStatus === "deploying" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
-                Deploy
-              </button>
-            )}
-            {isDeployable && !isBrowserPlatform && (
-              <button
-                onClick={() => handleLaunch(campaignPlatform || undefined)}
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-40"
-              >
-                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
-                Launch
-              </button>
-            )}
+          return (
+            <div key={platform} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+              <div className="flex items-center gap-2.5">
+                <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-400" : status === "failed" ? "bg-red-400" : "bg-zinc-500"}`} />
+                <span className="text-sm font-medium text-white">{pLabel}</span>
+                <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 ${
+                  isLive ? "bg-emerald-500/15 text-emerald-400" :
+                  status === "failed" ? "bg-red-500/15 text-red-400" :
+                  "bg-zinc-500/15 text-zinc-400"
+                }`}>
+                  {status.replace(/_/g, " ")}
+                </span>
+              </div>
 
-            {/* Mark as live */}
-            {isDeployable && isBrowserPlatform && browserDeployStatus === "success" && (
-              <button
-                onClick={async () => {
-                  setLoading(true);
-                  try {
-                    const res = await fetch(`/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ action: "browser_deployed" }),
-                    });
-                    if (res.ok) setStatus("active");
-                  } catch { /* ignore */ } finally { setLoading(false); }
-                }}
-                disabled={loading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors disabled:opacity-40"
-              >
-                <CheckCircle className="h-3 w-3" />
-                Confirm Live
-              </button>
-            )}
+              <div className="flex items-center gap-2">
+                {/* Browser deploy (X) */}
+                {isDeployable && isBrowser && (
+                  <button
+                    onClick={() => handleBrowserDeploy(platform)}
+                    disabled={!extensionDetected || browserDeployStatus === "deploying"}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-40"
+                  >
+                    {browserDeployStatus === "deploying" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
+                    Deploy
+                  </button>
+                )}
+                {/* API deploy (Google, Meta, etc.) */}
+                {isDeployable && !isBrowser && (
+                  <button
+                    onClick={() => handleLaunch(platform)}
+                    disabled={loading}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-40"
+                  >
+                    {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
+                    Launch
+                  </button>
+                )}
+                {/* Sync (live browser platforms) */}
+                {isLive && isBrowser && (
+                  <button
+                    onClick={() => handleBrowserSync(platform)}
+                    disabled={!extensionDetected || syncStatus === "syncing"}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-colors disabled:opacity-40"
+                  >
+                    {syncStatus === "syncing" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Sync
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
 
-            {/* Sync (live platforms) */}
-            {isLive && isBrowserPlatform && (
-              <button
-                onClick={() => handleBrowserSync(campaignPlatform || "x")}
-                disabled={!extensionDetected || syncStatus === "syncing"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-colors disabled:opacity-40"
-              >
-                {syncStatus === "syncing" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                Sync
-              </button>
-            )}
-
-            {/* Pause / Resume */}
-            {isLive && status !== "paused" && (
-              <button onClick={() => handleAction("pause")} disabled={loading}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-40">
-                <Pause className="h-3 w-3" /> Pause
-              </button>
-            )}
-            {status === "paused" && (
-              <button onClick={() => handleAction("resume")} disabled={loading}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
-                <Play className="h-3 w-3" /> Resume
-              </button>
-            )}
-          </div>
-        </div>
+        {platforms.length === 0 && (
+          <p className="text-[10px] text-slate-500">No platforms configured for this campaign.</p>
+        )}
 
         {/* Status messages */}
         {browserDeployStatus === "queued" && (
-          <p className="text-[10px] text-accent animate-pulse">Opening {pLabel}...</p>
+          <p className="text-[10px] text-accent animate-pulse">Opening ad platform...</p>
         )}
         {browserDeployStatus === "success" && (
-          <p className="text-[10px] text-emerald-400">Form filled — review on {pLabel}, then click &quot;Confirm Live&quot; above</p>
+          <p className="text-[10px] text-emerald-400">Form filled — review and confirm live below</p>
         )}
         {syncStatus === "success" && syncResult && (
           <p className="text-[10px] text-emerald-400">Synced {syncResult.campaignCount} campaign{syncResult.campaignCount !== 1 ? "s" : ""}, {syncResult.metricsFound} metrics</p>
         )}
 
-        {/* Extension missing warning */}
-        {isBrowserPlatform && !extensionDetected && isDeployable && (
+        {/* Extension missing for browser platforms */}
+        {platforms.some(p => browserDeployPlatforms.includes(p)) && !extensionDetected && isDeployable && (
           <p className="text-[10px] text-slate-500">
             <a href="/dashboard/connections" className="text-accent underline hover:text-accent/80">Install the Kalit extension</a> to deploy via browser
           </p>
@@ -429,22 +406,37 @@ export function CampaignActions({
                 <XCircle className="h-3 w-3" /> Reject
               </button>
             )}
-            {isBrowserPlatform && (
-              <button
-                onClick={async () => {
-                  setLoading(true);
-                  try {
-                    const res = await fetch(`/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ action: "browser_deployed" }),
-                    });
-                    if (res.ok) setStatus("active");
-                  } catch { /* ignore */ } finally { setLoading(false); }
-                }}
-                disabled={loading}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-slate-500 hover:text-accent transition-colors disabled:opacity-40 ml-auto">
-                <CheckCircle className="h-3 w-3" /> Mark as Live
+            <button
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const res = await fetch(`/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "browser_deployed" }),
+                  });
+                  if (res.ok) setStatus("active");
+                } catch { /* ignore */ } finally { setLoading(false); }
+              }}
+              disabled={loading}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-slate-500 hover:text-accent transition-colors disabled:opacity-40 ml-auto">
+              <CheckCircle className="h-3 w-3" /> Mark as Live
+            </button>
+          </div>
+        )}
+
+        {/* Pause / Resume for live campaigns */}
+        {isLive && (
+          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+            {status !== "paused" ? (
+              <button onClick={() => handleAction("pause")} disabled={loading}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-40">
+                <Pause className="h-3 w-3" /> Pause
+              </button>
+            ) : (
+              <button onClick={() => handleAction("resume")} disabled={loading}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
+                <Play className="h-3 w-3" /> Resume
               </button>
             )}
           </div>

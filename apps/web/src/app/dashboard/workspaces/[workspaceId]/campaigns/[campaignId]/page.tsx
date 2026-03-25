@@ -275,6 +275,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
             platformCampaignIds={campaign.platformCampaignIds as Record<string, string> | null}
             hasConnectedAccounts={connectedAccounts.length > 0}
             campaignPlatform={campaignPlatform}
+            adGroupPlatforms={adGroupPlatforms}
             connectedAccounts={connectedAccounts.map(a => ({ id: a.id, platform: a.platform, accountName: a.accountName }))}
           />
         </div>
