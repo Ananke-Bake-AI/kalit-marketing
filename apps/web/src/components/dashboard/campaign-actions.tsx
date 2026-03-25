@@ -295,394 +295,161 @@ export function CampaignActions({
     meta: "https://business.facebook.com/adsmanager/manage/campaigns",
   };
 
+  const isBrowserPlatform = browserDeployPlatforms.includes(campaignPlatform || "");
+  const isDeployable = ["draft", "pending_approval", "approved", "failed"].includes(status);
+  const isLive = ["active", "paused", "optimizing", "scaling", "launching", "monitoring"].includes(status);
+  const pLabel = platformLabels[campaignPlatform || ""] || campaignPlatform || "—";
+
   return (
     <div className="space-y-4">
-      {/* Action buttons */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Draft / Pending → Approve */}
-        {(status === "draft" || status === "pending_approval") && (
-          <>
-            <button
-              onClick={() => handleAction("approve")}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
-            >
-              <CheckCircle className="h-3.5 w-3.5" />
-              Approve
-            </button>
-            <button
-              onClick={() => handleLaunch(selectedPlatform || undefined)}
-              disabled={loading || !hasConnectedAccounts}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-50"
-              title={
-                !hasConnectedAccounts
-                  ? "Connect an ad platform account first"
-                  : undefined
-              }
-            >
-              {loading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Rocket className="h-3.5 w-3.5" />
-              )}
-              Approve & Launch{selectedPlatform ? ` on ${platformLabels[selectedPlatform] || selectedPlatform}` : ""}
-            </button>
-          </>
-        )}
+      {/* ── Unified Deployment Card ── */}
+      <div className="card p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Deployment</p>
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />}
+        </div>
 
-        {/* Approved → Launch */}
-        {status === "approved" && (
-          <button
-            onClick={() => handleLaunch(selectedPlatform || undefined)}
-            disabled={loading || !hasConnectedAccounts}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Rocket className="h-3.5 w-3.5" />
-            )}
-            Launch on {selectedPlatform ? platformLabels[selectedPlatform] || selectedPlatform : "Platform"}
-          </button>
-        )}
+        {/* Platform row — current platform */}
+        <div className="flex items-center justify-between py-2 border-b border-white/5">
+          <div className="flex items-center gap-2.5">
+            <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-400" : status === "failed" ? "bg-red-400" : "bg-zinc-500"}`} />
+            <span className="text-sm font-medium text-white">{pLabel}</span>
+            <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 ${
+              isLive ? "bg-emerald-500/15 text-emerald-400" :
+              status === "failed" ? "bg-red-500/15 text-red-400" :
+              "bg-zinc-500/15 text-zinc-400"
+            }`}>
+              {status.replace(/_/g, " ")}
+            </span>
+          </div>
 
-        {/* Failed → Retry */}
-        {status === "failed" && (
-          <button
-            onClick={() => handleLaunch(selectedPlatform || undefined)}
-            disabled={loading || !hasConnectedAccounts}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-colors disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Rocket className="h-3.5 w-3.5" />
-            )}
-            Retry Launch
-          </button>
-        )}
-
-        {/* Active → Pause */}
-        {(status === "active" || status === "optimizing" || status === "scaling") && (
-          <button
-            onClick={() => handleAction("pause")}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 transition-colors disabled:opacity-50"
-          >
-            <Pause className="h-3.5 w-3.5" />
-            Pause
-          </button>
-        )}
-
-        {/* Paused → Resume */}
-        {status === "paused" && (
-          <button
-            onClick={() => handleAction("resume")}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
-          >
-            <Play className="h-3.5 w-3.5" />
-            Resume
-          </button>
-        )}
-
-        {/* Reject (any non-active state) */}
-        {(status === "draft" || status === "pending_approval" || status === "approved") && (
-          <button
-            onClick={() => handleAction("reject")}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-50"
-          >
-            <XCircle className="h-3.5 w-3.5" />
-            Reject
-          </button>
-        )}
-
-        {/* Remove (active, paused, failed, completed) — deletes from platform */}
-        {["active", "paused", "optimizing", "scaling", "failed", "completed"].includes(status) && !confirmRemove && (
-          <button
-            onClick={() => setConfirmRemove(true)}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Remove
-          </button>
-        )}
-        {confirmRemove && (
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-red-400">Remove from platform?</span>
-            <button
-              onClick={() => { handleAction("remove"); setConfirmRemove(false); }}
-              disabled={loading}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-colors disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-              Yes, Remove
-            </button>
-            <button
-              onClick={() => setConfirmRemove(false)}
-              className="text-[10px] text-zinc-500 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-
-        {loading && (
-          <span className="text-[10px] text-slate-500 animate-pulse">
-            Processing...
-          </span>
-        )}
-      </div>
-
-      {/* Platform selector for deployment */}
-      {connectedAccounts.length > 0 &&
-        ["draft", "pending_approval", "approved", "failed"].includes(status) && (
-          <div className="card p-3 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              Deploy to platform
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Matching accounts first */}
-              {matchingAccounts.map(a => (
-                <button
-                  key={a.id}
-                  onClick={() => { setSelectedPlatform(a.platform); setShowPlatformWarning(false); }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border transition-colors ${
-                    selectedPlatform === a.platform
-                      ? "bg-accent/15 text-accent border-accent/30"
-                      : "bg-white/5 text-slate-400 border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  {platformLabels[a.platform] || a.platform}
-                  {a.accountName && <span className="text-slate-500">({a.accountName})</span>}
-                  {campaignPlatform === a.platform && (
-                    <span className="text-[9px] text-emerald-400 ml-1">recommended</span>
-                  )}
-                </button>
-              ))}
-              {/* Other accounts */}
-              {otherAccounts.map(a => (
-                <button
-                  key={a.id}
-                  onClick={() => { setSelectedPlatform(a.platform); setShowPlatformWarning(true); }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border transition-colors ${
-                    selectedPlatform === a.platform
-                      ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
-                      : "bg-white/5 text-slate-500 border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  {platformLabels[a.platform] || a.platform}
-                  {a.accountName && <span className="text-slate-600">({a.accountName})</span>}
-                </button>
-              ))}
-            </div>
-            {showPlatformWarning && selectedPlatform !== campaignPlatform && campaignPlatform && (
-              <div className="flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 p-2">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                <p>
-                  This campaign was designed for <strong>{platformLabels[campaignPlatform] || campaignPlatform}</strong> but you&apos;re deploying to <strong>{platformLabels[selectedPlatform] || selectedPlatform}</strong>. The agent will adapt but some features may not transfer.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-      {/* Browser Deploy option (for platforms without API access like X) */}
-      {["draft", "pending_approval", "approved", "failed"].includes(status) &&
-        browserDeployPlatforms.includes(campaignPlatform || "") && (
-          <div className="card p-3 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              Deploy via browser
-            </p>
-            <div className="flex items-center gap-2">
+            {/* Deploy action */}
+            {isDeployable && isBrowserPlatform && (
               <button
                 onClick={() => handleBrowserDeploy(campaignPlatform || "x")}
                 disabled={!extensionDetected || browserDeployStatus === "deploying"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-blue-500/25 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-40"
               >
-                {browserDeployStatus === "deploying" ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <ExternalLink className="h-3.5 w-3.5" />
-                )}
-                Deploy to {platformLabels[campaignPlatform || "x"] || "X"} via Browser
+                {browserDeployStatus === "deploying" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
+                Deploy
               </button>
-              {browserDeployStatus === "queued" && (
-                <span className="text-[10px] text-accent">Opening ads.x.com...</span>
-              )}
-              {browserDeployStatus === "success" && (
-                <span className="text-[10px] text-emerald-400">Fields filled — review and launch on X, then confirm in the extension overlay</span>
-              )}
-              {browserDeployStatus === "confirmed" && (
-                <span className="text-[10px] text-accent">Campaign is live — status updated</span>
-              )}
-              {browserDeployStatus === "failed" && (
-                <span className="text-[10px] text-red-400">Browser deploy failed</span>
-              )}
-            </div>
-            {!extensionDetected && (
-              <p className="text-[10px] text-slate-500">
-                Requires the{" "}
-                <a href="/dashboard/connections" className="text-accent underline hover:text-accent/80">
-                  Kalit Deploy extension
-                </a>
-                . Install it from Settings to deploy directly through the ad platform UI.
-              </p>
             )}
-            {extensionDetected && (
-              <p className="text-[10px] text-slate-600">
-                Opens {platformLabels[campaignPlatform || "x"]} in a new tab and auto-fills the campaign form. You review and submit.
-              </p>
+            {isDeployable && !isBrowserPlatform && (
+              <button
+                onClick={() => handleLaunch(campaignPlatform || undefined)}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-40"
+              >
+                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Rocket className="h-3 w-3" />}
+                Launch
+              </button>
             )}
-          </div>
-        )}
 
-      {/* Mark as Live — for browser-deploy platforms where user launched manually on the ad platform */}
-      {["draft", "pending_approval", "approved", "failed"].includes(status) &&
-        browserDeployPlatforms.includes(campaignPlatform || "") && (
-          <div className="card p-3 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              Already live on {platformLabels[campaignPlatform || "x"] || "X"}?
-            </p>
-            <div className="flex items-center gap-2">
+            {/* Mark as live */}
+            {isDeployable && isBrowserPlatform && browserDeployStatus === "success" && (
               <button
                 onClick={async () => {
                   setLoading(true);
                   try {
-                    const res = await fetch(
-                      `/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`,
-                      {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ action: "browser_deployed" }),
-                      }
-                    );
-                    if (res.ok) {
-                      setStatus("active");
-                    } else {
-                      const data = await res.json();
-                      setError(data.error || "Failed to update status");
-                    }
-                  } catch {
-                    setError("Network error");
-                  } finally {
-                    setLoading(false);
-                  }
+                    const res = await fetch(`/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "browser_deployed" }),
+                    });
+                    if (res.ok) setStatus("active");
+                  } catch { /* ignore */ } finally { setLoading(false); }
                 }}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors disabled:opacity-40"
               >
-                {loading ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-3.5 w-3.5" />
-                )}
-                Mark as Live
+                <CheckCircle className="h-3 w-3" />
+                Confirm Live
               </button>
-            </div>
-            <p className="text-[10px] text-slate-600">
-              If you launched this campaign directly on {platformLabels[campaignPlatform || "x"] || "X"} (or saved a draft and launched it later), mark it as live to enable performance syncing.
-            </p>
-          </div>
-        )}
+            )}
 
-      {/* Sync performance data from browser (for platforms without API like X) */}
-      {["active", "paused", "optimizing", "scaling", "launching", "monitoring"].includes(status) &&
-        browserDeployPlatforms.includes(campaignPlatform || "") && (
-          <div className="card p-3 space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
-              Sync performance data
-            </p>
-            <div className="flex items-center gap-2">
+            {/* Sync (live platforms) */}
+            {isLive && isBrowserPlatform && (
               <button
                 onClick={() => handleBrowserSync(campaignPlatform || "x")}
-                disabled={!extensionDetected || syncStatus === "opening" || syncStatus === "syncing"}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-sky-500/15 text-sky-400 border border-sky-500/30 hover:bg-sky-500/25 transition-colors disabled:opacity-50"
+                disabled={!extensionDetected || syncStatus === "syncing"}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-colors disabled:opacity-40"
               >
-                {syncStatus === "opening" || syncStatus === "syncing" ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3.5 w-3.5" />
-                )}
-                Sync from {platformLabels[campaignPlatform || "x"] || "X"}
+                {syncStatus === "syncing" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                Sync
               </button>
-              {syncStatus === "opening" && (
-                <span className="text-[10px] text-sky-400">Opening ads.x.com...</span>
-              )}
-              {syncStatus === "syncing" && (
-                <span className="text-[10px] text-sky-400 animate-pulse">Extracting campaign data...</span>
-              )}
-              {syncStatus === "success" && syncResult && (
-                <span className="text-[10px] text-emerald-400">
-                  Synced {syncResult.campaignCount} campaign{syncResult.campaignCount !== 1 ? "s" : ""}, {syncResult.metricsFound} metrics
-                </span>
-              )}
-              {syncStatus === "success" && !syncResult && (
-                <span className="text-[10px] text-emerald-400">Sync complete — refresh to see updated data</span>
-              )}
-              {syncStatus === "failed" && (
-                <span className="text-[10px] text-red-400">Sync failed — check the extension overlay for details</span>
-              )}
-            </div>
-            {!extensionDetected && (
-              <p className="text-[10px] text-slate-500">
-                Requires the{" "}
-                <a href="/dashboard/connections" className="text-sky-400 underline hover:text-sky-300">
-                  Kalit extension
-                </a>
-                . Opens {platformLabels[campaignPlatform || "x"]} and extracts campaign performance metrics.
-              </p>
             )}
-            {extensionDetected && !syncStatus && (
-              <p className="text-[10px] text-slate-600">
-                Opens {platformLabels[campaignPlatform || "x"]} in a new tab, scrapes campaign metrics (impressions, clicks, spend, conversions), and updates your dashboard.
-              </p>
+
+            {/* Pause / Resume */}
+            {isLive && status !== "paused" && (
+              <button onClick={() => handleAction("pause")} disabled={loading}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-40">
+                <Pause className="h-3 w-3" /> Pause
+              </button>
+            )}
+            {status === "paused" && (
+              <button onClick={() => handleAction("resume")} disabled={loading}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
+                <Play className="h-3 w-3" /> Resume
+              </button>
             )}
           </div>
+        </div>
+
+        {/* Status messages */}
+        {browserDeployStatus === "queued" && (
+          <p className="text-[10px] text-accent animate-pulse">Opening {pLabel}...</p>
+        )}
+        {browserDeployStatus === "success" && (
+          <p className="text-[10px] text-emerald-400">Form filled — review on {pLabel}, then click &quot;Confirm Live&quot; above</p>
+        )}
+        {syncStatus === "success" && syncResult && (
+          <p className="text-[10px] text-emerald-400">Synced {syncResult.campaignCount} campaign{syncResult.campaignCount !== 1 ? "s" : ""}, {syncResult.metricsFound} metrics</p>
         )}
 
-      {/* No connected accounts warning */}
-      {!hasConnectedAccounts &&
-        !browserDeployPlatforms.includes(campaignPlatform || "") &&
-        ["draft", "pending_approval", "approved", "failed"].includes(status) && (
-          <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            <p>
-              No ad platform connected.{" "}
-              <a
-                href={`/dashboard/workspaces/${workspaceId}`}
-                className="underline hover:text-yellow-300"
-              >
-                Connect Google or Meta
-              </a>{" "}
-              to launch campaigns.
-            </p>
-          </div>
+        {/* Extension missing warning */}
+        {isBrowserPlatform && !extensionDetected && isDeployable && (
+          <p className="text-[10px] text-slate-500">
+            <a href="/dashboard/connections" className="text-accent underline hover:text-accent/80">Install the Kalit extension</a> to deploy via browser
+          </p>
         )}
 
-      {/* Platform links (if already launched) */}
-      {platformCampaignIds &&
-        Object.keys(platformCampaignIds).length > 0 && (
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] text-slate-600 uppercase tracking-wider font-bold">
-              Platform IDs:
-            </span>
-            {Object.entries(platformCampaignIds).map(([platform, id]) => (
-              <a
-                key={platform}
-                href={platformLinks[platform] || "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[10px] text-slate-400 hover:text-accent transition-colors"
-              >
-                <ExternalLink className="h-2.5 w-2.5" />
-                {platform}: {id}
-              </a>
-            ))}
+        {/* Quick actions bar */}
+        {isDeployable && (
+          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+            {(status === "draft" || status === "pending_approval") && (
+              <button onClick={() => handleAction("approve")} disabled={loading}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
+                <CheckCircle className="h-3 w-3" /> Approve
+              </button>
+            )}
+            {(status === "draft" || status === "pending_approval" || status === "approved") && (
+              <button onClick={() => handleAction("reject")} disabled={loading}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-40">
+                <XCircle className="h-3 w-3" /> Reject
+              </button>
+            )}
+            {isBrowserPlatform && (
+              <button
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const res = await fetch(`/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ action: "browser_deployed" }),
+                    });
+                    if (res.ok) setStatus("active");
+                  } catch { /* ignore */ } finally { setLoading(false); }
+                }}
+                disabled={loading}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-slate-500 hover:text-accent transition-colors disabled:opacity-40 ml-auto">
+                <CheckCircle className="h-3 w-3" /> Mark as Live
+              </button>
+            )}
           </div>
         )}
+      </div>
 
       {/* Error display */}
       {error && (
@@ -693,58 +460,12 @@ export function CampaignActions({
       )}
 
       {/* Launch results */}
-      {result && (
-        <div className="space-y-2">
-          {result.results?.map((r, i) => (
-            <div
-              key={i}
-              className={`p-3 border text-xs ${
-                r.success
-                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                  : "bg-red-500/10 border-red-500/20 text-red-400"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <p className="font-medium">
-                  {r.platform} — {r.success ? "Launched" : "Failed"}
-                </p>
-                {r.platformCampaignId && (
-                  <span className="text-[10px] text-slate-500">
-                    ID: {r.platformCampaignId}
-                  </span>
-                )}
-              </div>
-              {r.error && (
-                <p className="mt-1 opacity-80">{r.error}</p>
-              )}
-              {r.steps.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {r.steps.map((step, j) => (
-                    <div key={j} className="flex items-center gap-2 text-[10px]">
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          step.status === "success"
-                            ? "bg-emerald-400"
-                            : step.status === "failed"
-                              ? "bg-red-400"
-                              : "bg-zinc-500"
-                        }`}
-                      />
-                      <span className="text-slate-500">
-                        {step.entity}
-                        {step.platformId ? ` → ${step.platformId}` : ""}
-                      </span>
-                      {step.error && (
-                        <span className="text-red-400/70">{step.error}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+      {result?.results?.map((r, i) => (
+        <div key={i} className={`p-3 border text-xs ${r.success ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
+          <p className="font-medium">{r.platform} — {r.success ? "Launched" : "Failed"}</p>
+          {r.error && <p className="mt-1 opacity-80">{r.error}</p>}
         </div>
-      )}
+      ))}
     </div>
   );
 }
