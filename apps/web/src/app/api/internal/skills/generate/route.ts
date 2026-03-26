@@ -21,9 +21,19 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { llmComplete } from "@/lib/llm/client";
+import type { ImageInput } from "@/lib/llm/client";
 import { writeFile, readFile, readdir, mkdir } from "fs/promises";
-import { join } from "path";
+import { join, extname } from "path";
 import { getPlatformSkill, listPlatforms } from "@/lib/extension/skills";
+
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp"]);
+const MEDIA_TYPES: Record<string, ImageInput["media_type"]> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+};
 
 const SKILLS_DIR = join(process.cwd(), ".extension-skills");
 
@@ -83,15 +93,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "platform is required" }, { status: 400 });
   }
 
-  // Load pages from directory if htmlDir is provided
+  // Load pages and images from directory if htmlDir is provided
   let pageData = pages || [];
-  if (htmlDir && pageData.length === 0) {
+  const images: Array<{ name: string; input: ImageInput }> = [];
+
+  if (htmlDir) {
     try {
       const files = await readdir(htmlDir);
-      const htmlFiles = files.filter(f => f.endsWith(".html")).sort();
-      for (const file of htmlFiles) {
-        const html = await readFile(join(htmlDir, file), "utf-8");
-        pageData.push({ name: file.replace(".html", ""), html });
+      const sortedFiles = files.sort();
+
+      // Load HTML files
+      if (pageData.length === 0) {
+        for (const file of sortedFiles.filter(f => f.endsWith(".html"))) {
+          const html = await readFile(join(htmlDir, file), "utf-8");
+          pageData.push({ name: file.replace(".html", ""), html });
+        }
+      }
+
+      // Load screenshots/images
+      for (const file of sortedFiles) {
+        const ext = extname(file).toLowerCase();
+        if (IMAGE_EXTENSIONS.has(ext)) {
+          const data = await readFile(join(htmlDir, file));
+          images.push({
+            name: file,
+            input: {
+              type: "base64",
+              media_type: MEDIA_TYPES[ext] || "image/png",
+              data: data.toString("base64"),
+            },
+          });
+        }
       }
     } catch (err) {
       return NextResponse.json(
@@ -101,14 +133,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (pageData.length === 0) {
+  if (pageData.length === 0 && images.length === 0) {
     return NextResponse.json(
-      { error: "No pages provided. Use pages[] or htmlDir." },
+      { error: "No pages or images found. Provide HTML files and/or screenshots in htmlDir." },
       { status: 400 }
     );
   }
 
-  console.log(`[skills/generate] Generating skill for ${platform} from ${pageData.length} pages...`);
+  console.log(`[skills/generate] Generating skill for ${platform} from ${pageData.length} HTML pages + ${images.length} screenshots...`);
 
   // Extract form elements from HTML to reduce tokens
   const compactPages = pageData.map((page) => ({
@@ -116,35 +148,47 @@ export async function POST(req: NextRequest) {
     compact: extractFormElements(page.html),
   }));
 
-  const prompt = `Analyze these HTML dumps from the ${platform.toUpperCase()} Ads Manager campaign creation flow.
+  const imageContext = images.length > 0
+    ? `\n\nI'm also providing ${images.length} screenshots of the ad platform UI. Use these to:
+- Understand the visual layout and field ordering
+- Identify labels and sections that may be obfuscated in the HTML
+- See dropdown menus, radio buttons, and conditional fields
+- Understand the page flow and navigation
+
+Screenshot filenames: ${images.map(i => i.name).join(", ")}`
+    : "";
+
+  const prompt = `Analyze these HTML dumps${images.length > 0 ? " and screenshots" : ""} from the ${platform.toUpperCase()} Ads Manager campaign creation flow.
 Generate a comprehensive platform skill cheatsheet for an AI agent that fills these forms via a browser extension.
 
 ${compactPages.map((p, i) => `
 === PAGE ${i + 1}: ${p.name} ===
 ${p.compact}
 `).join("\n")}
+${imageContext}
 
 Generate a cheatsheet covering:
 
 1. PAGE FLOW — all pages in order with URL patterns and footer buttons
-2. Per page: EVERY form field with exact data-testid/data-test-id-v2, type, placeholder, label, and what campaign data maps to it
+2. Per page: EVERY form field with exact data-testid/data-test-id-v2/aria-label/name/id, type, placeholder, label, and what campaign data maps to it
 3. Per page: EVERY actionable button with text and identifier
-4. FIELD IDENTIFICATION CHEAT SHEET — quick lookup table for all targeting/search fields with their data-test-id-v2 patterns
+4. FIELD IDENTIFICATION CHEAT SHEET — quick lookup table for all targeting/search fields with their selectors
 5. SELECT/DROPDOWN INTERACTION RULES — how search fields work (type → wait → click result)
 6. BUDGET RULES — which field is daily vs total, validation constraints
-7. CREATIVE PAGE RULES — where body text, headline, URL go. Note any conditionally-rendered fields.
+7. CREATIVE/AD PAGE RULES — where headlines, descriptions, URLs go. Note any conditionally-rendered fields.
 8. ERROR PATTERNS — DOM patterns for validation errors
 9. IMPORTANT REMINDERS — gotchas, field ordering, things that break
 
-Be EXTREMELY precise. Every field identifier must come from the actual HTML. The AI agent uses this to fill forms — wrong mappings = failed fills.
+Be EXTREMELY precise. Every field identifier must come from the actual HTML. Cross-reference with the screenshots to confirm field labels and layout. The AI agent uses this to fill forms — wrong mappings = failed fills.
 Return ONLY the cheatsheet text.`;
 
   try {
     const response = await llmComplete({
       model: "claude-sonnet-4-6",
-      system: "You analyze ad platform HTML and produce precise field-mapping cheatsheets for browser automation. Cite every data-testid, aria-label, and DOM pattern. Be exhaustive.",
+      system: "You analyze ad platform HTML and screenshots to produce precise field-mapping cheatsheets for browser automation. Cross-reference visual screenshots with HTML selectors. Cite every data-testid, aria-label, name, id, and DOM pattern. Be exhaustive.",
       prompt,
       maxTokens: 8192,
+      images: images.map(i => i.input),
     });
 
     const skill = response.text;

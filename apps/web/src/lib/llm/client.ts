@@ -14,6 +14,12 @@ export interface LLMResponse {
   text: string;
 }
 
+export interface ImageInput {
+  type: "base64";
+  media_type: "image/png" | "image/jpeg" | "image/gif" | "image/webp";
+  data: string; // base64 encoded
+}
+
 // Model mapping for claude-agent-sdk (uses short names)
 const AGENT_SDK_MODELS: Record<string, string> = {
   "claude-opus-4-6": "opus",
@@ -38,6 +44,7 @@ export async function llmComplete(options: {
   system: string;
   prompt: string;
   maxTokens?: number;
+  images?: ImageInput[];
 }): Promise<LLMResponse> {
   if (hasApiKey()) {
     return callWithSDK(options);
@@ -52,19 +59,41 @@ async function callWithSDK(options: {
   system: string;
   prompt: string;
   maxTokens?: number;
+  images?: ImageInput[];
 }): Promise<LLMResponse> {
   const Anthropic = (await import("@anthropic-ai/sdk")).default;
   const client = new Anthropic();
+
+  // Build content blocks — images first (for context), then text prompt
+  const content: Array<
+    | { type: "text"; text: string }
+    | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+  > = [];
+
+  if (options.images?.length) {
+    for (const img of options.images) {
+      content.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: img.media_type,
+          data: img.data,
+        },
+      });
+    }
+  }
+
+  content.push({ type: "text", text: options.prompt });
 
   const response = await client.messages.create({
     model: options.model,
     max_tokens: options.maxTokens ?? 4096,
     system: options.system,
-    messages: [{ role: "user", content: options.prompt }],
+    messages: [{ role: "user", content }],
   });
 
-  const textContent = response.content.find((c) => c.type === "text");
-  return { text: textContent?.text ?? "" };
+  const textContent = response.content.find((c: { type: string }) => c.type === "text");
+  return { text: (textContent as { text: string })?.text ?? "" };
 }
 
 // ── Claude Agent SDK (local session, no API key) ───────────────
