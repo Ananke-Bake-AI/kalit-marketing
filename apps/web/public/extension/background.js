@@ -119,6 +119,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // Open the ad platform in a new tab
       const platformUrls = {
         x: "https://ads.x.com",
+        google: "https://ads.google.com/aw/campaigns/new",
         meta: "https://adsmanager.facebook.com",
         linkedin: "https://www.linkedin.com/campaignmanager/",
         tiktok: "https://ads.tiktok.com/",

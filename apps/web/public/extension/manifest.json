@@ -7,6 +7,7 @@
   "host_permissions": [
     "https://ads.x.com/*",
     "https://business.x.com/*",
+    "https://ads.google.com/*",
     "http://localhost:3002/*",
     "https://marketing.kalit.ai/*"
   ],
@@ -22,6 +23,11 @@
     {
       "matches": ["https://ads.x.com/*", "https://business.x.com/*"],
       "js": ["lib/dom-analyzer.js", "lib/form-filler.js", "lib/page-scraper.js", "content-scripts/x-ads-automator.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://ads.google.com/*"],
+      "js": ["lib/dom-analyzer.js", "lib/form-filler.js", "content-scripts/google-ads-automator.js"],
       "run_at": "document_idle"
     }
   ],

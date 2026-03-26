@@ -181,27 +181,34 @@ export function CampaignActions({
             targetAudience: campaign.targetAudience,
             messagingAngle: campaign.messagingAngle,
             platform,
-            adGroups: campaign.adGroups?.map(
-              (ag: {
-                name: string;
-                targeting: Record<string, unknown>;
-                creatives: Array<{
-                  creative: {
-                    content: Record<string, unknown>;
-                  };
-                }>;
-              }) => ({
-                name: ag.name,
-                targeting: ag.targeting,
-                creatives: ag.creatives?.map(
-                  (c: {
-                    creative: { content: Record<string, unknown> };
-                  }) => ({
-                    ...c.creative?.content,
-                  })
-                ),
-              })
-            ),
+            adGroups: campaign.adGroups
+              ?.filter((ag: { platform?: string }) =>
+                // Only send ad groups for this specific platform
+                ag.platform === platform || (!ag.platform && !campaign.platform)
+              )
+              .map(
+                (ag: {
+                  name: string;
+                  platform?: string;
+                  targeting: Record<string, unknown>;
+                  creatives: Array<{
+                    creative: {
+                      content: Record<string, unknown>;
+                    };
+                  }>;
+                }) => ({
+                  name: ag.name,
+                  platform: ag.platform,
+                  targeting: ag.targeting,
+                  creatives: ag.creatives?.map(
+                    (c: {
+                      creative: { content: Record<string, unknown> };
+                    }) => ({
+                      ...c.creative?.content,
+                    })
+                  ),
+                })
+              ),
           },
         },
         window.location.origin
@@ -230,7 +237,7 @@ export function CampaignActions({
   }
 
   // Platforms that support browser deploy (no API needed)
-  const browserDeployPlatforms = ["x"];
+  const browserDeployPlatforms = ["x", "google"];
 
   const apiBase = `/api/workspaces/${workspaceId}/campaigns/${campaignId}/launch`;
 
