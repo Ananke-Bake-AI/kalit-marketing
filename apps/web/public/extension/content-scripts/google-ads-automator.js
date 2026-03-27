@@ -22,10 +22,14 @@
     return;
   }
 
-  const BUILD_VERSION = "google-v1";
+  const BUILD_VERSION = "google-v2";
   console.log(`[Kalit Google Automator] ${BUILD_VERSION} loaded on`, window.location.href);
 
-  // Check for deployment
+  let _pendingCampaign = null;
+  let _fillStarted = false;
+  let _lastUrl = "";
+
+  // Check for pending deployment
   chrome.runtime.sendMessage({ type: "AUTOMATOR_READY" }, async (response) => {
     if (!response || response.status !== "ok" || !response.deployment) {
       console.log("[Kalit Google Automator] No pending deployment");
@@ -38,10 +42,56 @@
       return;
     }
 
-    console.log(`[Kalit Google Automator] Deploying: ${campaign.name}`);
-    await fillerLib.sleep(3000);
-    await runGoogleAdsFill(campaign);
+    console.log(`[Kalit Google Automator] Deployment pending: ${campaign.name}`);
+    _pendingCampaign = campaign;
+
+    // Start watching for the right page (Google Ads SPA navigates internally)
+    watchForCampaignPage();
   });
+
+  /**
+   * Watch for URL changes — Google Ads is an SPA that navigates through
+   * account selection → objective → editor without full page reloads.
+   * We poll the URL and trigger the fill when we detect the campaign creation page.
+   */
+  function watchForCampaignPage() {
+    const check = async () => {
+      if (_fillStarted || !_pendingCampaign) return;
+
+      const url = window.location.href;
+      if (url === _lastUrl) return;
+      _lastUrl = url;
+
+      console.log(`[Kalit Google] URL changed: ${url}`);
+
+      // Detect which page we're on
+      if (url.includes("/campaigns/new") || url.includes("/campaigns/add")) {
+        // Check if we're on the objective selection page (has objective cards)
+        const hasObjectiveCards = document.querySelector('[data-value="WEBSITE_TRAFFIC"], [data-value="SALES"], selection-card');
+
+        if (hasObjectiveCards) {
+          console.log("[Kalit Google] Objective page detected — starting fill...");
+          _fillStarted = true;
+          await fillerLib.sleep(1500);
+          await runGoogleAdsFill(_pendingCampaign);
+          return;
+        }
+      }
+
+      if (url.includes("/campaigns/edit")) {
+        // Already in the editor (skipped objective page)
+        console.log("[Kalit Google] Editor page detected — starting fill...");
+        _fillStarted = true;
+        await fillerLib.sleep(1500);
+        await runGoogleAdsFill(_pendingCampaign);
+        return;
+      }
+    };
+
+    // Check immediately and then every 2 seconds
+    check();
+    setInterval(check, 2000);
+  }
 
   // ============================================================
   // Main Fill Flow
@@ -67,22 +117,34 @@
     const creative = adGroup.creatives?.[0] || {};
     const targeting = adGroup.targeting || {};
 
-    // Detect which page we're on
+    // Step 1: If on objective page, select objective and type
     const url = window.location.href;
-
     if (url.includes("/campaigns/new") || url.includes("/campaigns/add")) {
-      // Page B: Goal + Type selection
-      log("Page B: Selecting campaign objective and type...");
+      log("Step 1: Selecting campaign objective and type...");
       await selectObjectiveAndType(campaign);
-    } else if (url.includes("/campaigns/edit") || url.includes("/campaign_form")) {
-      // Page C: Campaign editor (main form)
-      log("Page C: Filling campaign form...");
-      await fillCampaignForm(campaign, adGroup, creative, targeting);
-    } else {
-      // Overview page — need to click "Create" first
-      log("Overview page — clicking Create > Campaign...");
-      await startNewCampaign();
+
+      // Wait for the editor to load after clicking Continue
+      log("Waiting for campaign editor to load...");
+      let editorReady = false;
+      for (let i = 0; i < 30 && !editorReady; i++) {
+        await fillerLib.sleep(2000);
+        // Check if the campaign name input exists (means editor loaded)
+        const nameInput = document.querySelector('input[aria-label="Campaign name"]');
+        if (nameInput) {
+          editorReady = true;
+          log("Editor loaded!");
+        }
+      }
+
+      if (!editorReady) {
+        log("Editor didn't load after 60s — may need manual intervention");
+        return;
+      }
     }
+
+    // Step 2: Fill the campaign form
+    log("Step 2: Filling campaign form...");
+    await fillCampaignForm(campaign, adGroup, creative, targeting);
   }
 
   // ============================================================
@@ -92,7 +154,8 @@
   async function selectObjectiveAndType(campaign) {
     const log = (msg) => console.log(`[Kalit Google] ${msg}`);
 
-    // Select objective — default to "Website traffic"
+    // ── STEP A: Select campaign objective ──
+    // The objective cards might be visible as tabs or selection-cards
     const objective = campaign.objective || "conversions";
     const objectiveMap = {
       conversions: "WEBSITE_TRAFFIC",
@@ -103,40 +166,84 @@
     };
     const objectiveValue = objectiveMap[objective] || "WEBSITE_TRAFFIC";
 
-    const objTab = document.querySelector(`dynamic-component[role="tab"][data-value="${objectiveValue}"]`) ||
-                   document.querySelector(`[role="tab"][data-value="${objectiveValue}"]`);
+    // Try multiple selector strategies
+    const objTab = document.querySelector(`[role="tab"][data-value="${objectiveValue}"]`) ||
+                   document.querySelector(`dynamic-component[role="tab"][data-value="${objectiveValue}"]`) ||
+                   document.querySelector(`selection-card[aria-label*="Website traffic"]`);
+
     if (objTab) {
       await fillerLib.clickElement(objTab);
       log(`Selected objective: ${objectiveValue}`);
-      await fillerLib.sleep(500);
+    } else {
+      // Try clicking by visible text
+      const clicked = clickByVisibleText("Website traffic") || clickByVisibleText("Sales") || clickByVisibleText("Leads");
+      log(clicked ? "Selected objective by text" : "Objective card not found — may already be selected");
     }
 
-    // Select campaign type — Demand Gen for social-style ads, Search for text ads
-    await fillerLib.sleep(1000);
-    const campaignType = campaign.type === "paid_search" ? "Search" : "Demand Gen";
-    const typeCard = document.querySelector(`selection-card[aria-label="${campaignType}"]`) ||
-                     document.querySelector(`[aria-label="${campaignType}"]`);
-    if (typeCard) {
-      await fillerLib.clickElement(typeCard);
-      log(`Selected type: ${campaignType}`);
+    await fillerLib.sleep(1500);
+
+    // Click Continue on objective page
+    await clickContinueButton(log);
+    await fillerLib.sleep(3000);
+
+    // ── STEP B: Select campaign type ──
+    // After clicking Continue on objective, Google shows campaign type cards
+    // Wait for the type cards to appear
+    let typePageDetected = false;
+    for (let i = 0; i < 10 && !typePageDetected; i++) {
       await fillerLib.sleep(500);
+      const typeCard = document.querySelector('selection-card[aria-label="Demand Gen"]') ||
+                       document.querySelector('selection-card[aria-label="Search"]') ||
+                       document.querySelector('[aria-label="Demand Gen"]');
+      if (typeCard) typePageDetected = true;
     }
 
-    // Click "Continue" / "Agree and continue"
-    await fillerLib.sleep(1000);
+    if (typePageDetected) {
+      const campaignType = campaign.type === "paid_search" ? "Search" : "Demand Gen";
+      const typeCard = document.querySelector(`selection-card[aria-label="${campaignType}"]`) ||
+                       document.querySelector(`[aria-label="${campaignType}"]`);
+      if (typeCard) {
+        await fillerLib.clickElement(typeCard);
+        log(`Selected campaign type: ${campaignType}`);
+      } else {
+        // Fallback: click by text
+        clickByVisibleText(campaignType);
+        log(`Selected campaign type by text: ${campaignType}`);
+      }
+
+      await fillerLib.sleep(1500);
+
+      // Click Continue on type page
+      await clickContinueButton(log);
+      await fillerLib.sleep(3000);
+    }
+  }
+
+  /** Click the Continue/Agree button on the current page */
+  async function clickContinueButton(log) {
     const continueBtn = document.querySelector('button[aria-label="Agree and continue to the next step"]') ||
                         document.querySelector('button[aria-label="Continue"]') ||
-                        findButtonByText("Continue");
+                        findButtonByText("Continue") ||
+                        findButtonByText("Agree and continue");
     if (continueBtn) {
       await fillerLib.clickElement(continueBtn);
       log("Clicked Continue");
-      await fillerLib.sleep(3000); // Wait for editor to load
+    } else {
+      log("Continue button not found");
     }
+  }
 
-    // Now we should be on the editor page — fill it
-    log("Editor loaded, starting form fill...");
-    // Re-check — the page may have reloaded
-    await fillerLib.sleep(2000);
+  /** Click an element by its visible text content */
+  function clickByVisibleText(text) {
+    const lower = text.toLowerCase();
+    for (const el of document.querySelectorAll("div, span, h3, h4, label, [role='tab'], selection-card")) {
+      const elText = (el.textContent || "").trim();
+      if (elText.toLowerCase().startsWith(lower) && analyzer.isElementVisible(el) && el.offsetHeight < 200) {
+        el.click();
+        return true;
+      }
+    }
+    return false;
   }
 
   // ============================================================
