@@ -64,11 +64,21 @@
 
       console.log(`[Kalit Google] URL changed: ${url}`);
 
-      // Detect which page we're on
-      if (url.includes("/campaigns/new") || url.includes("/campaigns/add")) {
-        // Check if we're on the objective selection page (has objective cards)
-        const hasObjectiveCards = document.querySelector('[data-value="WEBSITE_TRAFFIC"], [data-value="SALES"], selection-card');
+      // Detect which page we're on and act accordingly
 
+      // Overview page — click "+ New campaign" to start
+      if (url.includes("/aw/overview") || url.includes("/aw/campaigns")) {
+        if (!url.includes("/campaigns/new") && !url.includes("/campaigns/add") && !url.includes("/campaigns/edit")) {
+          console.log("[Kalit Google] Overview page — clicking Create > Campaign...");
+          await fillerLib.sleep(2000);
+          await startNewCampaign();
+          return;
+        }
+      }
+
+      // Objective selection page
+      if (url.includes("/campaigns/new") || url.includes("/campaigns/add")) {
+        const hasObjectiveCards = document.querySelector('[data-value="WEBSITE_TRAFFIC"], [data-value="SALES"], selection-card');
         if (hasObjectiveCards) {
           console.log("[Kalit Google] Objective page detected — starting fill...");
           _fillStarted = true;
@@ -78,8 +88,8 @@
         }
       }
 
+      // Campaign editor
       if (url.includes("/campaigns/edit")) {
-        // Already in the editor (skipped objective page)
         console.log("[Kalit Google] Editor page detected — starting fill...");
         _fillStarted = true;
         await fillerLib.sleep(1500);
@@ -392,21 +402,45 @@
   // ============================================================
 
   async function startNewCampaign() {
-    // Click the blue "+" FAB button
+    const log = (msg) => console.log(`[Kalit Google] ${msg}`);
+
+    // Strategy 1: Click the blue "+" FAB button (floating action button)
     const fab = document.querySelector('material-fab[aria-label="Create"]') ||
-                document.querySelector('[aria-label="Create"]');
+                document.querySelector('[aria-label="Create"]') ||
+                document.querySelector('material-fab');
     if (fab) {
+      log("Found Create FAB — clicking...");
       await fillerLib.clickElement(fab);
-      await fillerLib.sleep(500);
+      await fillerLib.sleep(1000);
 
       // Click "Campaign" in the popup menu
       const campaignOption = findButtonByText("Campaign") ||
-                              document.querySelector('[aria-label="Campaign"]');
+                              document.querySelector('[aria-label="Campaign"]') ||
+                              document.querySelector('[data-value="Campaign"]');
       if (campaignOption) {
         await fillerLib.clickElement(campaignOption);
+        log("Clicked Campaign option");
         await fillerLib.sleep(2000);
+        return;
       }
     }
+
+    // Strategy 2: Click "+ New campaign" button (if visible on campaigns page)
+    const newCampaignBtn = findButtonByText("New campaign") ||
+                            findButtonByText("+ New campaign") ||
+                            document.querySelector('a[href*="/campaigns/new"]');
+    if (newCampaignBtn) {
+      log("Found New campaign button — clicking...");
+      await fillerLib.clickElement(newCampaignBtn);
+      await fillerLib.sleep(2000);
+      return;
+    }
+
+    // Strategy 3: Navigate directly
+    log("No Create button found — navigating to campaigns/new...");
+    const currentUrl = new URL(window.location.href);
+    currentUrl.pathname = "/aw/campaigns/new";
+    window.location.href = currentUrl.toString();
   }
 
   // ============================================================
