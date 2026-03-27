@@ -8,6 +8,7 @@
     "https://ads.x.com/*",
     "https://business.x.com/*",
     "https://ads.google.com/*",
+    "https://business.google.com/*",
     "http://localhost:3002/*",
     "https://marketing.kalit.ai/*"
   ],
