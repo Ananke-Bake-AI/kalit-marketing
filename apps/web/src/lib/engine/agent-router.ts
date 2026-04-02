@@ -469,6 +469,10 @@ export async function buildAgentPrompt(taskId: string): Promise<{
             orderBy: { confidence: "desc" },
             take: 20,
           },
+          assets: {
+            orderBy: [{ isPrimary: "desc" }, { category: "asc" }],
+            take: 50,
+          },
         },
       },
     },
@@ -481,6 +485,7 @@ export async function buildAgentPrompt(taskId: string): Promise<{
 
   const wsConfig = task.workspace.config;
   const memories = task.workspace.memories;
+  const assets = task.workspace.assets;
 
   // Build context-rich user prompt
   const contextParts: string[] = [
@@ -508,6 +513,31 @@ export async function buildAgentPrompt(taskId: string): Promise<{
       );
     if (wsConfig.targetGeographies.length > 0)
       contextParts.push(`Geographies: ${wsConfig.targetGeographies.join(", ")}`);
+  }
+
+  // Brand assets context — lets agents know what visual materials are available
+  if (assets.length > 0) {
+    contextParts.push(`\n## Brand Assets (available for creatives)`);
+    contextParts.push(`The client has uploaded ${assets.length} brand asset(s). Use these as references when generating creatives, selecting imagery, or making visual recommendations.`);
+
+    const grouped = new Map<string, typeof assets>();
+    for (const asset of assets) {
+      const list = grouped.get(asset.category) ?? [];
+      list.push(asset);
+      grouped.set(asset.category, list);
+    }
+
+    for (const [category, items] of grouped) {
+      contextParts.push(`\n### ${category.replace(/_/g, " ").toUpperCase()}`);
+      for (const item of items) {
+        const parts = [`- ${item.name} (${item.mimeType})`];
+        if (item.isPrimary) parts.push("[PRIMARY]");
+        if (item.width && item.height) parts.push(`${item.width}x${item.height}`);
+        if (item.usageNotes) parts.push(`— ${item.usageNotes}`);
+        parts.push(`→ ${item.url}`);
+        contextParts.push(parts.join(" "));
+      }
+    }
   }
 
   if (memories.length > 0) {

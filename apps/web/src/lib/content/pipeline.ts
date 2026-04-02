@@ -45,7 +45,7 @@ function getImageAdapter(): ImageGenerationAdapter {
 export async function generateContent(brief: ContentBrief): Promise<GeneratedContent> {
   const numVariations = brief.numVariations ?? 3;
 
-  // 1. Fetch workspace context
+  // 1. Fetch workspace context (including brand assets for AI reference)
   const workspace = await prisma.workspace.findUnique({
     where: { id: brief.workspaceId },
     include: {
@@ -59,6 +59,10 @@ export async function generateContent(brief: ContentBrief): Promise<GeneratedCon
         where: { isActive: true },
         orderBy: { version: "desc" },
         take: 1,
+      },
+      assets: {
+        orderBy: [{ isPrimary: "desc" }, { category: "asc" }],
+        take: 30,
       },
     },
   });
@@ -82,6 +86,13 @@ export async function generateContent(brief: ContentBrief): Promise<GeneratedCon
     if (config.icpDescription) contextParts.push(`ICP: ${config.icpDescription}`);
     if (config.brandVoice) contextParts.push(`Brand Voice: ${config.brandVoice}`);
     if (config.primaryGoal) contextParts.push(`Primary Goal: ${config.primaryGoal}`);
+    if (config.colorPalette) {
+      const palette = config.colorPalette as { dominant?: string; colors?: Array<{ hex: string; label: string }> };
+      if (palette.colors?.length) {
+        contextParts.push(`Brand Colors: ${palette.colors.map((c) => `${c.hex} (${c.label})`).join(", ")}`);
+        if (palette.dominant) contextParts.push(`Dominant Color: ${palette.dominant}`);
+      }
+    }
   }
 
   if (workspace.memories.length > 0) {
@@ -101,6 +112,30 @@ export async function generateContent(brief: ContentBrief): Promise<GeneratedCon
         contextParts.push(`  - ${a.angle} → ${a.targetSegment}: "${a.hook}"`);
       }
     }
+  }
+
+  // Brand assets — pass uploaded logos, images, and visual materials so AI can reference them
+  if (workspace.assets.length > 0) {
+    contextParts.push(`\n## Brand Assets (uploaded by client)`);
+    contextParts.push(`The client has ${workspace.assets.length} brand asset(s) available. Reference these in your creatives — use existing logos, images, and brand materials rather than describing generic visuals.`);
+
+    const primaryLogo = workspace.assets.find((a) => a.category === "logo" && a.isPrimary);
+    if (primaryLogo) {
+      contextParts.push(`Primary Logo: ${primaryLogo.name} → ${primaryLogo.url}${primaryLogo.usageNotes ? ` (${primaryLogo.usageNotes})` : ""}`);
+    }
+
+    for (const asset of workspace.assets) {
+      if (asset === primaryLogo) continue;
+      const label = asset.category.replace(/_/g, " ");
+      const parts = [`- [${label}] ${asset.name}`];
+      if (asset.isPrimary) parts.push("[PRIMARY]");
+      if (asset.width && asset.height) parts.push(`${asset.width}x${asset.height}`);
+      if (asset.usageNotes) parts.push(`— ${asset.usageNotes}`);
+      parts.push(`→ ${asset.url}`);
+      contextParts.push(parts.join(" "));
+    }
+
+    contextParts.push(`\nWhen generating imagePrompt, incorporate these brand assets as references. For example: "Use the primary logo from ${primaryLogo?.url ?? 'brand assets'}, maintain the brand's visual identity with the provided color palette and imagery."`);
   }
 
   contextParts.push(`\n## Content Brief`);

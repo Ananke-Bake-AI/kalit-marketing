@@ -29,6 +29,7 @@ export class MockImageAdapter implements ImageGenerationAdapter {
       height,
       prompt: spec.prompt,
       model: "mock",
+      provider: "mock",
       metadata: {
         style: spec.style,
         aspectRatio: spec.aspectRatio,
@@ -56,6 +57,7 @@ export class MockImageAdapter implements ImageGenerationAdapter {
         height,
         prompt: prompt ?? `Mock variation ${i + 1}`,
         model: "mock",
+      provider: "mock",
         metadata: { seed, variation: i + 1, isMock: true },
       });
     }

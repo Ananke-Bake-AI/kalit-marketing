@@ -8,4 +8,5 @@ dist/
 coverage/
 .DS_Store
 .playwright-mcp/
+data/assets/
 full_context.txt

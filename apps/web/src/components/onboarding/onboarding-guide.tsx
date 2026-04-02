@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, Globe, Link2, DollarSign, Palette, Rocket } from "lucide-react";
+import { Sparkles, Globe, FolderOpen, Link2, DollarSign, Palette, Rocket } from "lucide-react";
 import { WelcomeStep } from "./steps/welcome-step";
 import { ContextStep } from "./steps/context-step";
+import { BrandAssetsStep } from "./steps/brand-assets-step";
 import { ConnectStep } from "./steps/connect-step";
 import { BudgetStep } from "./steps/budget-step";
 import { ContentStep } from "./steps/content-step";
 import { LaunchStep } from "./steps/launch-step";
 
-type StepKey = "welcome" | "context" | "connect" | "budget" | "content" | "launch";
+type StepKey = "welcome" | "context" | "brand_assets" | "connect" | "budget" | "content" | "launch";
 
 interface OnboardingGuideProps {
   workspaceId: string;
@@ -29,6 +30,7 @@ interface OnboardingGuideProps {
     accountName: string | null;
     isActive: boolean;
   }>;
+  assetsCount: number;
   creativesCount: number;
   campaignsCount: number;
   memoriesCount: number;
@@ -37,6 +39,7 @@ interface OnboardingGuideProps {
 const steps: { key: StepKey; label: string; icon: React.ElementType }[] = [
   { key: "welcome", label: "Welcome", icon: Sparkles },
   { key: "context", label: "Context", icon: Globe },
+  { key: "brand_assets", label: "Brand Assets", icon: FolderOpen },
   { key: "connect", label: "Connect", icon: Link2 },
   { key: "budget", label: "Budget & Goals", icon: DollarSign },
   { key: "content", label: "Create Content", icon: Palette },
@@ -48,6 +51,7 @@ export function OnboardingGuide({
   workspaceName,
   config,
   connectedAccounts,
+  assetsCount,
   creativesCount,
   campaignsCount,
   memoriesCount,
@@ -62,6 +66,8 @@ export function OnboardingGuide({
           return true;
         case "context":
           return memoriesCount >= 1;
+        case "brand_assets":
+          return assetsCount >= 1;
         case "connect":
           return connectedAccounts.length >= 1;
         case "budget":
@@ -74,7 +80,7 @@ export function OnboardingGuide({
           return false;
       }
     },
-    [connectedAccounts.length, config?.monthlyBudget, config?.primaryGoal, creativesCount, campaignsCount, memoriesCount]
+    [connectedAccounts.length, config?.monthlyBudget, config?.primaryGoal, assetsCount, creativesCount, campaignsCount, memoriesCount]
   );
 
   // Check localStorage dismissal
@@ -191,6 +197,16 @@ export function OnboardingGuide({
             hasContext={memoriesCount > 0}
             onComplete={goNext}
             onBack={goBack}
+          />
+        )}
+
+        {currentStep === "brand_assets" && (
+          <BrandAssetsStep
+            workspaceId={workspaceId}
+            assetsCount={assetsCount}
+            onComplete={goNext}
+            onBack={goBack}
+            onSkip={goNext}
           />
         )}
 

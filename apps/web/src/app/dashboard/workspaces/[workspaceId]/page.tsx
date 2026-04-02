@@ -15,6 +15,7 @@ import {
   ArrowDownRight,
   ChevronRight,
   DollarSign,
+  Share2,
 } from "lucide-react";
 import { TaskPipelineLive, EventFeedLive } from "@/components/war-room-live";
 import { OnboardingGuide } from "@/components/onboarding/onboarding-guide";
@@ -95,6 +96,8 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     recentEvents,
     connectedAccounts,
     creativesCount,
+    assetsCount,
+    recentSocialPosts,
   ] = await Promise.all([
     prisma.campaign.findMany({
       where: { workspaceId },
@@ -124,6 +127,14 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     }),
     prisma.creative.count({
       where: { workspaceId },
+    }),
+    prisma.workspaceAsset?.count({
+      where: { workspaceId },
+    }).catch(() => 0) ?? Promise.resolve(0),
+    prisma.socialPost.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
     }),
   ]);
 
@@ -214,6 +225,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
             accountName: a.accountName,
             isActive: a.isActive,
           }))}
+          assetsCount={assetsCount}
           creativesCount={creativesCount}
           campaignsCount={campaigns.length}
           memoriesCount={memories.length}
@@ -436,6 +448,59 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
                       </p>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Social Posts */}
+            <div className="card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Share2 className="h-4 w-4 text-slate-500" />
+                <h3 className="text-sm font-semibold text-slate-100">Social Posts</h3>
+                <Link
+                  href="/dashboard/social"
+                  className="ml-auto text-[10px] text-accent hover:underline"
+                >
+                  Create New
+                </Link>
+              </div>
+              {recentSocialPosts.length === 0 ? (
+                <EmptyState text="No social posts yet" />
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {recentSocialPosts.map((post) => {
+                    const platformColors: Record<string, string> = {
+                      x: "bg-white/10 text-white",
+                      meta: "bg-pink-500/15 text-pink-400",
+                      linkedin: "bg-blue-500/15 text-blue-400",
+                      reddit: "bg-orange-500/15 text-orange-400",
+                      tiktok: "bg-cyan-500/15 text-cyan-400",
+                    };
+                    const statusColors: Record<string, string> = {
+                      draft: "bg-zinc-500/15 text-zinc-400",
+                      published: "bg-emerald-500/15 text-emerald-400",
+                      scheduled: "bg-yellow-500/15 text-yellow-400",
+                      failed: "bg-red-500/15 text-red-400",
+                    };
+                    return (
+                      <div key={post.id} className="p-2.5 bg-white/[0.02] border border-white/5">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`badge text-[8px] ${platformColors[post.platform] ?? "bg-white/10 text-white"}`}>
+                            {post.platform}
+                          </span>
+                          <span className={`badge text-[8px] ${statusColors[post.status] ?? statusColors.draft}`}>
+                            {post.status}
+                          </span>
+                          <span className="text-[10px] text-slate-700 ml-auto">
+                            {timeAgo(post.createdAt)}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed truncate">
+                          {post.content.slice(0, 100)}{post.content.length > 100 ? "..." : ""}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

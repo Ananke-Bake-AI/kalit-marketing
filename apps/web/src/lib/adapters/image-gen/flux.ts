@@ -60,6 +60,7 @@ export class FluxAdapter implements ImageGenerationAdapter {
       height: spec.height ?? dimensions.height,
       prompt: spec.prompt,
       model: this.model,
+      provider: "replicate",
       metadata: {
         aspectRatio,
         style: spec.style,
@@ -106,6 +107,7 @@ export class FluxAdapter implements ImageGenerationAdapter {
         height: dimensions.height,
         prompt: variantPrompt,
         model: this.model,
+      provider: "replicate",
         metadata: { seed, variation: i + 1 },
       });
     }

@@ -120,6 +120,7 @@ model Workspace {
   config             WorkspaceConfig?
   members            WorkspaceMember[]
   connectedAccounts  ConnectedAccount[]
+  assets             WorkspaceAsset[]
   campaigns          Campaign[]
   creatives          Creative[]
   audiences          Audience[]
@@ -198,6 +199,63 @@ model WorkspaceConfig {
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@map("workspace_configs")
+}
+
+// ============================================================
+// WORKSPACE ASSETS (Brand Drive)
+// ============================================================
+
+enum AssetCategory {
+  logo
+  brand_image
+  product_screenshot
+  icon
+  font
+  color_swatch
+  guideline_doc
+  social_template
+  ad_template
+  video
+  raw_asset
+}
+
+model WorkspaceAsset {
+  id          String        @id @default(cuid())
+  workspaceId String        @map("workspace_id")
+  category    AssetCategory @default(raw_asset)
+
+  // File metadata
+  fileName     String  @map("file_name")
+  fileSize     Int     @map("file_size") // bytes
+  mimeType     String  @map("mime_type")
+  url          String  // served path or S3 URL
+  thumbnailUrl String? @map("thumbnail_url")
+
+  // Descriptive metadata
+  name        String  // display name (user-editable)
+  description String? @db.Text
+  tags        String[]
+
+  // Dimensions (for images/videos)
+  width  Int?
+  height Int?
+
+  // Brand context — helps AI understand what this asset is for
+  usageNotes String? @map("usage_notes") @db.Text // e.g. "primary logo, use on dark backgrounds"
+  isPrimary  Boolean @default(false) @map("is_primary") // mark as primary logo, primary color, etc.
+
+  // Storage metadata
+  storageProvider String @default("local") @map("storage_provider") // local, s3, cloudflare_r2
+  storageKey      String @map("storage_key") // internal path / S3 key
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([category])
+  @@map("workspace_assets")
 }
 
 // ============================================================

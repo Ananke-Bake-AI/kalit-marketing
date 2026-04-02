@@ -48,6 +48,7 @@ export class DallEAdapter implements ImageGenerationAdapter {
       height: dimensions.height,
       prompt: imageData.revised_prompt ?? spec.prompt,
       model: "dall-e-3",
+      provider: "openai",
       metadata: {
         quality,
         style,
