@@ -88,7 +88,11 @@ export async function GET(
     );
 
     // Fetch account info from platform (best-effort)
-    const accountInfo = await fetchAccountInfo(platform, tokenData.accessToken);
+    const accountInfo = await fetchAccountInfo(
+      platform,
+      tokenData.accessToken,
+      tokenData.metadata
+    );
 
     // Build credentials payload
     const credentials = encryptJson({
@@ -156,6 +160,8 @@ interface TokenExchangeResult {
   accessToken: string;
   refreshToken?: string;
   expiresAt: number;
+  /** Platform-specific metadata from the token response (e.g. TikTok advertiser_ids) */
+  metadata?: Record<string, unknown>;
 }
 
 async function exchangeCodeForTokens(
@@ -170,6 +176,11 @@ async function exchangeCodeForTokens(
   platform: string,
   codeVerifier?: string
 ): Promise<TokenExchangeResult> {
+  // TikTok uses JSON body with different field names
+  if (platform === "tiktok") {
+    return exchangeCodeForTokensTikTok(config, code);
+  }
+
   const bodyParams: Record<string, string> = {
     grant_type: "authorization_code",
     code,
@@ -228,6 +239,51 @@ async function exchangeCodeForTokens(
   };
 }
 
+/**
+ * TikTok Marketing API token exchange.
+ * Uses JSON body with app_id/secret/auth_code (not standard OAuth form params).
+ * Response nests data under { code: 0, data: { access_token, advertiser_ids } }.
+ */
+async function exchangeCodeForTokensTikTok(
+  config: { tokenUrl: string; clientId: string; clientSecret: string },
+  authCode: string
+): Promise<TokenExchangeResult> {
+  const response = await fetch(config.tokenUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      app_id: config.clientId,
+      secret: config.clientSecret,
+      auth_code: authCode,
+    }),
+  });
+
+  const json = (await response.json()) as {
+    code: number;
+    message: string;
+    data?: {
+      access_token?: string;
+      advertiser_ids?: string[];
+      scope?: number[];
+    };
+  };
+
+  if (json.code !== 0 || !json.data?.access_token) {
+    throw new Error(
+      `TikTok token exchange failed: ${json.message || "Unknown error"}`
+    );
+  }
+
+  return {
+    accessToken: json.data.access_token,
+    // TikTok access tokens are long-lived; no refresh token by default
+    expiresAt: Math.floor(Date.now() / 1000) + 86400 * 365,
+    metadata: {
+      advertiserIds: json.data.advertiser_ids ?? [],
+    },
+  };
+}
+
 interface AccountInfoResult {
   accountId: string;
   accountName?: string;
@@ -236,7 +292,8 @@ interface AccountInfoResult {
 
 async function fetchAccountInfo(
   platform: string,
-  accessToken: string
+  accessToken: string,
+  metadata?: Record<string, unknown>
 ): Promise<AccountInfoResult> {
   try {
     switch (platform) {
@@ -299,11 +356,38 @@ async function fetchAccountInfo(
         return { accountId: data.id, accountName: data.name };
       }
       case "tiktok": {
-        // TikTok returns advertiser info in the token response metadata
-        return {
-          accountId: `tiktok_${Date.now()}`,
-          accountName: "TikTok Business",
-        };
+        // Use the advertiser IDs returned in the token exchange response
+        const advertiserIds = (metadata?.advertiserIds as string[]) ?? [];
+        if (advertiserIds.length === 0) {
+          return {
+            accountId: `tiktok_${Date.now()}`,
+            accountName: "TikTok Business",
+          };
+        }
+        const advertiserId = advertiserIds[0];
+        // Fetch real advertiser name from the API
+        try {
+          const res = await fetch(
+            `https://business-api.tiktok.com/open_api/v1.3/advertiser/info/?advertiser_ids=["${advertiserId}"]`,
+            { headers: { "Access-Token": accessToken } }
+          );
+          const info = (await res.json()) as {
+            code: number;
+            data?: { list?: Array<{ advertiser_id: string; advertiser_name: string }> };
+          };
+          const name = info.data?.list?.[0]?.advertiser_name;
+          return {
+            accountId: advertiserId,
+            accountName: name || "TikTok Business",
+            metadata: { advertiserIds },
+          };
+        } catch {
+          return {
+            accountId: advertiserId,
+            accountName: "TikTok Business",
+            metadata: { advertiserIds },
+          };
+        }
       }
       case "hubspot": {
         const res = await fetch(

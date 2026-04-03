@@ -66,16 +66,25 @@ export async function GET(
   const redirectUri = `${baseUrl}/api/oauth/${platform}/callback`;
 
   const authUrl = new URL(config.authorizationUrl);
-  authUrl.searchParams.set("client_id", config.clientId);
-  authUrl.searchParams.set("redirect_uri", redirectUri);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("state", state);
-  authUrl.searchParams.set("scope", config.scopes.join(" "));
+
+  if (platform === "tiktok") {
+    // TikTok uses app_id (not client_id), and scope is configured at app level
+    authUrl.searchParams.set("app_id", config.clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("state", state);
+  } else {
+    authUrl.searchParams.set("client_id", config.clientId);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("state", state);
+    authUrl.searchParams.set("scope", config.scopes.join(" "));
+  }
 
   // Apply platform-specific params (except code_challenge_method which we handle below)
   if (config.additionalParams) {
     for (const [key, value] of Object.entries(config.additionalParams)) {
       if (key === "code_challenge_method") continue; // handled by PKCE logic
+      if (platform === "tiktok" && key === "app_id") continue; // already set above
       authUrl.searchParams.set(key, value);
     }
   }

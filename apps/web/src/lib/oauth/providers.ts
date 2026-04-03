@@ -60,10 +60,14 @@ const providers: Record<string, () => OAuthProviderConfig> = {
     tokenUrl: "https://business-api.tiktok.com/open_api/v1.3/oauth2/access_token/",
     clientId: getPlatformKey("TIKTOK_CLIENT_ID"),
     clientSecret: getPlatformKey("TIKTOK_CLIENT_SECRET"),
-    scopes: ["ad_management", "creative_management"],
-    additionalParams: {
-      app_id: getPlatformKey("TIKTOK_CLIENT_ID"),
-    },
+    scopes: [
+      "ad_account_management",
+      "ads_management",
+      "audience_management",
+      "reporting",
+      "measurement",
+      "creative_management",
+    ],
   }),
 
   x: () => ({

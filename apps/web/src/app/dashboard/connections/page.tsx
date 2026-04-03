@@ -252,7 +252,7 @@ const guides: Guide[] = [
       {
         title: "Register a Developer App",
         content:
-          "Go to the TikTok Marketing API portal. Click \"My Apps\" > \"Create App\". Fill in:\n\n• App name (e.g. \"Kalit Marketing\")\n• Description of what your app does\n• Select the Marketing API product\n• Choose the scopes: Ad Management, Creative Management\n\nSubmit for review — sandbox access is usually granted quickly.",
+          "Go to the TikTok Marketing API portal. Click \"My Apps\" > \"Create App\". Fill in:\n\n• App name (e.g. \"Kalit Marketing\")\n• Description of what your app does\n• Select the Marketing API product\n• Choose the scopes: Ad Account Management, Ads Management, Audience Management, Reporting, Measurement, Creative Management\n\nSubmit for review — sandbox access is usually granted quickly.",
         link: {
           label: "TikTok Marketing API Portal",
           url: "https://business-api.tiktok.com/portal/apps",
