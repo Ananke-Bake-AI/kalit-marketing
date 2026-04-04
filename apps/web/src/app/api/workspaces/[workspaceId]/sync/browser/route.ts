@@ -217,7 +217,7 @@ async function handleCanonicalSync(workspaceId: string, body: unknown) {
     data: {
       workspaceId,
       type: "performance_anomaly",
-      data: {
+      data: JSON.parse(JSON.stringify({
         syncType: "browser_canonical",
         platform: syncData.platform,
         syncedAt: syncData.syncedAt || new Date().toISOString(),
@@ -231,14 +231,13 @@ async function handleCanonicalSync(workspaceId: string, body: unknown) {
         accountOverview: syncData.accountOverview || null,
         audienceInsights: syncData.audienceInsights || null,
         conversionEvents: syncData.conversionEvents || null,
-        // Store full campaign data for analysis (capped to prevent huge events)
         campaignDetails: syncData.campaigns.slice(0, 20).map(c => ({
           name: c.name,
           status: c.status,
           metrics: c.metrics,
           adGroupCount: c.adGroups?.length || 0,
         })),
-      },
+      })),
     },
   });
 
@@ -308,7 +307,7 @@ async function handleLegacySync(workspaceId: string, body: unknown) {
     data: {
       workspaceId,
       type: "performance_anomaly",
-      data: {
+      data: JSON.parse(JSON.stringify({
         syncType: "browser_legacy",
         platform: syncData.platform,
         pageType: syncData.pageType,
@@ -320,7 +319,7 @@ async function handleLegacySync(workspaceId: string, body: unknown) {
         campaignsUnmatched: unmatched.length,
         matched,
         unmatched,
-      },
+      })),
     },
   });
 
