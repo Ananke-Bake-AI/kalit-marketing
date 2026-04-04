@@ -180,7 +180,7 @@ Rules:
         mode: "extract",
         timestamp: new Date().toISOString(),
         elapsed,
-        tokens: response.usage?.output_tokens || 0,
+        tokens: (response as any).usage?.output_tokens || 0,
         page: snapshot.url,
         campaignsFound: (result.campaigns || []).length,
         summaryKeys: Object.keys(result.summary || {}).length,
