@@ -397,7 +397,7 @@ ${recentHistory ? `PREVIOUS:\n${recentHistory}\n\n` : ""}Return commands to fill
       mode: mode || "plan",
       timestamp: new Date().toISOString(),
       elapsed,
-      tokens: response.usage?.output_tokens || 0,
+      tokens: (response as any).usage?.output_tokens || 0,
       page: snapshot.url,
       aiResponse: responseText.slice(0, 3000),
       commandCount: actions.length,
