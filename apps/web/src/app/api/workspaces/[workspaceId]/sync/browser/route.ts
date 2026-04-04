@@ -287,14 +287,14 @@ async function handleLegacySync(workspaceId: string, body: unknown) {
       await prisma.campaign.update({
         where: { id: dbCampaign.id },
         data: {
-          impressions: scraped.impressions ?? dbCampaign.impressions,
-          clicks: scraped.clicks ?? dbCampaign.clicks,
-          spend: scraped.spend ?? dbCampaign.spend,
-          conversions: scraped.conversions ?? dbCampaign.conversions,
-          ctr: scraped.ctr ?? dbCampaign.ctr,
-          cpc: scraped.cpc ?? dbCampaign.cpc,
-          cpa: scraped.cpa ?? dbCampaign.cpa,
-          roas: scraped.roas ?? dbCampaign.roas,
+          impressions: (scraped.impressions as number) ?? dbCampaign.impressions,
+          clicks: (scraped.clicks as number) ?? dbCampaign.clicks,
+          spend: (scraped.spend as number) ?? dbCampaign.spend,
+          conversions: (scraped.conversions as number) ?? dbCampaign.conversions,
+          ctr: (scraped.ctr as number) ?? dbCampaign.ctr,
+          cpc: (scraped.cpc as number) ?? dbCampaign.cpc,
+          cpa: (scraped.cpa as number) ?? dbCampaign.cpa,
+          roas: (scraped.roas as number) ?? dbCampaign.roas,
         },
       });
       matched.push(scraped.name);
