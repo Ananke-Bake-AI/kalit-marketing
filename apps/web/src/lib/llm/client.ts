@@ -67,7 +67,7 @@ async function callWithSDK(options: {
   // Build content blocks — images first (for context), then text prompt
   const content: Array<
     | { type: "text"; text: string }
-    | { type: "image"; source: { type: "base64"; media_type: string; data: string } }
+    | { type: "image"; source: { type: "base64"; media_type: "image/png" | "image/jpeg" | "image/gif" | "image/webp"; data: string } }
   > = [];
 
   if (options.images?.length) {
@@ -76,7 +76,7 @@ async function callWithSDK(options: {
         type: "image",
         source: {
           type: "base64",
-          media_type: img.media_type,
+          media_type: img.media_type as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
           data: img.data,
         },
       });
