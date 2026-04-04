@@ -83,10 +83,10 @@ export async function POST(req: NextRequest) {
   // Detect review/final page — must match URL OR have zero fillable fields + launch button
   const urlLower = (snapshot.url || "").toLowerCase();
   const buttonTexts = (snapshot.buttons || []).map((b: Record<string, string>) => (b.text || "").toLowerCase());
-  const hasLaunchBtn = buttonTexts.some(t =>
+  const hasLaunchBtn = buttonTexts.some((t: string) =>
     t.includes("launch campaign") || t.includes("launch")
   );
-  const hasSaveDraftBtn = buttonTexts.some(t =>
+  const hasSaveDraftBtn = buttonTexts.some((t: string) =>
     t.includes("save draft") || t.includes("save as draft")
   );
   const isReviewPage =
