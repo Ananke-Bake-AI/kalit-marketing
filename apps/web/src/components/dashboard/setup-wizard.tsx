@@ -1178,6 +1178,7 @@ export function SetupWizard() {
           setVerificationResults((prev) => ({
             ...prev,
             [platform.id]: {
+              platform: platform.id,
               keysConfigured: { "Kalit Extension": detected },
               allKeysConfigured: detected,
               oauthRequired: false,
