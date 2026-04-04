@@ -151,7 +151,7 @@ async function handleCanonicalSync(workspaceId: string, body: unknown) {
     where: {
       workspaceId,
       platform: syncData.platform,
-      status: { in: ["active", "paused", "optimizing", "scaling", "monitoring", "launching"] },
+      status: { in: ["active", "paused", "optimizing", "launching"] },
     },
     include: {
       adGroups: { select: { id: true, name: true } },
