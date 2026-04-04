@@ -75,10 +75,10 @@ export function ContentStep({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-bold tracking-[-0.04em] text-white">
+        <h2 className="text-lg font-bold tracking-[-0.04em] text-text">
           Create Your First Content
         </h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-text-secondary">
           Let&apos;s generate marketing content using AI based on your product
           and brand.
         </p>
@@ -88,7 +88,7 @@ export function ContentStep({
         <div className="max-w-xl">
           {/* Content type */}
           <div className="mb-5">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Content Type
             </p>
             <div className="flex gap-2">
@@ -99,7 +99,7 @@ export function ContentStep({
                   className={`border px-4 py-2 text-xs font-medium transition-all ${
                     contentType === ct.value
                       ? "border-accent/30 bg-accent/15 text-accent"
-                      : "border-white/10 bg-white/[0.03] text-slate-400 hover:border-white/20"
+                      : "border-divider bg-transparent text-text-secondary hover:border-divider"
                   }`}
                 >
                   {ct.label}
@@ -110,7 +110,7 @@ export function ContentStep({
 
           {/* Channel */}
           <div className="mb-6">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Channel (optional)
             </p>
             <div className="flex flex-wrap gap-2">
@@ -123,7 +123,7 @@ export function ContentStep({
                   className={`border px-3 py-1.5 text-[10px] font-medium transition-all ${
                     channel === ch.value
                       ? "border-accent/30 bg-accent/15 text-accent"
-                      : "border-white/10 bg-white/[0.03] text-slate-500 hover:border-white/20"
+                      : "border-divider bg-transparent text-text-secondary hover:border-divider"
                   }`}
                 >
                   {ch.label}
@@ -163,18 +163,18 @@ export function ContentStep({
                   className="border border-emerald-500/20 bg-emerald-500/5 p-4"
                 >
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500">
+                    <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-text-secondary">
                       Variation {i + 1}
                     </span>
-                    <span className="badge bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                    <span className="badge bg-emerald-500/15 text-emerald-600 border-emerald-500/30">
                       <Check className="mr-1 h-2.5 w-2.5" />
                       Created
                     </span>
                   </div>
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-semibold text-text">
                     {v.headline}
                   </p>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  <p className="mt-1 text-xs leading-relaxed text-text-secondary">
                     {v.body}
                   </p>
                   <p className="mt-2 text-xs font-medium text-accent">
@@ -186,8 +186,8 @@ export function ContentStep({
           ) : (
             <div className="mb-6 border border-emerald-500/20 bg-emerald-500/5 p-5">
               <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-400" />
-                <p className="text-sm text-emerald-400">
+                <Check className="h-4 w-4 text-emerald-600" />
+                <p className="text-sm text-emerald-600">
                   {creativesCount} creative{creativesCount !== 1 ? "s" : ""}{" "}
                   already created for this workspace.
                 </p>

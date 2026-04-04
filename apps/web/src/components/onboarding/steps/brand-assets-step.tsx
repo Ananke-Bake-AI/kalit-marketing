@@ -40,11 +40,11 @@ export function BrandAssetsStep({
           <div className="flex h-8 w-8 items-center justify-center border border-accent/30 bg-accent/10">
             <FolderOpen className="h-4 w-4 text-accent" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-white">
+          <h2 className="text-xl font-bold tracking-tight text-text">
             Brand Assets
           </h2>
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-text-secondary">
           Upload your startup&apos;s visual identity — logos, product screenshots, brand images.
           Our AI uses these to generate on-brand marketing creatives that actually look like your company.
         </p>
@@ -72,10 +72,10 @@ export function BrandAssetsStep({
             category: "brand_image",
           },
         ].map((item) => (
-          <div key={item.category} className="border border-white/5 bg-white/[0.02] p-4">
-            <item.icon className="mb-2 h-5 w-5 text-slate-500" />
-            <p className="text-xs font-semibold text-slate-200">{item.title}</p>
-            <p className="mt-1 text-[10px] text-slate-500">{item.desc}</p>
+          <div key={item.category} className="border border-divider bg-transparent p-4">
+            <item.icon className="mb-2 h-5 w-5 text-text-secondary" />
+            <p className="text-xs font-semibold text-text">{item.title}</p>
+            <p className="mt-1 text-[10px] text-text-secondary">{item.desc}</p>
           </div>
         ))}
       </div>
@@ -83,14 +83,14 @@ export function BrandAssetsStep({
       {/* Status */}
       {hasAssets && (
         <div className="mb-4 flex items-center gap-2 border border-emerald-500/20 bg-emerald-500/10 p-3">
-          <Check className="h-4 w-4 text-emerald-400" />
+          <Check className="h-4 w-4 text-emerald-600" />
           <span className="text-xs text-emerald-300">
             {uploadedCount} asset{uploadedCount > 1 ? "s" : ""} uploaded
           </span>
           {!showUpload && (
             <button
               onClick={() => setShowUpload(true)}
-              className="ml-auto text-[10px] text-emerald-400 hover:text-emerald-300"
+              className="ml-auto text-[10px] text-emerald-600 hover:text-emerald-300"
             >
               + Upload more
             </button>
@@ -114,7 +114,7 @@ export function BrandAssetsStep({
       {!showUpload && !hasAssets && (
         <button
           onClick={() => setShowUpload(true)}
-          className="mb-6 flex w-full items-center justify-center gap-2 border border-dashed border-white/10 py-8 text-sm text-slate-500 hover:border-accent/30 hover:text-accent"
+          className="mb-6 flex w-full items-center justify-center gap-2 border border-dashed border-divider py-8 text-sm text-text-secondary hover:border-accent/30 hover:text-accent"
         >
           <Upload className="h-5 w-5" />
           Upload Brand Assets
@@ -134,7 +134,7 @@ export function BrandAssetsStep({
         <div className="flex gap-2">
           <button
             onClick={onSkip}
-            className="px-3 py-2 text-[10px] text-slate-600 hover:text-slate-400"
+            className="px-3 py-2 text-[10px] text-text-secondary hover:text-text-secondary"
           >
             Skip for now
           </button>

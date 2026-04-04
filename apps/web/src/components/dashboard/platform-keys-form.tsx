@@ -237,13 +237,13 @@ export function PlatformKeysForm() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Key className="h-4 w-4 text-accent" />
-          <h2 className="text-sm font-bold text-white">
+          <h2 className="text-sm font-bold text-text">
             Platform API Credentials
           </h2>
         </div>
         <div className="flex items-center gap-2">
           {saved && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+            <span className="flex items-center gap-1 text-[10px] text-emerald-600">
               <Check className="h-3 w-3" />
               Saved
             </span>
@@ -273,7 +273,7 @@ export function PlatformKeysForm() {
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-2 text-xs text-text-secondary">
           <Loader2 className="h-3 w-3 animate-spin" />
           Loading...
         </div>
@@ -282,10 +282,10 @@ export function PlatformKeysForm() {
           {keyGroups.map((group) => (
             <div
               key={group.title}
-              className="border border-white/5 bg-white/[0.01]"
+              className="border border-divider bg-transparent"
             >
-              <div className="px-4 py-3 border-b border-white/5">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">
+              <div className="px-4 py-3 border-b border-divider">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-text-secondary">
                   {group.title}
                 </p>
               </div>
@@ -298,10 +298,10 @@ export function PlatformKeysForm() {
                   return (
                     <div key={field.key}>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="text-[11px] text-slate-500 font-medium">
+                        <label className="text-[11px] text-text-secondary font-medium">
                           {field.label}
                           {status?.set && !currentValue && (
-                            <span className="ml-2 text-emerald-400/70">
+                            <span className="ml-2 text-emerald-600/70">
                               ({status.masked})
                             </span>
                           )}
@@ -325,7 +325,7 @@ export function PlatformKeysForm() {
                                 [field.key]: !prev[field.key],
                               }))
                             }
-                            className="text-slate-600 hover:text-slate-400 transition-colors cursor-pointer"
+                            className="text-text-secondary hover:text-text-secondary transition-colors cursor-pointer"
                           >
                             {isVisible ? (
                               <EyeOff className="h-3 w-3" />
@@ -346,11 +346,11 @@ export function PlatformKeysForm() {
                             ? `Already configured (${status.masked})`
                             : field.placeholder
                         }
-                        className={`w-full bg-white/[0.03] border text-xs px-3 py-2 font-mono placeholder-slate-700 focus:outline-none transition-colors ${
+                        className={`w-full bg-transparent border text-xs px-3 py-2 font-mono placeholder-slate-700 focus:outline-none transition-colors ${
                           status?.set && !currentValue
                             ? "border-emerald-500/20 focus:border-emerald-500/40"
-                            : "border-white/10 focus:border-accent/30"
-                        } text-white`}
+                            : "border-divider focus:border-accent/30"
+                        } text-text`}
                       />
                     </div>
                   );

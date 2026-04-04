@@ -58,7 +58,7 @@ const EVENT_CONFIG: Record<
   },
   agent_action_taken: {
     label: "Agent Action",
-    color: "#c8ff00",
+    color: "#6366F1",
     bgColor: "rgba(200, 255, 0, 0.15)",
     icon: Zap,
   },
@@ -412,8 +412,8 @@ export function ActivityFeed({
             onMouseEnter={(e) => {
               if (!loadingMore) {
                 e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-                e.currentTarget.style.color = "#c8ff00";
-                e.currentTarget.style.borderColor = "rgba(200,255,0,0.2)";
+                e.currentTarget.style.color = "#6366F1";
+                e.currentTarget.style.borderColor = "rgba(99,102,241,0.2)";
               }
             }}
             onMouseLeave={(e) => {

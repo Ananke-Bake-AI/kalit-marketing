@@ -210,8 +210,8 @@ export default function SocialPage() {
       <div className="flex items-center justify-between">
         <div>
           <p className="eyebrow mb-1">Social Media</p>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Content Creator</h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight text-text">Content Creator</h1>
+          <p className="mt-1 text-xs text-text-secondary">
             Generate ready-to-post social content across all platforms from a single prompt
           </p>
         </div>
@@ -220,7 +220,7 @@ export default function SocialPage() {
             <select value={selectedWorkspace} onChange={(e) => setSelectedWorkspace(e.target.value)} className="input pr-8 text-xs">
               {workspaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-500" />
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-text-secondary" />
           </div>
         )}
       </div>
@@ -229,7 +229,7 @@ export default function SocialPage() {
         {/* ─── Left: Controls ─── */}
         <div className="space-y-4 xl:col-span-1">
           {/* Prompt */}
-          <div className="panel-surface p-4">
+          <div className="card-white p-4">
             <p className="eyebrow mb-2">What do you want to post?</p>
             <textarea
               value={prompt}
@@ -244,7 +244,7 @@ export default function SocialPage() {
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-1.5 text-[10px] text-slate-500 hover:text-accent"
+                className="flex items-center gap-1.5 text-[10px] text-text-secondary hover:text-accent"
               >
                 {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                 Import images
@@ -256,7 +256,7 @@ export default function SocialPage() {
                       <img src={url} alt="" className="h-full w-full object-cover" />
                       <button
                         onClick={() => setImportedUrls((prev) => prev.filter((_, j) => j !== i))}
-                        className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center bg-red-500 text-white group-hover:flex"
+                        className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center bg-red-500 text-text group-hover:flex"
                       >
                         <X className="h-2.5 w-2.5" />
                       </button>
@@ -268,7 +268,7 @@ export default function SocialPage() {
           </div>
 
           {/* Platforms */}
-          <div className="panel-surface p-4">
+          <div className="card-white p-4">
             <p className="eyebrow mb-3">Platforms</p>
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {(platforms.length ? platforms : [
@@ -286,15 +286,15 @@ export default function SocialPage() {
                     onClick={() => togglePlatform(p.id)}
                     className={`flex items-center gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider transition-all ${
                       selected
-                        ? "border border-white/20 bg-white/[0.06]"
-                        : "border border-white/5 text-slate-500 hover:border-white/10"
+                        ? "border border-divider bg-black/[0.03]"
+                        : "border border-divider text-text-secondary hover:border-divider"
                     }`}
                   >
-                    <div className={`flex h-4 w-4 items-center justify-center border ${selected ? "border-accent bg-accent text-black" : "border-white/20"}`}>
+                    <div className={`flex h-4 w-4 items-center justify-center border ${selected ? "border-accent bg-accent text-black" : "border-divider"}`}>
                       {selected && <Check className="h-2.5 w-2.5" />}
                     </div>
                     <span style={{ color: selected ? style?.color : undefined }}>{style?.icon}</span>
-                    <span className={selected ? "text-slate-200" : ""}>{p.name}</span>
+                    <span className={selected ? "text-text" : ""}>{p.name}</span>
                   </button>
                 );
               })}
@@ -303,9 +303,9 @@ export default function SocialPage() {
 
           {/* Brand Assets */}
           {imageAssets.length > 0 && (
-            <div className="panel-surface p-4">
+            <div className="card-white p-4">
               <p className="eyebrow mb-2">Brand Assets</p>
-              <p className="mb-3 text-[10px] text-slate-600">Use as visual references for image generation</p>
+              <p className="mb-3 text-[10px] text-text-secondary">Use as visual references for image generation</p>
               <div className="grid grid-cols-5 gap-1.5">
                 {imageAssets.slice(0, 10).map((asset) => {
                   const selected = selectedAssets.includes(asset.id);
@@ -314,7 +314,7 @@ export default function SocialPage() {
                       key={asset.id}
                       onClick={() => toggleAsset(asset.id)}
                       className={`relative overflow-hidden transition-all ${
-                        selected ? "ring-2 ring-accent ring-offset-1 ring-offset-[#050816]" : "opacity-60 hover:opacity-100"
+                        selected ? "ring-2 ring-accent ring-offset-1 ring-offset-body" : "opacity-60 hover:opacity-100"
                       }`}
                     >
                       <img src={asset.url} alt={asset.name} className="aspect-square w-full object-cover" />
@@ -332,14 +332,14 @@ export default function SocialPage() {
           )}
 
           {/* Image Generation */}
-          <div className="panel-surface p-4">
+          <div className="card-white p-4">
             <div className="flex items-center justify-between">
               <p className="eyebrow">Image Generation</p>
               <label className="flex cursor-pointer items-center gap-2">
-                <span className="text-[10px] text-slate-500">{generateImages ? "On" : "Off"}</span>
+                <span className="text-[10px] text-text-secondary">{generateImages ? "On" : "Off"}</span>
                 <button
                   onClick={() => setGenerateImages(!generateImages)}
-                  className={`h-5 w-9 transition-colors ${generateImages ? "bg-accent/30" : "bg-white/10"}`}
+                  className={`h-5 w-9 transition-colors ${generateImages ? "bg-accent/30" : "bg-subtle-strong"}`}
                 >
                   <div className={`h-4 w-4 bg-white transition-transform ${generateImages ? "translate-x-[18px]" : "translate-x-[2px]"}`} />
                 </button>
@@ -387,9 +387,9 @@ export default function SocialPage() {
 
           {posts.length === 0 && !generating ? (
             <div className="flex flex-col items-center justify-center py-32">
-              <Share2 className="mb-4 h-12 w-12 text-slate-700" />
-              <p className="text-sm text-slate-400">Ready to create</p>
-              <p className="mt-1 text-center text-xs text-slate-600">
+              <Share2 className="mb-4 h-12 w-12 text-text-secondary" />
+              <p className="text-sm text-text-secondary">Ready to create</p>
+              <p className="mt-1 text-center text-xs text-text-secondary">
                 Describe what you want to post — AI generates tailored content<br />
                 for each platform with matching visuals
               </p>
@@ -397,8 +397,8 @@ export default function SocialPage() {
           ) : generating ? (
             <div className="flex flex-col items-center justify-center py-32">
               <Loader2 className="mb-4 h-8 w-8 animate-spin text-accent" />
-              <p className="text-sm text-slate-300">Creating content for {selectedPlatforms.length} platforms...</p>
-              <p className="mt-1 text-xs text-slate-600">Generating text + images — this takes 15-40 seconds</p>
+              <p className="text-sm text-text">Creating content for {selectedPlatforms.length} platforms...</p>
+              <p className="mt-1 text-xs text-text-secondary">Generating text + images — this takes 15-40 seconds</p>
             </div>
           ) : (
             <div className="space-y-4">

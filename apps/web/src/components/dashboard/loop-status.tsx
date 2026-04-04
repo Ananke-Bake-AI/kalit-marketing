@@ -107,8 +107,8 @@ export function LoopStatus({ workspaceId }: LoopStatusProps) {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Zap size={18} style={{ color: "#c8ff00" }} />
-          <span className="eyebrow" style={{ color: "#c8ff00", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>
+          <Zap size={18} style={{ color: "#6366F1" }} />
+          <span className="eyebrow" style={{ color: "#6366F1", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 600 }}>
             Optimization Loop
           </span>
         </div>
@@ -127,9 +127,9 @@ export function LoopStatus({ workspaceId }: LoopStatusProps) {
         style={{
           width: "100%",
           padding: "12px 20px",
-          background: running ? "rgba(200,255,0,0.1)" : "#c8ff00",
-          color: running ? "#c8ff00" : "#050816",
-          border: running ? "1px solid rgba(200,255,0,0.3)" : "1px solid #c8ff00",
+          background: running ? "rgba(99,102,241,0.1)" : "#6366F1",
+          color: running ? "#6366F1" : "var(--body)",
+          border: running ? "1px solid rgba(99,102,241,0.3)" : "1px solid #6366F1",
           borderRadius: "0",
           cursor: running ? "not-allowed" : "pointer",
           fontWeight: 700,
@@ -166,15 +166,15 @@ export function LoopStatus({ workspaceId }: LoopStatusProps) {
                 alignItems: "center",
                 gap: "10px",
                 padding: "8px 12px",
-                background: i === currentPhase ? "rgba(200,255,0,0.06)" : "transparent",
-                border: i === currentPhase ? "1px solid rgba(200,255,0,0.15)" : "1px solid transparent",
+                background: i === currentPhase ? "rgba(99,102,241,0.06)" : "transparent",
+                border: i === currentPhase ? "1px solid rgba(99,102,241,0.15)" : "1px solid transparent",
                 transition: "all 0.3s",
               }}
             >
               {i < currentPhase ? (
-                <CheckCircle2 size={14} style={{ color: "#c8ff00", flexShrink: 0 }} />
+                <CheckCircle2 size={14} style={{ color: "#6366F1", flexShrink: 0 }} />
               ) : i === currentPhase ? (
-                <Loader2 size={14} style={{ color: "#c8ff00", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+                <Loader2 size={14} style={{ color: "#6366F1", animation: "spin 1s linear infinite", flexShrink: 0 }} />
               ) : (
                 <div style={{ width: 14, height: 14, border: "1px solid rgba(255,255,255,0.15)", flexShrink: 0 }} />
               )}
@@ -350,7 +350,7 @@ function ResultStat({
           fontSize: "18px",
           fontFamily: "monospace",
           fontWeight: 700,
-          color: "#c8ff00",
+          color: "#6366F1",
         }}
       >
         {value}

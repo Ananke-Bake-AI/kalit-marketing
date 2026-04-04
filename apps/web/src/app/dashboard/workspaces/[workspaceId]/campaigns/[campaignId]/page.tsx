@@ -30,14 +30,14 @@ interface PageProps {
 }
 
 const statusConfig: Record<string, { color: string; icon: typeof Clock }> = {
-  draft: { color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: Clock },
+  draft: { color: "bg-zinc-500/15 text-text-secondary border-zinc-500/30", icon: Clock },
   pending_approval: { color: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30", icon: AlertCircle },
-  approved: { color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30", icon: CheckCircle },
+  approved: { color: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30", icon: CheckCircle },
   launching: { color: "bg-blue-500/15 text-blue-400 border-blue-500/30", icon: Zap },
   active: { color: "bg-accent/15 text-accent border-accent/30", icon: Zap },
   paused: { color: "bg-orange-500/15 text-orange-400 border-orange-500/30", icon: Clock },
   optimizing: { color: "bg-purple-500/15 text-purple-400 border-purple-500/30", icon: TrendingUp },
-  completed: { color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30", icon: CheckCircle },
+  completed: { color: "bg-zinc-500/15 text-text-secondary border-zinc-500/30", icon: CheckCircle },
   failed: { color: "bg-red-500/15 text-red-400 border-red-500/30", icon: AlertCircle },
 };
 
@@ -139,7 +139,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
     tiktok: { bg: "bg-pink-500/15", text: "text-pink-400", label: "TikTok Ads" },
     reddit: { bg: "bg-orange-500/15", text: "text-orange-400", label: "Reddit Ads" },
     linkedin: { bg: "bg-sky-500/15", text: "text-sky-400", label: "LinkedIn Ads" },
-    x: { bg: "bg-zinc-500/15", text: "text-zinc-300", label: "X Ads" },
+    x: { bg: "bg-zinc-500/15", text: "text-text", label: "X Ads" },
   };
   // Detect all platforms from ad groups
   const adGroupPlatforms = [...new Set(campaign.adGroups.map(ag => ag.platform).filter(Boolean))] as string[];
@@ -161,23 +161,23 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   return (
     <div>
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-4 text-xs text-slate-500">
+      <div className="flex items-center gap-2 mb-4 text-xs text-text-secondary">
         <Link
           href={`/dashboard/workspaces/${workspaceId}`}
-          className="hover:text-white transition-colors"
+          className="hover:text-text transition-colors"
         >
           {campaign.workspace.name}
         </Link>
         <span>&rsaquo;</span>
-        <span className="text-slate-400">Campaigns</span>
+        <span className="text-text-secondary">Campaigns</span>
         <span>&rsaquo;</span>
-        <span className="text-white">{campaign.name}</span>
+        <span className="text-text">{campaign.name}</span>
       </div>
 
       {/* Back link */}
       <Link
         href={`/dashboard/workspaces/${workspaceId}`}
-        className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-white transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-text transition-colors mb-6"
       >
         <ArrowLeft className="h-3 w-3" />
         Back to dashboard
@@ -188,7 +188,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-xl font-bold tracking-[-0.04em] text-white">
+              <h1 className="text-xl font-bold tracking-[-0.04em] text-text">
                 {campaign.name}
               </h1>
               {isMultiPlatform ? (
@@ -218,8 +218,8 @@ export default async function CampaignDetailPage({ params }: PageProps) {
               </span>
             </div>
             {campaign.objective && (
-              <p className="text-xs text-slate-500">
-                Objective: <span className="text-slate-300">{campaign.objective}</span>
+              <p className="text-xs text-text-secondary">
+                Objective: <span className="text-text">{campaign.objective}</span>
               </p>
             )}
             <CampaignPlatformAdapt
@@ -233,30 +233,30 @@ export default async function CampaignDetailPage({ params }: PageProps) {
           </div>
 
           {/* Budget card */}
-          <div className="card p-4 min-w-[200px] shrink-0">
+          <div className="section-card p-4 min-w-[200px] shrink-0">
             <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-3.5 w-3.5 text-slate-500" />
+              <DollarSign className="h-3.5 w-3.5 text-text-secondary" />
               <p className="eyebrow">Budget</p>
             </div>
             <div className="flex items-baseline gap-2">
-              <p className="text-lg font-bold text-white">
+              <p className="text-lg font-bold text-text">
                 {campaign.dailyBudget ? `${formatCurrency(campaign.dailyBudget)}/day` : "—"}
               </p>
               {campaign.totalBudget && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-text-secondary">
                   / {formatCurrency(campaign.totalBudget)} total
                 </p>
               )}
             </div>
             {campaign.totalBudget && campaign.totalBudget > 0 && (
               <div className="mt-2">
-                <div className="h-1.5 bg-white/5 w-full">
+                <div className="h-1.5 bg-subtle w-full">
                   <div
                     className="h-full bg-accent/60"
                     style={{ width: `${budgetUsedPercent}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-slate-600 mt-1">
+                <p className="text-[10px] text-text-secondary mt-1">
                   {formatCurrency(campaign.spend)} spent ({budgetUsedPercent.toFixed(0)}%)
                 </p>
               </div>
@@ -266,7 +266,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
       </div>
 
       {/* Actions */}
-      <div className="mb-8 space-y-4">
+      <div className="mb-6 space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
           <CampaignActions
             campaignId={campaignId}
@@ -287,18 +287,18 @@ export default async function CampaignDetailPage({ params }: PageProps) {
 
       {/* Deployment Platform */}
       {campaignPlatform && (
-        <div className="card p-4 mb-8">
+        <div className="section-card p-4 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 flex items-center justify-center ${platformInfo!.bg}`}>
                 <Target className={`h-4 w-4 ${platformInfo!.text}`} />
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">
+                <p className="text-xs font-semibold text-text">
                   Deploy to {platformInfo!.label}
                 </p>
                 {hasMatchingConnection ? (
-                  <p className="text-[10px] text-emerald-400 flex items-center gap-1">
+                  <p className="text-[10px] text-emerald-600 flex items-center gap-1">
                     <CheckCircle className="h-2.5 w-2.5" />
                     Connected — {connectedAccounts.find(a => a.platform === campaignPlatform)?.accountName || "Account linked"}
                   </p>
@@ -312,7 +312,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
             </div>
             {!hasMatchingConnection && connectedAccounts.length > 0 && (
               <div className="text-right">
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[10px] text-text-secondary">
                   Available: {connectedAccounts.map(a => {
                     const pi = platformColors[a.platform];
                     return pi?.label || a.platform;
@@ -339,7 +339,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
       )}
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
         <StatCard icon={Eye} label="Impressions" value={formatNumber(campaign.impressions)} />
         <StatCard icon={MousePointerClick} label="Clicks" value={formatNumber(campaign.clicks)} />
         <StatCard icon={Target} label="Conversions" value={formatNumber(campaign.conversions)} />
@@ -400,35 +400,35 @@ export default async function CampaignDetailPage({ params }: PageProps) {
 
       {/* Strategy Section */}
       {(campaign.targetAudience || campaign.messagingAngle || campaign.hypothesis) && (
-        <div className="card p-5 mb-8">
+        <div className="section-card p-5 mb-6">
           <p className="eyebrow mb-4">Strategy & Hypothesis</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {campaign.targetAudience && (
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary mb-1">
                   Target Audience
                 </p>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-text leading-relaxed">
                   {campaign.targetAudience}
                 </p>
               </div>
             )}
             {campaign.messagingAngle && (
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary mb-1">
                   Messaging Angle
                 </p>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-text leading-relaxed">
                   {campaign.messagingAngle}
                 </p>
               </div>
             )}
             {campaign.hypothesis && (
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary mb-1">
                   Hypothesis
                 </p>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-text leading-relaxed">
                   {campaign.hypothesis}
                 </p>
               </div>
@@ -443,7 +443,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
           <Layers className="h-3.5 w-3.5" />
           Ad Groups ({totalAdGroups})
         </p>
-        <p className="text-[10px] text-slate-600">
+        <p className="text-[10px] text-text-secondary">
           {totalCreatives} creative{totalCreatives !== 1 ? "s" : ""} · {totalKeywords} keyword{totalKeywords !== 1 ? "s" : ""}
         </p>
       </div>
@@ -451,8 +451,8 @@ export default async function CampaignDetailPage({ params }: PageProps) {
       {/* Ad Groups */}
       <div className="space-y-3 mb-8">
         {campaign.adGroups.length === 0 ? (
-          <div className="card p-8 text-center">
-            <p className="text-sm text-slate-500">No ad groups yet</p>
+          <div className="section-card p-8 text-center">
+            <p className="text-sm text-text-secondary">No ad groups yet</p>
           </div>
         ) : (
           campaign.adGroups.map((ag) => (
@@ -493,11 +493,11 @@ export default async function CampaignDetailPage({ params }: PageProps) {
 
       {/* Experiment link */}
       {campaign.experiment && (
-        <div className="card p-4 mb-8">
+        <div className="section-card p-4 mb-6">
           <p className="eyebrow mb-2">Linked Experiment</p>
           <div className="flex items-center gap-3">
             <Zap className="h-4 w-4 text-purple-400" />
-            <p className="text-sm text-white">{campaign.experiment.name}</p>
+            <p className="text-sm text-text">{campaign.experiment.name}</p>
             <span className="badge bg-purple-500/15 text-purple-400 border-purple-500/30">
               {campaign.experiment.status}
             </span>
@@ -520,12 +520,12 @@ function StatCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="card p-4">
+    <div className="section-card p-4">
       <div className="flex items-center gap-1.5 mb-2">
-        <Icon className="h-3 w-3 text-slate-500" />
-        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+        <Icon className="h-3 w-3 text-text-secondary" />
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">{label}</p>
       </div>
-      <p className={`text-xl font-bold ${highlight ? "text-accent" : "text-white"}`}>
+      <p className={`text-xl font-bold ${highlight ? "text-accent" : "text-text"}`}>
         {value}
       </p>
     </div>

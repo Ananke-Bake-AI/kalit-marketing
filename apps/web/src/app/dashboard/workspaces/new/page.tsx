@@ -131,16 +131,16 @@ export default function NewWorkspacePage() {
       <div className="mb-8">
         <Link
           href="/dashboard"
-          className="mb-4 inline-flex items-center gap-2 border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.24em] text-slate-400 transition-all hover:border-accent/20 hover:text-slate-200"
+          className="mb-4 inline-flex items-center gap-2 border border-divider bg-transparent px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.24em] text-text-secondary transition-all hover:border-accent/20 hover:text-text"
         >
           <ArrowLeft className="h-3 w-3" />
           Back to Dashboard
         </Link>
         <p className="eyebrow mb-2">Onboarding</p>
-        <h1 className="text-xl font-bold tracking-[-0.04em] text-white">
+        <h1 className="text-xl font-bold tracking-[-0.04em] text-text">
           New Growth Workspace
         </h1>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-text-secondary">
           Set up a new autonomous growth runtime for a client
         </p>
       </div>
@@ -154,7 +154,7 @@ export default function NewWorkspacePage() {
           return (
             <div key={step.key} className="flex items-center gap-1">
               {i > 0 && (
-                <span className="text-[10px] text-slate-700">&rsaquo;</span>
+                <span className="text-[10px] text-text-secondary">&rsaquo;</span>
               )}
               <button
                 onClick={() => setCurrentStep(step.key)}
@@ -162,8 +162,8 @@ export default function NewWorkspacePage() {
                   isActive
                     ? "border border-accent/30 bg-accent/20 text-accent"
                     : isDone
-                      ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
-                      : "border border-white/5 bg-white/[0.03] text-slate-600"
+                      ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-600"
+                      : "border border-divider bg-transparent text-text-secondary"
                 }`}
               >
                 <Icon className="h-3 w-3" />
@@ -175,7 +175,7 @@ export default function NewWorkspacePage() {
       </div>
 
       {/* Form */}
-      <div className="panel-surface max-w-2xl p-8">
+      <div className="card-white max-w-2xl p-8">
         {currentStep === "product" && (
           <div className="space-y-5">
             <p className="section-title mb-6">Startup & Product</p>
@@ -352,19 +352,19 @@ export default function NewWorkspacePage() {
                   className={`block w-full border p-4 text-left transition-all ${
                     form.autonomyMode === mode.value
                       ? "border-accent/30 bg-accent/10"
-                      : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                      : "border-divider bg-transparent hover:border-divider"
                   }`}
                 >
                   <p
                     className={`text-sm font-semibold ${
                       form.autonomyMode === mode.value
                         ? "text-accent"
-                        : "text-slate-200"
+                        : "text-text"
                     }`}
                   >
                     {mode.title}
                   </p>
-                  <p className="mt-0.5 text-xs text-slate-500">{mode.desc}</p>
+                  <p className="mt-0.5 text-xs text-text-secondary">{mode.desc}</p>
                 </button>
               ))}
             </div>
@@ -383,14 +383,14 @@ export default function NewWorkspacePage() {
                   className={`flex w-full items-start gap-3 border p-4 text-left transition-all ${
                     form.shareConnections
                       ? "border-accent/30 bg-accent/10"
-                      : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                      : "border-divider bg-transparent hover:border-divider"
                   }`}
                 >
                   <div
                     className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border transition-colors ${
                       form.shareConnections
                         ? "border-accent bg-accent"
-                        : "border-white/20 bg-transparent"
+                        : "border-divider bg-transparent"
                     }`}
                   >
                     {form.shareConnections && (
@@ -404,13 +404,13 @@ export default function NewWorkspacePage() {
                         className={`text-sm font-semibold ${
                           form.shareConnections
                             ? "text-accent"
-                            : "text-slate-200"
+                            : "text-text"
                         }`}
                       >
                         Share connections from existing workspaces
                       </p>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-text-secondary">
                       Compatible ad accounts will be shared so you can start
                       launching campaigns immediately. You can switch to
                       workspace-specific accounts later.
@@ -419,17 +419,17 @@ export default function NewWorkspacePage() {
                       {existingConnections.map((conn, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1 border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] text-slate-400"
+                          className="inline-flex items-center gap-1 border border-divider bg-transparent px-2 py-0.5 text-[10px] text-text-secondary"
                         >
                           <span className="font-medium capitalize">
                             {conn.platform}
                           </span>
                           {conn.accountName && (
-                            <span className="text-slate-600">
+                            <span className="text-text-secondary">
                               · {conn.accountName}
                             </span>
                           )}
-                          <span className="text-slate-600">
+                          <span className="text-text-secondary">
                             from {conn.workspaceName}
                           </span>
                         </span>
@@ -500,7 +500,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
         {label}
       </label>
       <input
@@ -511,7 +511,7 @@ function Field({
         className="input w-full"
       />
       {hint && (
-        <p className="mt-1 text-[10px] text-slate-600">{hint}</p>
+        <p className="mt-1 text-[10px] text-text-secondary">{hint}</p>
       )}
     </div>
   );
@@ -532,7 +532,7 @@ function TextAreaField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
         {label}
       </label>
       <textarea
@@ -559,7 +559,7 @@ function SelectField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
         {label}
       </label>
       <select

@@ -47,7 +47,7 @@ interface Workspace {
 const autonomyConfig: Record<string, { label: string; color: string; description: string }> = {
   draft: {
     label: "Draft",
-    color: "bg-zinc-500/20 text-zinc-400 border-zinc-500/30",
+    color: "bg-zinc-500/20 text-text-secondary border-zinc-500/30",
     description: "All actions saved as drafts for manual review",
   },
   approval: {
@@ -62,7 +62,7 @@ const autonomyConfig: Record<string, { label: string; color: string; description
   },
   autonomous: {
     label: "Autonomous",
-    color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+    color: "bg-emerald-500/20 text-emerald-600 border-emerald-500/30",
     description: "Full autonomy with monitoring and alerting",
   },
 };
@@ -159,8 +159,8 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white font-sans">Settings</h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <h1 className="text-2xl font-bold text-text font-sans">Settings</h1>
+          <p className="text-sm text-text-secondary mt-1">
             Workspace configuration and connected platforms
           </p>
         </div>
@@ -183,7 +183,7 @@ export default function SettingsPage() {
         <div
           className={`flex items-center justify-between p-3 border text-sm ${
             banner.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600"
               : "bg-red-500/10 border-red-500/20 text-red-400"
           }`}
         >
@@ -207,12 +207,12 @@ export default function SettingsPage() {
       {loading ? (
         <div className="card p-12 text-center">
           <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-zinc-500 mt-3">Loading settings...</p>
+          <p className="text-sm text-text-secondary mt-3">Loading settings...</p>
         </div>
       ) : !config ? (
         <div className="card p-12 text-center">
-          <p className="text-zinc-500">No configuration found</p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p className="text-text-secondary">No configuration found</p>
+          <p className="text-xs text-text-secondary mt-1">
             Complete the onboarding wizard to configure this workspace
           </p>
         </div>
@@ -220,23 +220,23 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Product Info */}
           <div className="card p-5 space-y-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+            <p className="text-xs text-text-secondary uppercase tracking-wider font-medium eyebrow">
               Product
             </p>
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-zinc-600 mb-0.5">Name</p>
-                <p className="text-white font-medium">{config.productName}</p>
+                <p className="text-xs text-text-secondary mb-0.5">Name</p>
+                <p className="text-text font-medium">{config.productName}</p>
               </div>
               <div>
-                <p className="text-xs text-zinc-600 mb-0.5">Description</p>
-                <p className="text-sm text-zinc-300 leading-relaxed">
+                <p className="text-xs text-text-secondary mb-0.5">Description</p>
+                <p className="text-sm text-text leading-relaxed">
                   {config.productDescription}
                 </p>
               </div>
               {config.productUrl && (
                 <div>
-                  <p className="text-xs text-zinc-600 mb-0.5">URL</p>
+                  <p className="text-xs text-text-secondary mb-0.5">URL</p>
                   <p className="text-sm text-accent font-mono">
                     {config.productUrl}
                   </p>
@@ -245,14 +245,14 @@ export default function SettingsPage() {
               <div className="flex gap-6">
                 {config.industry && (
                   <div>
-                    <p className="text-xs text-zinc-600 mb-0.5">Industry</p>
-                    <p className="text-sm text-zinc-300">{config.industry}</p>
+                    <p className="text-xs text-text-secondary mb-0.5">Industry</p>
+                    <p className="text-sm text-text">{config.industry}</p>
                   </div>
                 )}
                 {config.stage && (
                   <div>
-                    <p className="text-xs text-zinc-600 mb-0.5">Stage</p>
-                    <p className="text-sm text-zinc-300 capitalize">
+                    <p className="text-xs text-text-secondary mb-0.5">Stage</p>
+                    <p className="text-sm text-text capitalize">
                       {config.stage}
                     </p>
                   </div>
@@ -263,38 +263,38 @@ export default function SettingsPage() {
 
           {/* Budget */}
           <div className="card p-5 space-y-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+            <p className="text-xs text-text-secondary uppercase tracking-wider font-medium eyebrow">
               Budget & Targets
             </p>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-zinc-600 mb-0.5">Monthly Budget</p>
-                  <p className="text-xl text-white font-bold">
+                  <p className="text-xs text-text-secondary mb-0.5">Monthly Budget</p>
+                  <p className="text-xl text-text font-bold">
                     {config.monthlyBudget
                       ? formatCurrency(config.monthlyBudget, config.currency)
                       : "Not set"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-600 mb-0.5">Currency</p>
-                  <p className="text-sm text-zinc-300 font-mono">
+                  <p className="text-xs text-text-secondary mb-0.5">Currency</p>
+                  <p className="text-sm text-text font-mono">
                     {config.currency}
                   </p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-zinc-600 mb-0.5">Target CAC</p>
-                  <p className="text-white font-medium">
+                  <p className="text-xs text-text-secondary mb-0.5">Target CAC</p>
+                  <p className="text-text font-medium">
                     {config.targetCac
                       ? formatCurrency(config.targetCac, config.currency)
                       : "Not set"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-600 mb-0.5">Target ROAS</p>
-                  <p className="text-white font-medium">
+                  <p className="text-xs text-text-secondary mb-0.5">Target ROAS</p>
+                  <p className="text-text font-medium">
                     {config.targetRoas
                       ? `${config.targetRoas.toFixed(2)}x`
                       : "Not set"}
@@ -306,35 +306,35 @@ export default function SettingsPage() {
 
           {/* ICP */}
           <div className="card p-5 space-y-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+            <p className="text-xs text-text-secondary uppercase tracking-wider font-medium eyebrow">
               Ideal Customer Profile
             </p>
             {config.icpDescription ? (
-              <p className="text-sm text-zinc-300 leading-relaxed">
+              <p className="text-sm text-text leading-relaxed">
                 {config.icpDescription}
               </p>
             ) : (
-              <p className="text-sm text-zinc-600">Not configured</p>
+              <p className="text-sm text-text-secondary">Not configured</p>
             )}
           </div>
 
           {/* Brand Voice */}
           <div className="card p-5 space-y-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+            <p className="text-xs text-text-secondary uppercase tracking-wider font-medium eyebrow">
               Brand Voice
             </p>
             {config.brandVoice ? (
-              <p className="text-sm text-zinc-300 leading-relaxed">
+              <p className="text-sm text-text leading-relaxed">
                 {config.brandVoice}
               </p>
             ) : (
-              <p className="text-sm text-zinc-600">Not configured</p>
+              <p className="text-sm text-text-secondary">Not configured</p>
             )}
           </div>
 
           {/* Autonomy Mode */}
           <div className="card p-5 space-y-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+            <p className="text-xs text-text-secondary uppercase tracking-wider font-medium eyebrow">
               Autonomy Mode
             </p>
             {autonomy && (
@@ -346,7 +346,7 @@ export default function SettingsPage() {
                     {autonomy.label}
                   </span>
                 </div>
-                <p className="text-sm text-zinc-400">{autonomy.description}</p>
+                <p className="text-sm text-text-secondary">{autonomy.description}</p>
 
                 {/* Visual autonomy scale */}
                 <div className="flex gap-1 mt-2">
@@ -367,14 +367,14 @@ export default function SettingsPage() {
                                 Object.keys(autonomyConfig).indexOf(
                                   config.autonomyMode
                                 )
-                              ? "bg-white/10"
-                              : "bg-white/5"
+                              ? "bg-subtle-strong"
+                              : "bg-subtle"
                         }`}
                       />
                     )
                   )}
                 </div>
-                <div className="flex justify-between text-[10px] text-zinc-600">
+                <div className="flex justify-between text-[10px] text-text-secondary">
                   <span>Draft</span>
                   <span>Approval</span>
                   <span>Guardrailed</span>
@@ -386,7 +386,7 @@ export default function SettingsPage() {
 
           {/* Target Geographies */}
           <div className="card p-5 space-y-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+            <p className="text-xs text-text-secondary uppercase tracking-wider font-medium eyebrow">
               Target Geographies
             </p>
             {config.targetGeographies.length > 0 ? (
@@ -394,21 +394,21 @@ export default function SettingsPage() {
                 {config.targetGeographies.map((geo) => (
                   <span
                     key={geo}
-                    className="px-2 py-1 text-xs bg-white/5 text-zinc-300 rounded-none border border-white/5"
+                    className="px-2 py-1 text-xs bg-subtle text-text rounded-none border border-divider"
                   >
                     {geo}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-zinc-600">No geographies configured</p>
+              <p className="text-sm text-text-secondary">No geographies configured</p>
             )}
           </div>
 
           {/* Connected Platforms — full width */}
           <div className="card p-5 space-y-4 lg:col-span-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-zinc-500 uppercase tracking-wider font-medium eyebrow">
+              <p className="text-xs text-text-secondary uppercase tracking-wider font-medium eyebrow">
                 Connected Platforms
               </p>
               <Link
@@ -426,21 +426,21 @@ export default function SettingsPage() {
                 {workspace.connectedAccounts.map((acc) => (
                   <div
                     key={acc.id}
-                    className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5"
+                    className="flex items-center justify-between p-3 bg-transparent border border-divider"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm text-white font-medium truncate">
+                      <p className="text-sm text-text font-medium truncate">
                         {platformLabels[acc.platform] || acc.platform}
                       </p>
                       {acc.accountName && (
-                        <p className="text-xs text-zinc-500 truncate">
+                        <p className="text-xs text-text-secondary truncate">
                           {acc.accountName}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-3">
                       {acc.lastSyncAt && (
-                        <span className="text-[10px] text-zinc-600">
+                        <span className="text-[10px] text-text-secondary">
                           Synced{" "}
                           {new Date(acc.lastSyncAt).toLocaleDateString()}
                         </span>
@@ -456,8 +456,8 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="text-center py-6">
-                <Plug className="h-8 w-8 text-zinc-700 mx-auto mb-2" />
-                <p className="text-sm text-zinc-500">
+                <Plug className="h-8 w-8 text-text-secondary mx-auto mb-2" />
+                <p className="text-sm text-text-secondary">
                   No platforms connected yet
                 </p>
                 <Link

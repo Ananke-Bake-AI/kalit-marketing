@@ -116,7 +116,7 @@ function SectionHeader({
   return (
     <div className="flex items-center gap-2 mb-4">
       <span className="text-accent">{icon}</span>
-      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
         {label}
       </span>
     </div>
@@ -137,10 +137,10 @@ function SummaryCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="border border-white/5 bg-white/[0.01] p-4 flex flex-col gap-1">
+    <div className="border border-divider bg-transparent p-4 flex flex-col gap-1">
       <div className="flex items-center gap-1.5 mb-1">
-        <span className="text-slate-600">{icon}</span>
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+        <span className="text-text-secondary">{icon}</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
           {label}
         </span>
       </div>
@@ -148,12 +148,12 @@ function SummaryCard({
         className={
           highlight
             ? "text-lg font-bold font-mono text-accent"
-            : "text-lg font-bold font-mono text-white"
+            : "text-lg font-bold font-mono text-text"
         }
       >
         {value}
       </span>
-      {sub && <span className="text-[10px] text-slate-500">{sub}</span>}
+      {sub && <span className="text-[10px] text-text-secondary">{sub}</span>}
     </div>
   );
 }
@@ -176,11 +176,11 @@ function MiniBarChart({ metrics }: { metrics: DailyMetric[] }) {
       <div className="flex items-center gap-4 mb-4 text-[10px]">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 bg-accent/60" />
-          <span className="text-slate-500">Spend</span>
+          <span className="text-text-secondary">Spend</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 bg-emerald-500/60" />
-          <span className="text-slate-500">Conversions</span>
+          <span className="text-text-secondary">Conversions</span>
         </div>
       </div>
 
@@ -208,14 +208,14 @@ function MiniBarChart({ metrics }: { metrics: DailyMetric[] }) {
 
               {/* Tooltip */}
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
-                <div className="bg-[#0a0f2e] border border-white/10 p-2 text-[10px] whitespace-nowrap">
-                  <p className="text-white font-medium mb-1">
+                <div className="bg-[#0a0f2e] border border-divider p-2 text-[10px] whitespace-nowrap">
+                  <p className="text-text font-medium mb-1">
                     {formatDate(m.date)}
                   </p>
                   <p className="text-accent">
                     Spend: {formatCurrency(m.spend)}
                   </p>
-                  <p className="text-emerald-400">
+                  <p className="text-emerald-600">
                     Conv: {formatNumber(m.conversions)}
                   </p>
                 </div>
@@ -237,7 +237,7 @@ function MiniBarChart({ metrics }: { metrics: DailyMetric[] }) {
           return (
             <div
               key={m.date}
-              className="flex-1 text-center text-[8px] text-slate-600 font-mono"
+              className="flex-1 text-center text-[8px] text-text-secondary font-mono"
             >
               {show ? formatDate(m.date) : ""}
             </div>
@@ -343,7 +343,7 @@ export function CampaignPerformance({
             <span className="text-accent">
               <TrendingUp className="w-4 h-4" />
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
               Campaign Performance
             </span>
           </div>
@@ -351,7 +351,7 @@ export function CampaignPerformance({
           <div className="flex items-center gap-3">
             {/* Date range selector */}
             <div className="flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-slate-600" />
+              <Calendar className="w-3 h-3 text-text-secondary" />
               {(["7d", "14d", "30d"] as DateRange[]).map((r) => (
                 <button
                   key={r}
@@ -359,7 +359,7 @@ export function CampaignPerformance({
                   className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors ${
                     range === r
                       ? "bg-accent/15 text-accent border border-accent/30"
-                      : "text-slate-500 border border-white/5 hover:text-slate-300 hover:border-white/10"
+                      : "text-text-secondary border border-divider hover:text-text hover:border-divider"
                   }`}
                 >
                   {r}
@@ -385,7 +385,7 @@ export function CampaignPerformance({
 
         {/* Last synced */}
         {lastSynced && (
-          <div className="flex items-center gap-1.5 mt-3 text-[10px] text-slate-600">
+          <div className="flex items-center gap-1.5 mt-3 text-[10px] text-text-secondary">
             <Clock className="w-3 h-3" />
             Last synced: {formatTimestamp(lastSynced)}
           </div>
@@ -408,7 +408,7 @@ export function CampaignPerformance({
       {loading && (
         <div className="card p-12 flex flex-col items-center justify-center gap-3">
           <Loader2 className="w-5 h-5 text-accent animate-spin" />
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-text-secondary">
             Loading performance data...
           </span>
         </div>
@@ -419,11 +419,11 @@ export function CampaignPerformance({
       {/* ============================================================ */}
       {!loading && !hasData && !error && (
         <div className="card p-12 flex flex-col items-center justify-center gap-3">
-          <BarChart3 className="w-6 h-6 text-slate-700" />
-          <span className="text-sm text-slate-500 font-medium">
+          <BarChart3 className="w-6 h-6 text-text-secondary" />
+          <span className="text-sm text-text-secondary font-medium">
             No performance data yet
           </span>
-          <span className="text-[10px] text-slate-600 max-w-xs text-center leading-relaxed">
+          <span className="text-[10px] text-text-secondary max-w-xs text-center leading-relaxed">
             Data will appear after the campaign starts receiving impressions.
             Try syncing to pull the latest data from the ad platform.
           </span>
@@ -494,7 +494,7 @@ export function CampaignPerformance({
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-white/5">
+                <tr className="border-b border-divider">
                   {[
                     "Date",
                     "Impressions",
@@ -507,7 +507,7 @@ export function CampaignPerformance({
                   ].map((col) => (
                     <th
                       key={col}
-                      className="text-left text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600 py-2 px-3 first:pl-0"
+                      className="text-left text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary py-2 px-3 first:pl-0"
                     >
                       {col}
                     </th>
@@ -518,35 +518,35 @@ export function CampaignPerformance({
                 {metrics.map((m, i) => (
                   <tr
                     key={m.date}
-                    className={`border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors ${
+                    className={`border-b border-white/[0.03] hover:bg-transparent transition-colors ${
                       i % 2 === 0 ? "bg-white/[0.005]" : ""
                     }`}
                   >
-                    <td className="py-2.5 px-3 pl-0 font-mono text-slate-300 whitespace-nowrap">
+                    <td className="py-2.5 px-3 pl-0 font-mono text-text whitespace-nowrap">
                       {formatDate(m.date)}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-white">
+                    <td className="py-2.5 px-3 font-mono text-text">
                       {formatNumber(m.impressions)}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-white">
+                    <td className="py-2.5 px-3 font-mono text-text">
                       {formatNumber(m.clicks)}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-slate-300">
+                    <td className="py-2.5 px-3 font-mono text-text">
                       {formatPct(m.ctr)}
                     </td>
                     <td className="py-2.5 px-3 font-mono">
                       <span
                         className={
-                          m.conversions > 0 ? "text-accent font-bold" : "text-slate-500"
+                          m.conversions > 0 ? "text-accent font-bold" : "text-text-secondary"
                         }
                       >
                         {formatNumber(m.conversions)}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-white">
+                    <td className="py-2.5 px-3 font-mono text-text">
                       {formatCurrency(m.spend)}
                     </td>
-                    <td className="py-2.5 px-3 font-mono text-slate-300">
+                    <td className="py-2.5 px-3 font-mono text-text">
                       {m.conversions > 0 ? formatCurrency(m.cpa) : "--"}
                     </td>
                     <td className="py-2.5 px-3 font-mono">
@@ -555,8 +555,8 @@ export function CampaignPerformance({
                           m.roas >= 1
                             ? "text-accent font-bold"
                             : m.roas > 0
-                              ? "text-white"
-                              : "text-slate-500"
+                              ? "text-text"
+                              : "text-text-secondary"
                         }
                       >
                         {m.roas > 0 ? `${m.roas.toFixed(2)}x` : "--"}

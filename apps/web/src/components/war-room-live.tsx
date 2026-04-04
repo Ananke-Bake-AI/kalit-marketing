@@ -58,7 +58,7 @@ function duration(start: string, end?: string | null): string {
 
 function LiveIndicator() {
   return (
-    <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-400">
+    <span className="ml-auto flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-emerald-600">
       <span className="relative flex h-2 w-2">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -72,20 +72,20 @@ const statusConfig: Record<
   string,
   { color: string; bg: string; label: string; spinning?: boolean }
 > = {
-  queued: { color: "text-slate-400", bg: "bg-zinc-500/20", label: "Queued" },
+  queued: { color: "text-text-secondary", bg: "bg-zinc-500/20", label: "Queued" },
   researching: { color: "text-blue-400", bg: "bg-blue-500/20", label: "Researching", spinning: true },
   generating: { color: "text-purple-400", bg: "bg-purple-500/20", label: "Generating", spinning: true },
-  executing: { color: "text-emerald-400", bg: "bg-emerald-500/20", label: "Executing", spinning: true },
+  executing: { color: "text-emerald-600", bg: "bg-emerald-500/20", label: "Executing", spinning: true },
   waiting_approval: { color: "text-orange-400", bg: "bg-orange-500/20", label: "Awaiting Approval" },
-  approved: { color: "text-emerald-400", bg: "bg-emerald-500/20", label: "Approved" },
-  completed: { color: "text-emerald-400", bg: "bg-emerald-500/20", label: "Completed" },
+  approved: { color: "text-emerald-600", bg: "bg-emerald-500/20", label: "Approved" },
+  completed: { color: "text-emerald-600", bg: "bg-emerald-500/20", label: "Completed" },
   failed: { color: "text-red-400", bg: "bg-red-500/20", label: "Failed" },
 };
 
 const familyColors: Record<string, string> = {
   research: "text-blue-400",
   production: "text-purple-400",
-  execution: "text-emerald-400",
+  execution: "text-emerald-600",
   review: "text-amber-400",
 };
 
@@ -180,8 +180,8 @@ export function TaskPipelineLive({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Clock className="h-4 w-4 text-slate-500" />
-        <h3 className="text-sm font-semibold text-slate-100">Task Pipeline</h3>
+        <Clock className="h-4 w-4 text-text-secondary" />
+        <h3 className="text-sm font-semibold text-text">Task Pipeline</h3>
         {activeCount > 0 && (
           <span className="text-[10px] px-1.5 py-0.5 bg-accent/20 text-accent font-medium">
             {activeCount} active
@@ -199,7 +199,7 @@ export function TaskPipelineLive({
             className={`px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer ${
               filter === f
                 ? "bg-accent/15 text-accent border border-accent/30"
-                : "text-slate-600 border border-white/5 hover:text-slate-400"
+                : "text-text-secondary border border-divider hover:text-text-secondary"
             }`}
           >
             {f === "all" ? `All (${displayTasks.length})` : f === "active" ? `Active (${activeCount})` : `Done (${displayTasks.length - activeCount})`}
@@ -209,7 +209,7 @@ export function TaskPipelineLive({
 
       {filtered.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-700">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-secondary">
             {filter === "all" ? "No tasks yet" : `No ${filter} tasks`}
           </p>
         </div>
@@ -231,7 +231,7 @@ export function TaskPipelineLive({
                     ? "border-accent/20 bg-accent/[0.03]"
                     : isApproval
                       ? "border-orange-500/20 bg-orange-500/[0.03]"
-                      : "border-white/5 bg-white/[0.02]"
+                      : "border-divider bg-transparent"
                 }`}
               >
                 {/* Main row */}
@@ -240,9 +240,9 @@ export function TaskPipelineLive({
                   className="flex items-center w-full p-2.5 text-left cursor-pointer"
                 >
                   {isExpanded ? (
-                    <ChevronDown className="h-3 w-3 text-slate-600 mr-2 shrink-0" />
+                    <ChevronDown className="h-3 w-3 text-text-secondary mr-2 shrink-0" />
                   ) : (
-                    <ChevronRight className="h-3 w-3 text-slate-600 mr-2 shrink-0" />
+                    <ChevronRight className="h-3 w-3 text-text-secondary mr-2 shrink-0" />
                   )}
 
                   {/* Priority dot */}
@@ -252,11 +252,11 @@ export function TaskPipelineLive({
                   />
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-white truncate">
+                    <p className="text-xs font-medium text-text truncate">
                       {task.title}
                     </p>
-                    <p className="text-[10px] text-slate-600 mt-0.5">
-                      <span className={familyColors[task.family] ?? "text-slate-500"}>
+                    <p className="text-[10px] text-text-secondary mt-0.5">
+                      <span className={familyColors[task.family] ?? "text-text-secondary"}>
                         {task.agentType}
                       </span>
                       {" · "}
@@ -275,7 +275,7 @@ export function TaskPipelineLive({
                     </span>
 
                     {/* Duration / time */}
-                    <span className="text-[10px] text-slate-700 w-12 text-right">
+                    <span className="text-[10px] text-text-secondary w-12 text-right">
                       {task.startedAt && !task.completedAt
                         ? duration(task.startedAt)
                         : timeAgo(task.createdAt)}
@@ -285,14 +285,14 @@ export function TaskPipelineLive({
 
                 {/* Expanded details + actions */}
                 {isExpanded && (
-                  <div className="px-2.5 pb-2.5 pt-0 border-t border-white/5">
+                  <div className="px-2.5 pb-2.5 pt-0 border-t border-divider">
                     <div className="mt-2 space-y-1.5">
                       {task.reason && (
-                        <p className="text-[10px] text-slate-500">
-                          <span className="text-slate-600 font-medium">Reason:</span> {task.reason}
+                        <p className="text-[10px] text-text-secondary">
+                          <span className="text-text-secondary font-medium">Reason:</span> {task.reason}
                         </p>
                       )}
-                      <div className="flex items-center gap-3 text-[10px] text-slate-600">
+                      <div className="flex items-center gap-3 text-[10px] text-text-secondary">
                         <span>Created: {timeAgo(task.createdAt)}</span>
                         {task.startedAt && (
                           <span>Started: {timeAgo(task.startedAt)}</span>
@@ -301,7 +301,7 @@ export function TaskPipelineLive({
                           <span>Finished: {timeAgo(task.completedAt)}</span>
                         )}
                         {task.startedAt && (
-                          <span className="text-slate-500">
+                          <span className="text-text-secondary">
                             Duration: {duration(task.startedAt, task.completedAt)}
                           </span>
                         )}
@@ -317,7 +317,7 @@ export function TaskPipelineLive({
                             loading={actionLoading === `${task.id}:approve`}
                             icon={CheckCircle}
                             label="Approve"
-                            className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25"
+                            className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/25"
                           />
                           <ActionBtn
                             onClick={() => handleAction(task.id, "reject")}
@@ -361,7 +361,7 @@ export function TaskPipelineLive({
                           loading={outputLoading === task.id}
                           icon={Eye}
                           label="View Output"
-                          className="bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                          className="bg-subtle text-text-secondary border-divider hover:bg-subtle-strong"
                         />
                       )}
                     </div>
@@ -384,8 +384,8 @@ export function TaskPipelineLive({
 function TaskOutputViewer({ output }: { output: Record<string, unknown> | null }) {
   if (!output) {
     return (
-      <div className="mt-3 p-2 border border-white/5 bg-white/[0.02]">
-        <p className="text-[10px] text-slate-600">No output data</p>
+      <div className="mt-3 p-2 border border-divider bg-transparent">
+        <p className="text-[10px] text-text-secondary">No output data</p>
       </div>
     );
   }
@@ -403,8 +403,8 @@ function TaskOutputViewer({ output }: { output: Record<string, unknown> | null }
           .trim();
 
         return (
-          <div key={key} className="border border-white/5 bg-white/[0.02]">
-            <p className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 bg-white/[0.02] border-b border-white/5">
+          <div key={key} className="border border-divider bg-transparent">
+            <p className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-text-secondary bg-transparent border-b border-divider">
               {label}
             </p>
             <div className="p-2.5">
@@ -417,7 +417,7 @@ function TaskOutputViewer({ output }: { output: Record<string, unknown> | null }
               ) : typeof value === "object" && value !== null ? (
                 <OutputItem item={value as Record<string, unknown>} />
               ) : (
-                <p className="text-[11px] text-slate-300">{String(value)}</p>
+                <p className="text-[11px] text-text">{String(value)}</p>
               )}
             </div>
           </div>
@@ -429,7 +429,7 @@ function TaskOutputViewer({ output }: { output: Record<string, unknown> | null }
 
 function OutputItem({ item }: { item: Record<string, unknown> }) {
   if (typeof item !== "object" || item === null) {
-    return <p className="text-[11px] text-slate-400">{String(item)}</p>;
+    return <p className="text-[11px] text-text-secondary">{String(item)}</p>;
   }
 
   const entries = Object.entries(item);
@@ -440,19 +440,19 @@ function OutputItem({ item }: { item: Record<string, unknown> }) {
   const rest = entries.filter(([k]) => k !== headerKey?.[0]);
 
   return (
-    <div className="p-2 bg-white/[0.02] border border-white/5">
+    <div className="p-2 bg-transparent border border-divider">
       {headerKey && (
-        <p className="text-[11px] font-medium text-white mb-1">
+        <p className="text-[11px] font-medium text-text mb-1">
           {String(headerKey[1])}
         </p>
       )}
       <div className="flex flex-wrap gap-x-4 gap-y-0.5">
         {rest.map(([k, v]) => (
           <div key={k} className="flex items-baseline gap-1">
-            <span className="text-[9px] text-slate-600 uppercase">
+            <span className="text-[9px] text-text-secondary uppercase">
               {k.replace(/([A-Z])/g, " $1").replace(/_/g, " ")}:
             </span>
-            <span className="text-[10px] text-slate-400">
+            <span className="text-[10px] text-text-secondary">
               {Array.isArray(v)
                 ? v.length > 3
                   ? `${v.slice(0, 3).join(", ")} +${v.length - 3} more`
@@ -514,13 +514,13 @@ export function EventFeedLive({
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Activity className="h-4 w-4 text-slate-500" />
-        <h3 className="text-sm font-semibold text-slate-100">Recent Events</h3>
+        <Activity className="h-4 w-4 text-text-secondary" />
+        <h3 className="text-sm font-semibold text-text">Recent Events</h3>
         <LiveIndicator />
       </div>
       {displayEvents.length === 0 ? (
         <div className="py-6 text-center">
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-700">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-secondary">
             No events yet
           </p>
         </div>
@@ -531,15 +531,15 @@ export function EventFeedLive({
               key={event.id}
               className="border-l-2 border-accent/20 pl-3 py-1.5"
             >
-              <p className="text-xs text-white">
+              <p className="text-xs text-text">
                 {event.type.replace(/_/g, " ")}
               </p>
               {event.data?.reason ? (
-                <p className="text-[10px] text-slate-500 italic mt-0.5">
+                <p className="text-[10px] text-text-secondary italic mt-0.5">
                   {String(event.data.reason)}
                 </p>
               ) : null}
-              <p className="text-[10px] text-slate-700 mt-0.5">
+              <p className="text-[10px] text-text-secondary mt-0.5">
                 {timeAgo(event.createdAt)}
               </p>
             </div>

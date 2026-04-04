@@ -123,10 +123,10 @@ export function ConnectStep({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-bold tracking-[-0.04em] text-white">
+        <h2 className="text-lg font-bold tracking-[-0.04em] text-text">
           Connect Your Platforms
         </h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-text-secondary">
           Link your ad accounts, analytics, and revenue tools to enable
           autonomous growth.
         </p>
@@ -153,23 +153,23 @@ export function ConnectStep({
                     className={`flex items-center justify-between border p-4 transition-all ${
                       isConnected
                         ? "border-emerald-500/30 bg-emerald-500/5"
-                        : "border-white/10 bg-white/[0.03]"
+                        : "border-divider bg-transparent"
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <Icon
                         className={`h-4 w-4 ${
-                          isConnected ? "text-emerald-400" : "text-slate-500"
+                          isConnected ? "text-emerald-600" : "text-text-secondary"
                         }`}
                       />
                       <div>
-                        <p className="text-xs font-medium text-white">
+                        <p className="text-xs font-medium text-text">
                           {platform.name}
                         </p>
                         {isConnected && (
                           <div className="mt-0.5 flex items-center gap-1">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                            <span className="text-[10px] text-emerald-400">
+                            <span className="text-[10px] text-emerald-600">
                               {connectedAccount?.accountName || "Connected"}
                             </span>
                           </div>
@@ -178,7 +178,7 @@ export function ConnectStep({
                     </div>
 
                     {isConnected ? (
-                      <span className="badge bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+                      <span className="badge bg-emerald-500/15 text-emerald-600 border-emerald-500/30">
                         <Check className="mr-1 h-2.5 w-2.5" />
                         Connected
                       </span>
@@ -212,21 +212,21 @@ export function ConnectStep({
       {/* API Key Modal */}
       {apiKeyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="panel-surface w-full max-w-md p-6">
+          <div className="card-white w-full max-w-md p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white">
+              <h3 className="text-sm font-semibold text-text">
                 Connect{" "}
                 {platforms.find((p) => p.key === apiKeyModal)?.name}
               </h3>
               <button
                 onClick={() => setApiKeyModal(null)}
-                className="text-slate-500 hover:text-white"
+                className="text-text-secondary hover:text-text"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
                 API Key
               </label>
               <input
@@ -263,7 +263,7 @@ export function ConnectStep({
       <div className="mt-8 flex items-center justify-between">
         <button
           onClick={onSkip}
-          className="text-xs text-slate-600 transition-colors hover:text-slate-400"
+          className="text-xs text-text-secondary transition-colors hover:text-text-secondary"
         >
           Skip for now
         </button>

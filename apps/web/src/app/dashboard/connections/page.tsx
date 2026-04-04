@@ -763,7 +763,7 @@ const categories = [
 ];
 
 const difficultyColors: Record<string, string> = {
-  beginner: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  beginner: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
   intermediate: "bg-blue-500/15 text-blue-400 border-blue-500/30",
   advanced: "bg-purple-500/15 text-purple-400 border-purple-500/30",
 };
@@ -778,11 +778,11 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="absolute top-2 right-2 p-1 text-slate-600 hover:text-white transition-colors cursor-pointer"
+      className="absolute top-2 right-2 p-1 text-text-secondary hover:text-text transition-colors cursor-pointer"
       title="Copy"
     >
       {copied ? (
-        <Check className="h-3.5 w-3.5 text-emerald-400" />
+        <Check className="h-3.5 w-3.5 text-emerald-600" />
       ) : (
         <Copy className="h-3.5 w-3.5" />
       )}
@@ -822,43 +822,43 @@ function GuideCard({ guide }: { guide: Guide }) {
   const Icon = guide.icon;
 
   return (
-    <div className="border border-white/5 bg-white/[0.01] hover:border-white/10 transition-colors">
+    <div className="border border-divider bg-transparent hover:border-divider transition-colors">
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full p-5 flex items-start gap-4 text-left cursor-pointer"
       >
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-white/10 bg-white/[0.03]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-divider bg-transparent">
           <Icon className="h-5 w-5 text-accent" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-bold text-white">{guide.title}</h3>
+            <h3 className="text-sm font-bold text-text">{guide.title}</h3>
             <span
               className={`badge text-[9px] ${difficultyColors[guide.difficulty]}`}
             >
               {guide.difficulty}
             </span>
-            <span className="text-[10px] text-slate-600">
+            <span className="text-[10px] text-text-secondary">
               ~{guide.timeEstimate}
             </span>
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <p className="text-xs text-text-secondary leading-relaxed">
             {guide.description}
           </p>
         </div>
         <div className="shrink-0 mt-1">
           {expanded ? (
-            <ChevronDown className="h-4 w-4 text-slate-500" />
+            <ChevronDown className="h-4 w-4 text-text-secondary" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-slate-500" />
+            <ChevronRight className="h-4 w-4 text-text-secondary" />
           )}
         </div>
       </button>
 
       {/* Steps */}
       {expanded && (
-        <div className="px-5 pb-5 border-t border-white/5 pt-4 space-y-5">
+        <div className="px-5 pb-5 border-t border-divider pt-4 space-y-5">
           {guide.steps.map((step, i) => (
             <div key={i} className="relative pl-8">
               {/* Step number */}
@@ -867,20 +867,20 @@ function GuideCard({ guide }: { guide: Guide }) {
               </div>
               {/* Connector line */}
               {i < guide.steps.length - 1 && (
-                <div className="absolute left-[9px] top-6 bottom-[-16px] w-px bg-white/5" />
+                <div className="absolute left-[9px] top-6 bottom-[-16px] w-px bg-subtle" />
               )}
 
-              <h4 className="text-xs font-semibold text-white mb-1.5">
+              <h4 className="text-xs font-semibold text-text mb-1.5">
                 {step.title}
               </h4>
               {step.content && (
-                <p className="text-xs text-slate-400 leading-relaxed mb-2 whitespace-pre-line">
+                <p className="text-xs text-text-secondary leading-relaxed mb-2 whitespace-pre-line">
                   {resolveOrigin(step.content)}
                 </p>
               )}
 
               {step.code && (
-                <div className="relative bg-black/30 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap mb-2">
+                <div className="relative bg-black/30 border border-divider p-3 font-mono text-[11px] text-text leading-relaxed whitespace-pre-wrap mb-2">
                   <CopyButton text={resolveOrigin(step.code)} />
                   {resolveOrigin(step.code)}
                 </div>
@@ -890,8 +890,8 @@ function GuideCard({ guide }: { guide: Guide }) {
                 <div className="space-y-2 mb-2">
                   {step.codes.map((c, j) => (
                     <div key={j}>
-                      <p className="text-[10px] text-slate-500 font-medium mb-1">{c.label}</p>
-                      <div className="relative bg-black/30 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      <p className="text-[10px] text-text-secondary font-medium mb-1">{c.label}</p>
+                      <div className="relative bg-black/30 border border-divider p-3 font-mono text-[11px] text-text leading-relaxed whitespace-pre-wrap">
                         <CopyButton text={resolveOrigin(c.value)} />
                         {resolveOrigin(c.value)}
                       </div>
@@ -930,7 +930,7 @@ function GuideCard({ guide }: { guide: Guide }) {
 
           {/* Env vars summary */}
           {guide.envVars && guide.envVars.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-white/5">
+            <div className="mt-4 pt-4 border-t border-divider">
               <p className="eyebrow mb-2 flex items-center gap-1.5">
                 <Key className="h-3 w-3" />
                 Environment Variables
@@ -944,8 +944,8 @@ function GuideCard({ guide }: { guide: Guide }) {
                     <code className="font-mono text-accent shrink-0">
                       {v.key}
                     </code>
-                    <span className="text-slate-600">—</span>
-                    <span className="text-slate-500">{v.description}</span>
+                    <span className="text-text-secondary">—</span>
+                    <span className="text-text-secondary">{v.description}</span>
                   </div>
                 ))}
               </div>
@@ -1020,23 +1020,23 @@ export default function ConnectionsPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Plug className="h-5 w-5 text-accent" />
-            <h1 className="text-2xl font-bold text-white font-sans">
+            <h1 className="text-2xl font-bold text-text font-sans">
               Connections
             </h1>
           </div>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-text-secondary">
             Connect ad platforms, AI services, analytics, and more to your Growth Console.
           </p>
         </div>
 
         {/* Mode Toggle */}
-        <div className="flex border border-white/10 bg-white/[0.02]">
+        <div className="flex border border-divider bg-transparent">
           <button
             onClick={() => setMode("wizard")}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
               mode === "wizard"
                 ? "bg-accent/15 text-accent border-r border-accent/30"
-                : "text-slate-500 hover:text-white border-r border-white/10"
+                : "text-text-secondary hover:text-text border-r border-divider"
             }`}
           >
             <Wand2 className="h-3 w-3" />
@@ -1047,7 +1047,7 @@ export default function ConnectionsPage() {
             className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium transition-colors cursor-pointer ${
               mode === "text"
                 ? "bg-accent/15 text-accent"
-                : "text-slate-500 hover:text-white"
+                : "text-text-secondary hover:text-text"
             }`}
           >
             <FileText className="h-3 w-3" />
@@ -1061,7 +1061,7 @@ export default function ConnectionsPage() {
         <div
           className={`flex items-center justify-between p-3 border text-sm ${
             banner.type === "success"
-              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600"
               : "bg-red-500/10 border-red-500/20 text-red-400"
           }`}
         >
@@ -1093,22 +1093,22 @@ export default function ConnectionsPage() {
             <Zap className="h-5 w-5 text-accent" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white mb-1">Quick Start</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h2 className="text-sm font-bold text-text mb-1">Quick Start</h2>
+            <p className="text-xs text-text-secondary leading-relaxed">
               To get your first campaign live, you need at minimum:{" "}
-              <span className="text-white">1)</span> An AI engine (Claude — works out of the box with Claude Code),{" "}
-              <span className="text-white">2)</span> One ad platform (Google or Meta),{" "}
-              <span className="text-white">3)</span> An encryption key for secure credential storage.
+              <span className="text-text">1)</span> An AI engine (Claude — works out of the box with Claude Code),{" "}
+              <span className="text-text">2)</span> One ad platform (Google or Meta),{" "}
+              <span className="text-text">3)</span> An encryption key for secure credential storage.
               Everything else is optional and can be added later.
             </p>
             <div className="flex gap-2 mt-3">
-              <span className="badge bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+              <span className="badge bg-emerald-500/15 text-emerald-600 border-emerald-500/30">
                 Claude AI — Ready
               </span>
-              <span className="badge bg-white/5 text-slate-500 border-white/10">
+              <span className="badge bg-subtle text-text-secondary border-divider">
                 Ad Platform — Setup Required
               </span>
-              <span className="badge bg-white/5 text-slate-500 border-white/10">
+              <span className="badge bg-subtle text-text-secondary border-divider">
                 Encryption — Setup Required
               </span>
             </div>
@@ -1123,7 +1123,7 @@ export default function ConnectionsPage() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search guides..."
-          className="bg-white/[0.03] border border-white/10 text-white text-xs px-3 py-2 placeholder-slate-600 focus:border-accent/30 focus:outline-none w-64"
+          className="bg-transparent border border-divider text-text text-xs px-3 py-2 placeholder-slate-600 focus:border-accent/30 focus:outline-none w-64"
         />
         <div className="flex gap-1.5 flex-wrap">
           {categories.map((cat) => (
@@ -1133,12 +1133,12 @@ export default function ConnectionsPage() {
               className={`px-3 py-1.5 text-[10px] font-medium border transition-colors cursor-pointer ${
                 selectedCategory === cat
                   ? "bg-accent/10 border-accent text-accent"
-                  : "bg-white/[0.02] border-white/5 text-zinc-500 hover:border-white/10"
+                  : "bg-transparent border-divider text-text-secondary hover:border-divider"
               }`}
             >
               {cat}
               {cat !== "All" && (
-                <span className="ml-1 text-zinc-700">
+                <span className="ml-1 text-text-secondary">
                   ({guides.filter((g) => g.category === cat).length})
                 </span>
               )}
@@ -1151,7 +1151,7 @@ export default function ConnectionsPage() {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <div className="card p-12 text-center">
-            <p className="text-zinc-500">No guides found</p>
+            <p className="text-text-secondary">No guides found</p>
           </div>
         ) : (
           filtered.map((guide) => <GuideCard key={guide.id} guide={guide} />)
@@ -1164,21 +1164,21 @@ export default function ConnectionsPage() {
           <Key className="h-3.5 w-3.5" />
           Full Environment Variable Reference
         </p>
-        <div className="relative bg-black/30 border border-white/5 p-4 font-mono text-[11px] leading-[1.8] text-slate-400 whitespace-pre-wrap">
+        <div className="relative bg-black/30 border border-divider p-4 font-mono text-[11px] leading-[1.8] text-text-secondary whitespace-pre-wrap">
           <CopyButton
             text={allEnvVars.map((v) => `${v.key}=`).join("\n")}
           />
           {allEnvVars.map((v) => (
             <div key={v.key}>
-              <span className="text-slate-600"># {v.description}</span>
+              <span className="text-text-secondary"># {v.description}</span>
               {"\n"}
               <span className="text-accent">{v.key}</span>
-              <span className="text-slate-600">=</span>
+              <span className="text-text-secondary">=</span>
               {"\n"}
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-slate-600 mt-2">
+        <p className="text-[10px] text-text-secondary mt-2">
           Copy this block into your .env file and fill in the values for each
           service you want to use.
         </p>

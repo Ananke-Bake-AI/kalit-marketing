@@ -75,7 +75,7 @@ function formatPercent(n: number): string {
 }
 
 function confidenceColor(score: number): string {
-  if (score >= 0.8) return "text-emerald-400";
+  if (score >= 0.8) return "text-emerald-600";
   if (score >= 0.5) return "text-yellow-400";
   return "text-red-400";
 }
@@ -128,16 +128,16 @@ export default function ReportingPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white font-sans">
+          <h1 className="text-2xl font-bold text-text font-sans">
             Growth Report
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Performance, actions, and learning
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex border border-white/5 rounded-none overflow-hidden">
+          <div className="flex border border-divider rounded-none overflow-hidden">
             {(["7d", "14d", "30d"] as const).map((range) => (
               <button
                 key={range}
@@ -145,7 +145,7 @@ export default function ReportingPage() {
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                   dateRange === range
                     ? "bg-accent/10 text-accent"
-                    : "bg-card text-zinc-500 hover:text-zinc-300"
+                    : "bg-surface shadow-card rounded-3xl text-text-secondary hover:text-text"
                 }`}
               >
                 {range}
@@ -170,18 +170,18 @@ export default function ReportingPage() {
       {loading ? (
         <div className="card p-12 text-center">
           <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-zinc-500 mt-3">Generating report...</p>
+          <p className="text-sm text-text-secondary mt-3">Generating report...</p>
         </div>
       ) : !report ? (
         <div className="card p-12 text-center">
-          <p className="text-zinc-500">No report data available</p>
+          <p className="text-text-secondary">No report data available</p>
         </div>
       ) : (
         <>
           {/* Measurement Confidence */}
           <div className="card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-white uppercase tracking-wider">
+              <h2 className="text-sm font-semibold text-text uppercase tracking-wider">
                 Measurement Confidence
               </h2>
               <span
@@ -195,7 +195,7 @@ export default function ReportingPage() {
                 ([factor, score]) => (
                   <div key={factor}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-zinc-500 capitalize">
+                      <span className="text-xs text-text-secondary capitalize">
                         {factor.replace(/_/g, " ")}
                       </span>
                       <span
@@ -204,7 +204,7 @@ export default function ReportingPage() {
                         {formatPercent(score)}
                       </span>
                     </div>
-                    <div className="h-1.5 bg-white/5 rounded-none overflow-hidden">
+                    <div className="h-1.5 bg-subtle rounded-none overflow-hidden">
                       <div
                         className={`h-full ${confidenceBarColor(score)} transition-all`}
                         style={{ width: `${score * 100}%` }}
@@ -265,14 +265,14 @@ export default function ReportingPage() {
               },
             ].map((stat) => (
               <div key={stat.label} className="card p-4">
-                <p className="text-xs text-zinc-500 uppercase tracking-wider">
+                <p className="text-xs text-text-secondary uppercase tracking-wider">
                   {stat.label}
                 </p>
                 <p
                   className={`text-xl font-bold mt-1 ${
                     "highlight" in stat && stat.highlight
                       ? "text-accent"
-                      : "text-white"
+                      : "text-text"
                   }`}
                 >
                   {stat.value}
@@ -285,11 +285,11 @@ export default function ReportingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Agent Actions */}
             <div className="card p-5">
-              <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+              <h2 className="text-sm font-semibold text-text uppercase tracking-wider mb-4">
                 System Actions
               </h2>
               {report.actions.length === 0 ? (
-                <p className="text-sm text-zinc-600">
+                <p className="text-sm text-text-secondary">
                   No actions in this period
                 </p>
               ) : (
@@ -299,14 +299,14 @@ export default function ReportingPage() {
                       key={i}
                       className="border-l-2 border-accent/30 pl-3 py-1"
                     >
-                      <p className="text-sm text-white">
+                      <p className="text-sm text-text">
                         {action.description}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-zinc-600">
+                        <span className="text-xs text-text-secondary">
                           {new Date(action.timestamp).toLocaleDateString()}
                         </span>
-                        <span className="text-xs text-zinc-500 italic">
+                        <span className="text-xs text-text-secondary italic">
                           {action.reason}
                         </span>
                       </div>
@@ -318,19 +318,19 @@ export default function ReportingPage() {
 
             {/* Experiments */}
             <div className="card p-5">
-              <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+              <h2 className="text-sm font-semibold text-text uppercase tracking-wider mb-4">
                 Experiments
               </h2>
               {report.experiments.length === 0 ? (
-                <p className="text-sm text-zinc-600">
+                <p className="text-sm text-text-secondary">
                   No experiments in this period
                 </p>
               ) : (
                 <div className="space-y-3 max-h-80 overflow-y-auto">
                   {report.experiments.map((exp) => (
-                    <div key={exp.id} className="p-3 bg-white/[0.02] border border-white/5">
+                    <div key={exp.id} className="p-3 bg-transparent border border-divider">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-white">
+                        <p className="text-sm font-medium text-text">
                           {exp.name}
                         </p>
                         <span
@@ -338,14 +338,14 @@ export default function ReportingPage() {
                             exp.status === "running"
                               ? "bg-blue-500/20 text-blue-400"
                               : exp.status === "completed"
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : "bg-zinc-500/20 text-zinc-400"
+                                ? "bg-emerald-500/20 text-emerald-600"
+                                : "bg-zinc-500/20 text-text-secondary"
                           }`}
                         >
                           {exp.status}
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-500 mt-1">
+                      <p className="text-xs text-text-secondary mt-1">
                         {exp.hypothesis}
                       </p>
                       {exp.winner && (
@@ -370,25 +370,25 @@ export default function ReportingPage() {
               <p className="text-3xl font-bold text-accent">
                 {report.tasksCompleted}
               </p>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">
+              <p className="text-xs text-text-secondary mt-1 uppercase tracking-wider">
                 Tasks Completed
               </p>
             </div>
             <div className="card p-4 text-center">
-              <p className="text-3xl font-bold text-white">
+              <p className="text-3xl font-bold text-text">
                 {report.memoriesGained}
               </p>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">
+              <p className="text-xs text-text-secondary mt-1 uppercase tracking-wider">
                 Memories Gained
               </p>
             </div>
             <div className="card p-4 text-center">
               <p
-                className={`text-3xl font-bold ${report.tasksFailed > 0 ? "text-red-400" : "text-zinc-600"}`}
+                className={`text-3xl font-bold ${report.tasksFailed > 0 ? "text-red-400" : "text-text-secondary"}`}
               >
                 {report.tasksFailed}
               </p>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">
+              <p className="text-xs text-text-secondary mt-1 uppercase tracking-wider">
                 Tasks Failed
               </p>
             </div>
@@ -397,7 +397,7 @@ export default function ReportingPage() {
           {/* Top Campaigns */}
           {report.campaigns.length > 0 && (
             <div className="card p-5">
-              <h2 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+              <h2 className="text-sm font-semibold text-text uppercase tracking-wider mb-4">
                 Top Campaigns by Spend
               </h2>
               <div className="space-y-2">
@@ -416,31 +416,31 @@ export default function ReportingPage() {
                       />
                       <div className="relative flex items-center justify-between p-2.5">
                         <div className="flex items-center gap-3">
-                          <span className="text-sm text-white font-medium">
+                          <span className="text-sm text-text font-medium">
                             {c.name}
                           </span>
                           <span
                             className={`text-xs px-1.5 py-0.5 rounded-none ${
                               c.status === "active"
-                                ? "bg-emerald-500/20 text-emerald-400"
-                                : "bg-zinc-500/20 text-zinc-400"
+                                ? "bg-emerald-500/20 text-emerald-600"
+                                : "bg-zinc-500/20 text-text-secondary"
                             }`}
                           >
                             {c.status}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-xs">
-                          <span className="text-zinc-400">
+                          <span className="text-text-secondary">
                             {formatCurrency(c.spend)}
                           </span>
-                          <span className="text-zinc-400">
+                          <span className="text-text-secondary">
                             {c.conversions} conv
                           </span>
                           <span
                             className={
                               c.roas && c.roas >= 2
                                 ? "text-accent font-medium"
-                                : "text-zinc-500"
+                                : "text-text-secondary"
                             }
                           >
                             {c.roas ? `${c.roas.toFixed(2)}x` : "—"}

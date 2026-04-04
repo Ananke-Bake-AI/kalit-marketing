@@ -58,7 +58,7 @@ const familyConfig: Record<
   },
   execution: {
     icon: Rocket,
-    color: "text-emerald-400",
+    color: "text-emerald-600",
     bg: "bg-emerald-500/15",
     border: "border-emerald-500/30",
   },
@@ -74,20 +74,20 @@ const statusConfig: Record<
   string,
   { icon: React.ElementType; color: string; bg: string; label: string; spinning?: boolean }
 > = {
-  queued: { icon: Clock, color: "text-slate-400", bg: "bg-zinc-500/20", label: "Queued" },
+  queued: { icon: Clock, color: "text-text-secondary", bg: "bg-zinc-500/20", label: "Queued" },
   researching: { icon: Loader2, color: "text-blue-400", bg: "bg-blue-500/20", label: "Researching", spinning: true },
   generating: { icon: Loader2, color: "text-purple-400", bg: "bg-purple-500/20", label: "Generating", spinning: true },
-  executing: { icon: Loader2, color: "text-emerald-400", bg: "bg-emerald-500/20", label: "Executing", spinning: true },
+  executing: { icon: Loader2, color: "text-emerald-600", bg: "bg-emerald-500/20", label: "Executing", spinning: true },
   waiting_approval: {
     icon: AlertTriangle,
     color: "text-orange-400",
     bg: "bg-orange-500/20",
     label: "Awaiting Approval",
   },
-  approved: { icon: CheckCircle, color: "text-emerald-400", bg: "bg-emerald-500/20", label: "Approved" },
+  approved: { icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-500/20", label: "Approved" },
   completed: {
     icon: CheckCircle,
-    color: "text-emerald-400",
+    color: "text-emerald-600",
     bg: "bg-emerald-500/20",
     label: "Completed",
   },
@@ -98,7 +98,7 @@ const priorityColors: Record<string, string> = {
   critical: "text-red-400 border-red-500/30 bg-red-500/15",
   high: "text-orange-400 border-orange-500/30 bg-orange-500/15",
   medium: "text-amber-400 border-amber-500/30 bg-amber-500/15",
-  low: "text-slate-400 border-white/10 bg-white/5",
+  low: "text-text-secondary border-divider bg-subtle",
 };
 
 function timeAgo(dateStr: string): string {
@@ -208,7 +208,7 @@ export default function PipelinePage() {
       <div className="mb-6">
         <p className="eyebrow mb-2">Operations</p>
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold tracking-[-0.04em] text-white">
+          <h1 className="text-xl font-bold tracking-[-0.04em] text-text">
             Task Pipeline
           </h1>
           {activeCount > 0 && (
@@ -222,7 +222,7 @@ export default function PipelinePage() {
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-text-secondary">
           All growth tasks across workspaces — research, production, execution,
           review
         </p>
@@ -251,7 +251,7 @@ export default function PipelinePage() {
           className={`badge transition-all cursor-pointer ${
             !filterFamily
               ? "bg-accent/20 text-accent border-accent/30"
-              : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+              : "bg-subtle text-text-secondary border-divider hover:text-text"
           }`}
         >
           All
@@ -268,12 +268,12 @@ export default function PipelinePage() {
               className={`badge gap-1 transition-all cursor-pointer ${
                 filterFamily === family
                   ? `${config.bg} ${config.color} ${config.border}`
-                  : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+                  : "bg-subtle text-text-secondary border-divider hover:text-text"
               }`}
             >
               <Icon className="h-2.5 w-2.5" />
               {family}
-              <span className="text-slate-600 ml-0.5">({count})</span>
+              <span className="text-text-secondary ml-0.5">({count})</span>
             </button>
           );
         })}
@@ -294,12 +294,12 @@ export default function PipelinePage() {
               className={`badge gap-1 transition-all cursor-pointer ${
                 filterStatus === status
                   ? `${config.bg} ${config.color}`
-                  : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+                  : "bg-subtle text-text-secondary border-divider hover:text-text"
               }`}
             >
               <Icon className={`h-2.5 w-2.5 ${config.spinning ? "animate-spin" : ""}`} />
               {config.label}
-              <span className="text-slate-600 ml-0.5">({count})</span>
+              <span className="text-text-secondary ml-0.5">({count})</span>
             </button>
           );
         })}
@@ -307,21 +307,21 @@ export default function PipelinePage() {
 
       {/* Tasks list */}
       {loading ? (
-        <div className="panel-surface p-12 text-center">
-          <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-slate-500" />
-          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-slate-600">
+        <div className="card-white p-12 text-center">
+          <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin text-text-secondary" />
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-text-secondary">
             Loading pipeline
           </p>
         </div>
       ) : sorted.length === 0 ? (
-        <div className="panel-surface p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-white/10 bg-white/[0.03]">
-            <FlaskConical className="h-8 w-8 text-slate-600" />
+        <div className="card-white p-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-divider bg-transparent">
+            <FlaskConical className="h-8 w-8 text-text-secondary" />
           </div>
-          <h3 className="text-lg font-bold uppercase tracking-[-0.02em] text-gray-200">
+          <h3 className="text-lg font-bold uppercase tracking-[-0.02em] text-text">
             {allTasks.length === 0 ? "Pipeline Empty" : "No matching tasks"}
           </h3>
-          <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
+          <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
             {allTasks.length === 0
               ? "Tasks appear here when the lifecycle engine triggers them — during onboarding, strategy generation, campaign launches, and optimization cycles."
               : "Try adjusting your filters to see tasks."}
@@ -348,7 +348,7 @@ export default function PipelinePage() {
                     ? "border-accent/20 bg-accent/[0.03]"
                     : isApproval
                       ? "border-orange-500/20 bg-orange-500/[0.03]"
-                      : "border-white/5 bg-white/[0.02]"
+                      : "border-divider bg-transparent"
                 }`}
               >
                 {/* Main row */}
@@ -357,9 +357,9 @@ export default function PipelinePage() {
                   className="flex items-center w-full p-3 text-left cursor-pointer"
                 >
                   {isExpanded ? (
-                    <ChevronDown className="h-3 w-3 text-slate-600 mr-2.5 shrink-0" />
+                    <ChevronDown className="h-3 w-3 text-text-secondary mr-2.5 shrink-0" />
                   ) : (
-                    <ChevronRight className="h-3 w-3 text-slate-600 mr-2.5 shrink-0" />
+                    <ChevronRight className="h-3 w-3 text-text-secondary mr-2.5 shrink-0" />
                   )}
 
                   {/* Family icon */}
@@ -369,7 +369,7 @@ export default function PipelinePage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-xs font-medium text-white truncate">
+                      <p className="text-xs font-medium text-text truncate">
                         {task.title}
                       </p>
                       <span className={`badge ${priorityColors[task.priority]}`}>
@@ -377,11 +377,11 @@ export default function PipelinePage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-slate-600">
+                      <span className="text-[10px] text-text-secondary">
                         {task.agentType} · {task.family}
                       </span>
                       {selectedWorkspace === "all" && (
-                        <span className="text-[10px] text-slate-700">
+                        <span className="text-[10px] text-text-secondary">
                           · {workspaceNames.get(task.workspaceId) ?? "Unknown"}
                         </span>
                       )}
@@ -396,7 +396,7 @@ export default function PipelinePage() {
                     </span>
 
                     {/* Duration / time */}
-                    <span className="text-[10px] text-slate-700 w-16 text-right">
+                    <span className="text-[10px] text-text-secondary w-16 text-right">
                       {task.startedAt && !task.completedAt
                         ? duration(task.startedAt)
                         : timeAgo(task.createdAt)}
@@ -406,22 +406,22 @@ export default function PipelinePage() {
 
                 {/* Expanded details */}
                 {isExpanded && (
-                  <div className="px-3 pb-3 pt-0 border-t border-white/5">
+                  <div className="px-3 pb-3 pt-0 border-t border-divider">
                     <div className="mt-2 space-y-1.5">
                       {task.description && (
-                        <p className="text-[11px] text-slate-400">{task.description}</p>
+                        <p className="text-[11px] text-text-secondary">{task.description}</p>
                       )}
                       {task.reason && (
-                        <p className="text-[10px] text-slate-500">
-                          <span className="text-slate-600 font-medium">Reason:</span> {task.reason}
+                        <p className="text-[10px] text-text-secondary">
+                          <span className="text-text-secondary font-medium">Reason:</span> {task.reason}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 text-[10px] text-slate-600">
+                      <div className="flex items-center gap-4 text-[10px] text-text-secondary">
                         <span>Created: {timeAgo(task.createdAt)}</span>
                         {task.startedAt && <span>Started: {timeAgo(task.startedAt)}</span>}
                         {task.completedAt && <span>Finished: {timeAgo(task.completedAt)}</span>}
                         {task.startedAt && (
-                          <span className="text-slate-500 font-medium">
+                          <span className="text-text-secondary font-medium">
                             Duration: {duration(task.startedAt, task.completedAt)}
                           </span>
                         )}
@@ -437,7 +437,7 @@ export default function PipelinePage() {
                             loading={actionLoading === `${task.id}:approve`}
                             icon={CheckCircle}
                             label="Approve"
-                            className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25"
+                            className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/25"
                           />
                           <ActionBtn
                             onClick={() => handleAction(task.workspaceId, task.id, "reject")}

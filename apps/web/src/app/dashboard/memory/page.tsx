@@ -23,7 +23,7 @@ interface Workspace {
 const typeConfig: Record<string, { label: string; color: string }> = {
   winning_angle: {
     label: "Winning Angle",
-    color: "bg-emerald-500/20 text-emerald-400",
+    color: "bg-emerald-500/20 text-emerald-600",
   },
   failing_angle: {
     label: "Failing Angle",
@@ -111,10 +111,10 @@ export default function MemoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white font-sans">
+          <h1 className="text-2xl font-bold text-text font-sans">
             Memory
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Accumulated learnings and insights from growth operations
           </p>
         </div>
@@ -141,12 +141,12 @@ export default function MemoryPage() {
             className={`px-3 py-1.5 text-xs font-medium rounded-none border transition-colors ${
               typeFilter === t
                 ? "bg-accent/10 border-accent text-accent"
-                : "bg-card border-white/5 text-zinc-400 hover:border-white/10"
+                : "bg-surface shadow-card rounded-3xl border-divider text-text-secondary hover:border-divider"
             }`}
           >
             {t === "all" ? "All" : typeConfig[t]?.label || t}
             {t !== "all" && (
-              <span className="ml-1 text-zinc-600">
+              <span className="ml-1 text-text-secondary">
                 ({memories.filter((m) => m.type === t).length})
               </span>
             )}
@@ -158,12 +158,12 @@ export default function MemoryPage() {
       {loading ? (
         <div className="card p-12 text-center">
           <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-zinc-500 mt-3">Loading memories...</p>
+          <p className="text-sm text-text-secondary mt-3">Loading memories...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
-          <p className="text-zinc-500">No memories found</p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p className="text-text-secondary">No memories found</p>
+          <p className="text-xs text-text-secondary mt-1">
             Memories are accumulated as the system learns from campaign
             performance and experiments
           </p>
@@ -173,7 +173,7 @@ export default function MemoryPage() {
           {filtered.map((m) => {
             const cfg = typeConfig[m.type] || {
               label: m.type,
-              color: "bg-zinc-500/20 text-zinc-400",
+              color: "bg-zinc-500/20 text-text-secondary",
             };
             const barColor = typeBarColors[m.type] || "bg-zinc-500";
 
@@ -187,26 +187,26 @@ export default function MemoryPage() {
                     >
                       {cfg.label}
                     </span>
-                    <h3 className="text-white font-medium leading-snug">
+                    <h3 className="text-text font-medium leading-snug">
                       {m.title}
                     </h3>
                   </div>
                 </div>
 
                 {/* Content */}
-                <p className="text-sm text-zinc-400 leading-relaxed line-clamp-3">
+                <p className="text-sm text-text-secondary leading-relaxed line-clamp-3">
                   {m.content}
                 </p>
 
                 {/* Confidence bar */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs text-zinc-500">Confidence</p>
-                    <p className="text-xs text-zinc-400 font-mono">
+                    <p className="text-xs text-text-secondary">Confidence</p>
+                    <p className="text-xs text-text-secondary font-mono">
                       {(m.confidence * 100).toFixed(0)}%
                     </p>
                   </div>
-                  <div className="w-full h-1.5 bg-white/5 rounded-none overflow-hidden">
+                  <div className="w-full h-1.5 bg-subtle rounded-none overflow-hidden">
                     <div
                       className={`h-full rounded-none transition-all ${barColor}`}
                       style={{ width: `${m.confidence * 100}%` }}
@@ -216,10 +216,10 @@ export default function MemoryPage() {
 
                 {/* Evidence count */}
                 <div className="flex items-center justify-between">
-                  <p className="text-xs text-zinc-600">
+                  <p className="text-xs text-text-secondary">
                     {m.evidenceCount} evidence point{m.evidenceCount !== 1 ? "s" : ""}
                   </p>
-                  <p className="text-xs text-zinc-600">
+                  <p className="text-xs text-text-secondary">
                     {new Date(m.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -230,7 +230,7 @@ export default function MemoryPage() {
                     {m.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-1.5 py-0.5 text-[10px] bg-white/5 text-zinc-500 rounded-none"
+                        className="px-1.5 py-0.5 text-[10px] bg-subtle text-text-secondary rounded-none"
                       >
                         {tag}
                       </span>

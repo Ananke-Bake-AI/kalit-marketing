@@ -53,34 +53,34 @@ export function CampaignAdGroupCard({ adGroup }: { adGroup: AdGroupData }) {
   const ageMax = targeting.ageMax as number | undefined;
 
   return (
-    <div className="border border-white/5 bg-white/[0.01] hover:border-white/10 transition-colors">
+    <div className="border border-divider bg-transparent hover:border-divider transition-colors">
       {/* Header — always visible */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full p-4 flex items-center gap-3 text-left cursor-pointer"
       >
         {expanded ? (
-          <ChevronDown className="h-4 w-4 text-slate-500 shrink-0" />
+          <ChevronDown className="h-4 w-4 text-text-secondary shrink-0" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-slate-500 shrink-0" />
+          <ChevronRight className="h-4 w-4 text-text-secondary shrink-0" />
         )}
 
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white truncate">{adGroup.name}</p>
+          <p className="text-sm font-medium text-text truncate">{adGroup.name}</p>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             {keywords.length > 0 && (
-              <span className="text-[10px] text-slate-500 flex items-center gap-1">
+              <span className="text-[10px] text-text-secondary flex items-center gap-1">
                 <Search className="h-3 w-3" />
                 {keywords.length} keywords
               </span>
             )}
             {adGroup.creatives.length > 0 && (
-              <span className="text-[10px] text-slate-500">
+              <span className="text-[10px] text-text-secondary">
                 {adGroup.creatives.length} ad{adGroup.creatives.length > 1 ? "s" : ""}
               </span>
             )}
             {devices.length > 0 && (
-              <span className="text-[10px] text-slate-500 flex items-center gap-1">
+              <span className="text-[10px] text-text-secondary flex items-center gap-1">
                 {devices.includes("mobile") && <Smartphone className="h-3 w-3" />}
                 {devices.includes("desktop") && <Monitor className="h-3 w-3" />}
               </span>
@@ -92,28 +92,28 @@ export function CampaignAdGroupCard({ adGroup }: { adGroup: AdGroupData }) {
         <div className="flex items-center gap-4 shrink-0 text-right">
           {adGroup.dailyBudget && (
             <div>
-              <p className="text-[10px] text-slate-600">Budget</p>
-              <p className="text-xs text-white font-medium">${adGroup.dailyBudget}/d</p>
+              <p className="text-[10px] text-text-secondary">Budget</p>
+              <p className="text-xs text-text font-medium">${adGroup.dailyBudget}/d</p>
             </div>
           )}
           <div>
-            <p className="text-[10px] text-slate-600">Impr.</p>
-            <p className="text-xs text-slate-400">{formatNumber(adGroup.impressions)}</p>
+            <p className="text-[10px] text-text-secondary">Impr.</p>
+            <p className="text-xs text-text-secondary">{formatNumber(adGroup.impressions)}</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-600">Clicks</p>
-            <p className="text-xs text-slate-400">{formatNumber(adGroup.clicks)}</p>
+            <p className="text-[10px] text-text-secondary">Clicks</p>
+            <p className="text-xs text-text-secondary">{formatNumber(adGroup.clicks)}</p>
           </div>
           <div>
-            <p className="text-[10px] text-slate-600">Conv.</p>
-            <p className="text-xs text-white font-medium">{formatNumber(adGroup.conversions)}</p>
+            <p className="text-[10px] text-text-secondary">Conv.</p>
+            <p className="text-xs text-text font-medium">{formatNumber(adGroup.conversions)}</p>
           </div>
         </div>
       </button>
 
       {/* Expanded content */}
       {expanded && (
-        <div className="px-4 pb-4 border-t border-white/5 pt-4 space-y-4">
+        <div className="px-4 pb-4 border-t border-divider pt-4 space-y-4">
           {/* Targeting details */}
           <div>
             <p className="eyebrow mb-2 flex items-center gap-1.5">
@@ -128,7 +128,7 @@ export function CampaignAdGroupCard({ adGroup }: { adGroup: AdGroupData }) {
                 </span>
               ))}
               {locations.map((loc) => (
-                <span key={loc} className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px]">
+                <span key={loc} className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px]">
                   <Globe className="h-2.5 w-2.5" />
                   {loc}
                 </span>
@@ -140,12 +140,12 @@ export function CampaignAdGroupCard({ adGroup }: { adGroup: AdGroupData }) {
                 </span>
               ))}
               {(ageMin || ageMax) && (
-                <span className="px-2 py-0.5 bg-white/5 text-slate-500 text-[10px]">
+                <span className="px-2 py-0.5 bg-subtle text-text-secondary text-[10px]">
                   Age: {ageMin || "18"}–{ageMax || "65+"}
                 </span>
               )}
               {devices.map((d) => (
-                <span key={d} className="px-2 py-0.5 bg-white/5 text-slate-500 text-[10px] capitalize">
+                <span key={d} className="px-2 py-0.5 bg-subtle text-text-secondary text-[10px] capitalize">
                   {d}
                 </span>
               ))}

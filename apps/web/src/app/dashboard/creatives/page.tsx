@@ -25,13 +25,13 @@ interface Workspace {
 }
 
 const statusColors: Record<string, string> = {
-  draft: "bg-zinc-500/20 text-zinc-400",
+  draft: "bg-zinc-500/20 text-text-secondary",
   pending_review: "bg-yellow-500/20 text-yellow-400",
   approved: "bg-blue-500/20 text-blue-400",
   rejected: "bg-red-500/20 text-red-400",
-  active: "bg-emerald-500/20 text-emerald-400",
+  active: "bg-emerald-500/20 text-emerald-600",
   fatigued: "bg-red-500/20 text-red-400",
-  archived: "bg-zinc-500/20 text-zinc-600",
+  archived: "bg-zinc-500/20 text-text-secondary",
 };
 
 const typeLabels: Record<string, string> = {
@@ -58,7 +58,7 @@ const typeColors: Record<string, string> = {
   video_script: "bg-red-500/20 text-red-400",
   ugc_concept: "bg-yellow-500/20 text-yellow-400",
   carousel: "bg-indigo-500/20 text-indigo-400",
-  email_copy: "bg-emerald-500/20 text-emerald-400",
+  email_copy: "bg-emerald-500/20 text-emerald-600",
   social_post: "bg-teal-500/20 text-teal-400",
   blog_draft: "bg-lime-500/20 text-lime-400",
   landing_page_variant: "bg-fuchsia-500/20 text-fuchsia-400",
@@ -117,8 +117,8 @@ export default function CreativesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white font-sans">Creatives</h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <h1 className="text-2xl font-bold text-text font-sans">Creatives</h1>
+          <p className="text-sm text-text-secondary mt-1">
             Creative assets and performance tracking
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function CreativesPage() {
       {/* Filters */}
       <div className="space-y-3">
         <div className="flex gap-2 flex-wrap items-center">
-          <span className="text-xs text-zinc-600 uppercase tracking-wider mr-1">Status</span>
+          <span className="text-xs text-text-secondary uppercase tracking-wider mr-1">Status</span>
           {statuses.map((s) => (
             <button
               key={s}
@@ -147,7 +147,7 @@ export default function CreativesPage() {
               className={`px-3 py-1.5 text-xs font-medium rounded-none border transition-colors ${
                 statusFilter === s
                   ? "bg-accent/10 border-accent text-accent"
-                  : "bg-card border-white/5 text-zinc-400 hover:border-white/10"
+                  : "bg-surface shadow-card rounded-3xl border-divider text-text-secondary hover:border-divider"
               }`}
             >
               {s === "all" ? "All" : s.replace("_", " ")}
@@ -155,7 +155,7 @@ export default function CreativesPage() {
           ))}
         </div>
         <div className="flex gap-2 flex-wrap items-center">
-          <span className="text-xs text-zinc-600 uppercase tracking-wider mr-1">Type</span>
+          <span className="text-xs text-text-secondary uppercase tracking-wider mr-1">Type</span>
           {types.map((t) => (
             <button
               key={t}
@@ -163,7 +163,7 @@ export default function CreativesPage() {
               className={`px-3 py-1.5 text-xs font-medium rounded-none border transition-colors ${
                 typeFilter === t
                   ? "bg-accent/10 border-accent text-accent"
-                  : "bg-card border-white/5 text-zinc-400 hover:border-white/10"
+                  : "bg-surface shadow-card rounded-3xl border-divider text-text-secondary hover:border-divider"
               }`}
             >
               {t === "all" ? "All" : typeLabels[t] || t}
@@ -176,12 +176,12 @@ export default function CreativesPage() {
       {loading ? (
         <div className="card p-12 text-center">
           <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-zinc-500 mt-3">Loading creatives...</p>
+          <p className="text-sm text-text-secondary mt-3">Loading creatives...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
-          <p className="text-zinc-500">No creatives found</p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p className="text-text-secondary">No creatives found</p>
+          <p className="text-xs text-text-secondary mt-1">
             Creatives will appear once the production pipeline generates assets
           </p>
         </div>
@@ -192,10 +192,10 @@ export default function CreativesPage() {
               {/* Title & Version */}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-white font-medium truncate">
+                  <p className="text-text font-medium truncate">
                     {c.title || "Untitled Creative"}
                   </p>
-                  <p className="text-xs text-zinc-600 mt-0.5">v{c.version}</p>
+                  <p className="text-xs text-text-secondary mt-0.5">v{c.version}</p>
                 </div>
               </div>
 
@@ -203,14 +203,14 @@ export default function CreativesPage() {
               <div className="flex gap-2 flex-wrap">
                 <span
                   className={`inline-block px-2 py-0.5 text-xs font-medium rounded-none ${
-                    typeColors[c.type] || "bg-zinc-500/20 text-zinc-400"
+                    typeColors[c.type] || "bg-zinc-500/20 text-text-secondary"
                   }`}
                 >
                   {typeLabels[c.type] || c.type}
                 </span>
                 <span
                   className={`inline-block px-2 py-0.5 text-xs font-medium rounded-none ${
-                    statusColors[c.status] || "bg-zinc-500/20 text-zinc-400"
+                    statusColors[c.status] || "bg-zinc-500/20 text-text-secondary"
                   }`}
                 >
                   {c.status.replace("_", " ")}
@@ -220,20 +220,20 @@ export default function CreativesPage() {
               {/* Performance Stats */}
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <p className="text-xs text-zinc-500">Impressions</p>
-                  <p className="text-sm text-white font-medium">
+                  <p className="text-xs text-text-secondary">Impressions</p>
+                  <p className="text-sm text-text font-medium">
                     {formatNumber(c.impressions)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Clicks</p>
-                  <p className="text-sm text-white font-medium">
+                  <p className="text-xs text-text-secondary">Clicks</p>
+                  <p className="text-sm text-text font-medium">
                     {formatNumber(c.clicks)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Conversions</p>
-                  <p className="text-sm text-white font-medium">
+                  <p className="text-xs text-text-secondary">Conversions</p>
+                  <p className="text-sm text-text font-medium">
                     {formatNumber(c.conversions)}
                   </p>
                 </div>
@@ -242,7 +242,7 @@ export default function CreativesPage() {
               {/* CTR */}
               {c.impressions > 0 && (
                 <div>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-text-secondary">
                     CTR: {((c.clicks / c.impressions) * 100).toFixed(2)}%
                   </p>
                 </div>
@@ -252,20 +252,20 @@ export default function CreativesPage() {
               {c.fatigueScore !== null && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs text-zinc-500">Fatigue Score</p>
+                    <p className="text-xs text-text-secondary">Fatigue Score</p>
                     <p
                       className={`text-xs font-medium ${
                         c.fatigueScore >= 0.7
                           ? "text-red-400"
                           : c.fatigueScore >= 0.4
                             ? "text-yellow-400"
-                            : "text-emerald-400"
+                            : "text-emerald-600"
                       }`}
                     >
                       {(c.fatigueScore * 100).toFixed(0)}%
                     </p>
                   </div>
-                  <div className="w-full h-1.5 bg-white/5 rounded-none overflow-hidden">
+                  <div className="w-full h-1.5 bg-subtle rounded-none overflow-hidden">
                     <div
                       className={`h-full rounded-none transition-all ${
                         c.fatigueScore >= 0.7
@@ -286,7 +286,7 @@ export default function CreativesPage() {
                   {c.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="px-1.5 py-0.5 text-[10px] bg-white/5 text-zinc-500 rounded-none"
+                      className="px-1.5 py-0.5 text-[10px] bg-subtle text-text-secondary rounded-none"
                     >
                       {tag}
                     </span>

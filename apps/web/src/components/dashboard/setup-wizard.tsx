@@ -582,7 +582,7 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="text-[10px] text-slate-600 hover:text-accent transition-colors cursor-pointer"
+      className="text-[10px] text-text-secondary hover:text-accent transition-colors cursor-pointer"
     >
       {copied ? "Copied!" : "Copy"}
     </button>
@@ -685,7 +685,7 @@ function AccountConfigFields({
       {fields.map((field) => (
         <div key={field.key}>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] text-slate-500 font-medium">
+            <label className="text-[11px] text-text-secondary font-medium">
               {field.label}
             </label>
             {field.link && (
@@ -707,7 +707,7 @@ function AccountConfigFields({
               setValues((prev) => ({ ...prev, [field.key]: e.target.value }))
             }
             placeholder={field.placeholder}
-            className="w-full bg-white/[0.03] border border-white/10 text-xs px-3 py-2 font-mono text-white placeholder-slate-700 focus:outline-none focus:border-accent/30 transition-colors"
+            className="w-full bg-transparent border border-divider text-xs px-3 py-2 font-mono text-text placeholder-slate-700 focus:outline-none focus:border-accent/30 transition-colors"
           />
         </div>
       ))}
@@ -726,7 +726,7 @@ function AccountConfigFields({
           Save
         </button>
         {saved && (
-          <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+          <span className="flex items-center gap-1 text-[10px] text-emerald-600">
             <Check className="h-3 w-3" />
             Saved to account
           </span>
@@ -780,12 +780,12 @@ function WizardStepContent({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-line">
+      <p className="text-xs text-text-secondary leading-relaxed whitespace-pre-line">
         {resolveOrigin(step.description)}
       </p>
 
       {step.code && (
-        <div className="relative bg-black/40 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed">
+        <div className="relative bg-black/40 border border-divider p-3 font-mono text-[11px] text-text leading-relaxed">
           <div className="absolute top-2 right-2">
             <CopyButton text={resolveOrigin(step.code)} />
           </div>
@@ -797,8 +797,8 @@ function WizardStepContent({
         <div className="space-y-2">
           {step.codes.map((c, i) => (
             <div key={i}>
-              <p className="text-[10px] text-slate-500 font-medium mb-1">{c.label}</p>
-              <div className="relative bg-black/40 border border-white/5 p-3 font-mono text-[11px] text-slate-300 leading-relaxed">
+              <p className="text-[10px] text-text-secondary font-medium mb-1">{c.label}</p>
+              <div className="relative bg-black/40 border border-divider p-3 font-mono text-[11px] text-text leading-relaxed">
                 <div className="absolute top-2 right-2">
                   <CopyButton text={resolveOrigin(c.value)} />
                 </div>
@@ -834,10 +834,10 @@ function WizardStepContent({
             return (
               <div key={field.key}>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] text-slate-500 font-medium">
+                  <label className="text-[11px] text-text-secondary font-medium">
                     {field.label}
                     {isConfigured && (
-                      <span className="ml-2 text-emerald-400/70">
+                      <span className="ml-2 text-emerald-600/70">
                         <Check className="h-3 w-3 inline mr-0.5" />
                         {status.masked}
                       </span>
@@ -863,7 +863,7 @@ function WizardStepContent({
                             [field.key]: !prev[field.key],
                           }))
                         }
-                        className="text-slate-600 hover:text-slate-400 transition-colors cursor-pointer"
+                        className="text-text-secondary hover:text-text-secondary transition-colors cursor-pointer"
                       >
                         {isVisible ? (
                           <EyeOff className="h-3 w-3" />
@@ -888,11 +888,11 @@ function WizardStepContent({
                       ? `Already configured (${status.masked})`
                       : field.placeholder
                   }
-                  className={`w-full bg-white/[0.03] border text-xs px-3 py-2 font-mono placeholder-slate-700 focus:outline-none transition-colors ${
+                  className={`w-full bg-transparent border text-xs px-3 py-2 font-mono placeholder-slate-700 focus:outline-none transition-colors ${
                     isConfigured
                       ? "border-emerald-500/20 focus:border-emerald-500/40"
-                      : "border-white/10 focus:border-accent/30"
-                  } text-white`}
+                      : "border-divider focus:border-accent/30"
+                  } text-text`}
                 />
                 {field.fileUpload && (
                   <div className="mt-1.5">
@@ -919,13 +919,13 @@ function WizardStepContent({
                     />
                     <label
                       htmlFor={`file-${field.key}`}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider cursor-pointer border border-white/10 bg-white/[0.03] text-slate-400 hover:border-accent/20 hover:text-accent transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium uppercase tracking-wider cursor-pointer border border-divider bg-transparent text-text-secondary hover:border-accent/20 hover:text-accent transition-colors"
                     >
                       <ArrowRight className="h-3 w-3 rotate-90" />
                       {field.fileUpload.label}
                     </label>
                     {currentValue && currentValue.startsWith("{") && (
-                      <span className="ml-2 text-[10px] text-emerald-400">
+                      <span className="ml-2 text-[10px] text-emerald-600">
                         <Check className="h-3 w-3 inline mr-0.5" />
                         JSON loaded
                       </span>
@@ -950,7 +950,7 @@ function WizardStepContent({
               Save
             </button>
             {localSaved && (
-              <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+              <span className="flex items-center gap-1 text-[10px] text-emerald-600">
                 <Check className="h-3 w-3" />
                 Saved
               </span>
@@ -994,7 +994,7 @@ function WizardStepContent({
           <button
             onClick={onVerify}
             disabled={verifying}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-white/5 text-white border border-white/10 hover:border-white/20 transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-subtle text-text border border-divider hover:border-divider transition-colors cursor-pointer disabled:opacity-50"
           >
             {verifying ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1014,14 +1014,14 @@ function WizardStepContent({
             >
               <div className="flex items-center gap-2">
                 {verificationResult.ready ? (
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 ) : (
                   <AlertTriangle className="h-4 w-4 text-yellow-400" />
                 )}
                 <span
                   className={
                     verificationResult.ready
-                      ? "text-emerald-400 font-medium"
+                      ? "text-emerald-600 font-medium"
                       : "text-yellow-400 font-medium"
                   }
                 >
@@ -1038,14 +1038,14 @@ function WizardStepContent({
                       className="flex items-center gap-2 text-[11px]"
                     >
                       {configured ? (
-                        <Check className="h-3 w-3 text-emerald-400" />
+                        <Check className="h-3 w-3 text-emerald-600" />
                       ) : (
-                        <Circle className="h-3 w-3 text-slate-600" />
+                        <Circle className="h-3 w-3 text-text-secondary" />
                       )}
-                      <code className="font-mono text-slate-400">{key}</code>
+                      <code className="font-mono text-text-secondary">{key}</code>
                       <span
                         className={
-                          configured ? "text-emerald-400" : "text-slate-600"
+                          configured ? "text-emerald-600" : "text-text-secondary"
                         }
                       >
                         {configured ? "Configured" : "Missing"}
@@ -1056,16 +1056,16 @@ function WizardStepContent({
                 {verificationResult.oauthRequired && (
                   <div className="flex items-center gap-2 text-[11px]">
                     {verificationResult.oauthConnected ? (
-                      <Check className="h-3 w-3 text-emerald-400" />
+                      <Check className="h-3 w-3 text-emerald-600" />
                     ) : (
-                      <Circle className="h-3 w-3 text-slate-600" />
+                      <Circle className="h-3 w-3 text-text-secondary" />
                     )}
-                    <span className="text-slate-400">OAuth Connected</span>
+                    <span className="text-text-secondary">OAuth Connected</span>
                     <span
                       className={
                         verificationResult.oauthConnected
-                          ? "text-emerald-400"
-                          : "text-slate-600"
+                          ? "text-emerald-600"
+                          : "text-text-secondary"
                       }
                     >
                       {verificationResult.oauthConnected
@@ -1309,7 +1309,7 @@ export function SetupWizard() {
     return (
       <div className="card p-12 text-center">
         <Loader2 className="h-5 w-5 animate-spin mx-auto text-accent" />
-        <p className="text-sm text-zinc-500 mt-3">Loading setup wizard...</p>
+        <p className="text-sm text-text-secondary mt-3">Loading setup wizard...</p>
       </div>
     );
   }
@@ -1319,13 +1319,13 @@ export function SetupWizard() {
       {/* Workspace selector */}
       {workspaces.length > 0 && (
         <div className="flex items-center gap-3">
-          <label className="text-[11px] text-slate-500 font-medium">
+          <label className="text-[11px] text-text-secondary font-medium">
             Workspace:
           </label>
           <select
             value={selectedWorkspace}
             onChange={(e) => setSelectedWorkspace(e.target.value)}
-            className="bg-white/[0.03] border border-white/10 text-white text-xs px-3 py-1.5 focus:border-accent/30 focus:outline-none"
+            className="bg-transparent border border-divider text-text text-xs px-3 py-1.5 focus:border-accent/30 focus:outline-none"
           >
             {workspaces.map((w) => (
               <option key={w.id} value={w.id}>
@@ -1359,22 +1359,22 @@ export function SetupWizard() {
                       ? "border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/50"
                       : status === "in-progress"
                         ? "border-yellow-500/20 bg-yellow-500/5 hover:border-yellow-500/40"
-                        : "border-white/5 bg-white/[0.01] hover:border-white/10"
+                        : "border-divider bg-transparent hover:border-divider"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Icon className="h-3.5 w-3.5 text-slate-400" />
+                  <Icon className="h-3.5 w-3.5 text-text-secondary" />
                   {status === "complete" && (
-                    <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                    <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                   )}
                   {status === "in-progress" && (
                     <CircleDot className="h-3 w-3 text-yellow-400" />
                   )}
                 </div>
-                <p className="text-[11px] font-medium text-white truncate">
+                <p className="text-[11px] font-medium text-text truncate">
                   {pw.title}
                 </p>
-                <p className="text-[9px] text-slate-600 truncate">
+                <p className="text-[9px] text-text-secondary truncate">
                   {status === "complete"
                     ? "Ready"
                     : status === "in-progress"
@@ -1397,8 +1397,8 @@ export function SetupWizard() {
               return <Icon className="h-4 w-4 text-accent" />;
             })()}
             <div>
-              <p className="text-sm font-bold text-white">{wizard.title}</p>
-              <p className="text-[10px] text-slate-600">
+              <p className="text-sm font-bold text-text">{wizard.title}</p>
+              <p className="text-[10px] text-text-secondary">
                 {wizard.description}
               </p>
             </div>
@@ -1416,20 +1416,20 @@ export function SetupWizard() {
                 disabled={!accessible}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-left text-[11px] transition-colors cursor-pointer ${
                   isCurrent
-                    ? "bg-accent/10 border-l-2 border-accent text-white"
+                    ? "bg-accent/10 border-l-2 border-accent text-text"
                     : status === "complete"
-                      ? "text-emerald-400/70 hover:bg-white/[0.02]"
+                      ? "text-emerald-600/70 hover:bg-transparent"
                       : accessible
-                        ? "text-slate-500 hover:bg-white/[0.02] hover:text-slate-300"
-                        : "text-slate-700 cursor-not-allowed"
+                        ? "text-text-secondary hover:bg-transparent hover:text-text"
+                        : "text-text-secondary cursor-not-allowed"
                 }`}
               >
                 {status === "complete" ? (
-                  <Check className="h-3 w-3 text-emerald-400 shrink-0" />
+                  <Check className="h-3 w-3 text-emerald-600 shrink-0" />
                 ) : isCurrent ? (
                   <ChevronRight className="h-3 w-3 text-accent shrink-0" />
                 ) : (
-                  <span className="w-3 h-3 flex items-center justify-center text-[9px] font-bold text-slate-600 shrink-0">
+                  <span className="w-3 h-3 flex items-center justify-center text-[9px] font-bold text-text-secondary shrink-0">
                     {i + 1}
                   </span>
                 )}
@@ -1444,7 +1444,7 @@ export function SetupWizard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] text-slate-600 font-mono">
+                <span className="text-[10px] text-text-secondary font-mono">
                   Step {activeStep + 1}/{wizard.steps.length}
                 </span>
                 <span
@@ -1452,10 +1452,10 @@ export function SetupWizard() {
                     wizard.steps[activeStep].type === "credentials" || wizard.steps[activeStep].type === "account-config"
                       ? "bg-accent/15 text-accent border-accent/30"
                       : wizard.steps[activeStep].type === "action"
-                        ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                        ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
                         : wizard.steps[activeStep].type === "verify"
                           ? "bg-purple-500/15 text-purple-400 border-purple-500/30"
-                          : "bg-white/5 text-slate-500 border-white/10"
+                          : "bg-subtle text-text-secondary border-divider"
                   }`}
                 >
                   {wizard.steps[activeStep].type === "credentials" || wizard.steps[activeStep].type === "account-config"
@@ -1469,7 +1469,7 @@ export function SetupWizard() {
                           : "Information"}
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-white">
+              <h3 className="text-sm font-bold text-text">
                 {wizard.steps[activeStep].title}
               </h3>
             </div>
@@ -1488,24 +1488,24 @@ export function SetupWizard() {
           />
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5">
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-divider">
             <button
               onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
               disabled={activeStep === 0}
-              className="text-xs text-slate-500 hover:text-white transition-colors disabled:opacity-30 cursor-pointer"
+              className="text-xs text-text-secondary hover:text-text transition-colors disabled:opacity-30 cursor-pointer"
             >
               Previous
             </button>
             {activeStep < wizard.steps.length - 1 ? (
               <button
                 onClick={() => setActiveStep(activeStep + 1)}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-white/5 text-white border border-white/10 hover:bg-white/10 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-subtle text-text border border-divider hover:bg-subtle-strong transition-colors cursor-pointer"
               >
                 Next Step
                 <ChevronRight className="h-3 w-3" />
               </button>
             ) : (
-              <span className="text-[10px] text-slate-600">
+              <span className="text-[10px] text-text-secondary">
                 Last step — run verification above
               </span>
             )}

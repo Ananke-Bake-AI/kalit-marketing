@@ -109,7 +109,7 @@ export function AssetUpload({ workspaceId, category: defaultCategory, onUploaded
         className={`group relative flex cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 py-10 transition-all duration-200 ${
           dragOver
             ? "border-accent/60 bg-accent/[0.06]"
-            : "border-white/10 bg-white/[0.02] hover:border-accent/30 hover:bg-white/[0.04]"
+            : "border-divider bg-transparent hover:border-accent/30 hover:bg-subtle"
         }`}
       >
         <input
@@ -120,11 +120,11 @@ export function AssetUpload({ workspaceId, category: defaultCategory, onUploaded
           onChange={handleSelect}
           className="hidden"
         />
-        <Upload className={`mb-3 h-8 w-8 transition-colors ${dragOver ? "text-accent" : "text-slate-600 group-hover:text-slate-400"}`} />
-        <p className="text-sm font-medium text-slate-300">
+        <Upload className={`mb-3 h-8 w-8 transition-colors ${dragOver ? "text-accent" : "text-text-secondary group-hover:text-text-secondary"}`} />
+        <p className="text-sm font-medium text-text">
           {dragOver ? "Drop files here" : "Drag & drop files or click to browse"}
         </p>
-        <p className="mt-1 text-[11px] text-slate-600">
+        <p className="mt-1 text-[11px] text-text-secondary">
           Images, videos, fonts, PDFs — up to 50MB each, max 20 files
         </p>
       </div>
@@ -135,13 +135,13 @@ export function AssetUpload({ workspaceId, category: defaultCategory, onUploaded
           <div className="flex items-center justify-between">
             <p className="eyebrow">
               {files.length} file{files.length > 1 ? "s" : ""} selected
-              <span className="ml-2 text-slate-600">
+              <span className="ml-2 text-text-secondary">
                 ({(totalSize / (1024 * 1024)).toFixed(1)} MB)
               </span>
             </p>
             <button
               onClick={() => setFiles([])}
-              className="text-[10px] uppercase tracking-widest text-slate-500 hover:text-red-400"
+              className="text-[10px] uppercase tracking-widest text-text-secondary hover:text-red-400"
             >
               Clear all
             </button>
@@ -151,13 +151,13 @@ export function AssetUpload({ workspaceId, category: defaultCategory, onUploaded
             {files.map((file, i) => {
               const Icon = getFileIcon(file.type);
               return (
-                <div key={i} className="flex items-center gap-2 border border-white/5 bg-white/[0.02] px-3 py-1.5">
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                  <span className="flex-1 truncate text-xs text-slate-300">{file.name}</span>
-                  <span className="text-[10px] text-slate-600">
+                <div key={i} className="flex items-center gap-2 border border-divider bg-transparent px-3 py-1.5">
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
+                  <span className="flex-1 truncate text-xs text-text">{file.name}</span>
+                  <span className="text-[10px] text-text-secondary">
                     {(file.size / 1024).toFixed(0)}KB
                   </span>
-                  <button onClick={() => removeFile(i)} className="text-slate-600 hover:text-red-400">
+                  <button onClick={() => removeFile(i)} className="text-text-secondary hover:text-red-400">
                     <X className="h-3 w-3" />
                   </button>
                 </div>
@@ -168,7 +168,7 @@ export function AssetUpload({ workspaceId, category: defaultCategory, onUploaded
           {/* Upload Options */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">
+              <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">
                 Category
               </label>
               <select
@@ -184,7 +184,7 @@ export function AssetUpload({ workspaceId, category: defaultCategory, onUploaded
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">
+              <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">
                 Tags
               </label>
               <input
@@ -197,7 +197,7 @@ export function AssetUpload({ workspaceId, category: defaultCategory, onUploaded
           </div>
 
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">
               Usage Notes (helps AI understand context)
             </label>
             <input

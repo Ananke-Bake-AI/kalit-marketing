@@ -43,14 +43,14 @@ export function WelcomeStep({
   return (
     <div>
       <div className="mb-8 text-center">
-        <h2 className="text-2xl font-bold tracking-[-0.04em] text-white">
+        <h2 className="text-2xl font-bold tracking-[-0.04em] text-text">
           Welcome to your Growth Runtime
         </h2>
-        <p className="mt-2 text-sm text-slate-400">
+        <p className="mt-2 text-sm text-text-secondary">
           {workspaceName}
           {productName ? ` — ${productName}` : ""}
         </p>
-        <p className="mt-1 text-xs text-slate-600">
+        <p className="mt-1 text-xs text-text-secondary">
           Let&apos;s set up your autonomous growth engine in a few steps.
         </p>
       </div>
@@ -64,11 +64,11 @@ export function WelcomeStep({
                 <div className="flex h-7 w-7 items-center justify-center border border-accent/20 bg-accent/10">
                   <Icon className="h-3.5 w-3.5 text-accent" />
                 </div>
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-text">
                   {feature.title}
                 </h3>
               </div>
-              <p className="text-xs leading-relaxed text-slate-400">
+              <p className="text-xs leading-relaxed text-text-secondary">
                 {feature.description}
               </p>
             </div>

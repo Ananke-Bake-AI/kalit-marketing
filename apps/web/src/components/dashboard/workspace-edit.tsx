@@ -67,7 +67,7 @@ export function WorkspaceEdit({ workspaceId, initialValues }: WorkspaceEditProps
     return (
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-slate-400 border border-white/10 hover:border-white/20 hover:text-white transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium text-text-secondary border border-divider hover:border-divider hover:text-text transition-colors cursor-pointer"
       >
         <Pencil className="h-3 w-3" />
         Edit Workspace
@@ -78,10 +78,10 @@ export function WorkspaceEdit({ workspaceId, initialValues }: WorkspaceEditProps
   return (
     <div className="card p-5 space-y-4 border-accent/20">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-white">Edit Workspace</h3>
+        <h3 className="text-sm font-bold text-text">Edit Workspace</h3>
         <div className="flex items-center gap-2">
           {saved && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+            <span className="flex items-center gap-1 text-[10px] text-emerald-600">
               <Check className="h-3 w-3" />
               Saved
             </span>
@@ -96,7 +96,7 @@ export function WorkspaceEdit({ workspaceId, initialValues }: WorkspaceEditProps
           </button>
           <button
             onClick={() => { setOpen(false); setValues(initialValues); }}
-            className="text-slate-500 hover:text-white transition-colors cursor-pointer"
+            className="text-text-secondary hover:text-text transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -171,11 +171,11 @@ function Field({
   multiline?: boolean;
 }) {
   const inputClass =
-    "w-full bg-white/[0.03] border border-white/10 text-xs px-3 py-2 text-white placeholder-slate-700 focus:outline-none focus:border-accent/30 transition-colors";
+    "w-full bg-transparent border border-divider text-xs px-3 py-2 text-text placeholder-slate-700 focus:outline-none focus:border-accent/30 transition-colors";
 
   return (
     <div>
-      <label className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-1 block">
+      <label className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary mb-1 block">
         {label}
       </label>
       {multiline ? (

@@ -136,10 +136,10 @@ export function LaunchStep({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-bold tracking-[-0.04em] text-white">
+        <h2 className="text-lg font-bold tracking-[-0.04em] text-text">
           Ready to Launch
         </h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-text-secondary">
           Review your setup, choose how the growth engine runs, and go live.
         </p>
       </div>
@@ -151,24 +151,24 @@ export function LaunchStep({
           {checkItems.map((item) => (
             <div
               key={item.label}
-              className="flex items-center gap-3 border border-white/5 bg-white/[0.02] p-3"
+              className="flex items-center gap-3 border border-divider bg-transparent p-3"
             >
               {item.done ? (
-                <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+                <Check className="h-4 w-4 shrink-0 text-emerald-600" />
               ) : (
-                <Circle className="h-4 w-4 shrink-0 text-slate-600" />
+                <Circle className="h-4 w-4 shrink-0 text-text-secondary" />
               )}
               <div className="flex-1 min-w-0">
                 <p
                   className={`text-xs font-medium ${
-                    item.done ? "text-white" : "text-slate-500"
+                    item.done ? "text-text" : "text-text-secondary"
                   }`}
                 >
                   {item.label}
                 </p>
                 <p
                   className={`text-[10px] ${
-                    item.done ? "text-slate-400" : "text-slate-600"
+                    item.done ? "text-text-secondary" : "text-text-secondary"
                   } truncate`}
                 >
                   {item.detail}
@@ -188,23 +188,23 @@ export function LaunchStep({
             className={`flex w-full items-start gap-3 border p-4 text-left transition-all ${
               scheduleMode === "automatic"
                 ? "border-accent/30 bg-accent/5"
-                : "border-white/5 bg-white/[0.02] hover:border-white/10"
+                : "border-divider bg-transparent hover:border-divider"
             }`}
           >
             <Zap
               className={`mt-0.5 h-4 w-4 shrink-0 ${
-                scheduleMode === "automatic" ? "text-accent" : "text-slate-500"
+                scheduleMode === "automatic" ? "text-accent" : "text-text-secondary"
               }`}
             />
             <div>
               <p
                 className={`text-xs font-semibold ${
-                  scheduleMode === "automatic" ? "text-accent" : "text-white"
+                  scheduleMode === "automatic" ? "text-accent" : "text-text"
                 }`}
               >
                 Automatic
               </p>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400">
+              <p className="mt-0.5 text-[10px] leading-relaxed text-text-secondary">
                 AI decides when to review performance, create content, optimize
                 budgets, and scale campaigns. Adapts frequency based on workspace
                 state.
@@ -217,34 +217,34 @@ export function LaunchStep({
             className={`flex w-full items-start gap-3 border p-4 text-left transition-all ${
               scheduleMode === "custom"
                 ? "border-accent/30 bg-accent/5"
-                : "border-white/5 bg-white/[0.02] hover:border-white/10"
+                : "border-divider bg-transparent hover:border-divider"
             }`}
           >
             <Settings2
               className={`mt-0.5 h-4 w-4 shrink-0 ${
-                scheduleMode === "custom" ? "text-accent" : "text-slate-500"
+                scheduleMode === "custom" ? "text-accent" : "text-text-secondary"
               }`}
             />
             <div className="flex-1">
               <p
                 className={`text-xs font-semibold ${
-                  scheduleMode === "custom" ? "text-accent" : "text-white"
+                  scheduleMode === "custom" ? "text-accent" : "text-text"
                 }`}
               >
                 Custom Schedule
               </p>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-slate-400">
+              <p className="mt-0.5 text-[10px] leading-relaxed text-text-secondary">
                 Set a fixed interval for the supervisor to check and act on your
                 workspace.
               </p>
               {scheduleMode === "custom" && (
                 <div className="mt-3 flex items-center gap-2">
-                  <Clock className="h-3 w-3 text-slate-500" />
-                  <span className="text-[10px] text-slate-400">Every</span>
+                  <Clock className="h-3 w-3 text-text-secondary" />
+                  <span className="text-[10px] text-text-secondary">Every</span>
                   <select
                     value={customInterval}
                     onChange={(e) => setCustomInterval(Number(e.target.value))}
-                    className="border border-white/10 bg-white/[0.05] px-2 py-1 text-[10px] text-white focus:border-accent/30 focus:outline-none"
+                    className="border border-divider bg-white/[0.05] px-2 py-1 text-[10px] text-text focus:border-accent/30 focus:outline-none"
                   >
                     <option value={15}>15 minutes</option>
                     <option value={30}>30 minutes</option>
@@ -286,7 +286,7 @@ export function LaunchStep({
         <div className="flex items-center gap-3">
           <button
             onClick={onDismiss}
-            className="text-xs text-slate-600 transition-colors hover:text-slate-400"
+            className="text-xs text-text-secondary transition-colors hover:text-text-secondary"
           >
             Go to Dashboard
           </button>

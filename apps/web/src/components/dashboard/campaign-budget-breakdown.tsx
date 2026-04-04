@@ -203,7 +203,7 @@ function SectionHeader({
   return (
     <div className="flex items-center gap-2 mb-4">
       <span className="text-accent">{icon}</span>
-      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
         {label}
       </span>
     </div>
@@ -221,7 +221,7 @@ function ProgressBar({
 }) {
   const width = Math.min(pct(value, max), 100);
   return (
-    <div className={`h-1.5 bg-white/5 w-full ${className ?? ""}`}>
+    <div className={`h-1.5 bg-subtle w-full ${className ?? ""}`}>
       <div
         className="h-full bg-accent/60 transition-all duration-500"
         style={{ width: `${width}%` }}
@@ -243,17 +243,17 @@ function StatCell({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
         {label}
       </span>
       <span
         className={
-          highlight ? "text-lg text-accent font-bold" : "text-lg text-white font-bold"
+          highlight ? "text-lg text-accent font-bold" : "text-lg text-text font-bold"
         }
       >
         {value}
       </span>
-      {sub && <span className="text-xs text-slate-300">{sub}</span>}
+      {sub && <span className="text-xs text-text">{sub}</span>}
     </div>
   );
 }
@@ -319,23 +319,23 @@ export function CampaignBudgetBreakdown({
 
           {/* Total Budget + progress */}
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
               Total Budget
             </span>
-            <span className="text-lg text-white font-bold">
+            <span className="text-lg text-text font-bold">
               {total > 0 ? formatCurrency(total, cur) : "—"}
             </span>
             {total > 0 && (
               <>
                 <ProgressBar value={spend} max={total} className="mt-1" />
-                <span className="text-xs text-slate-300">
+                <span className="text-xs text-text">
                   {formatCurrency(spend, cur)} spent &middot;{" "}
                   {pct(spend, total).toFixed(1)}% used
                 </span>
               </>
             )}
             {total === 0 && (
-              <span className="text-xs text-slate-300">No lifetime cap</span>
+              <span className="text-xs text-text">No lifetime cap</span>
             )}
           </div>
 
@@ -348,7 +348,7 @@ export function CampaignBudgetBreakdown({
             sub={
               daysRemaining !== null ? (
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-slate-500" />
+                  <Clock className="w-3 h-3 text-text-secondary" />
                   At current daily rate
                 </span>
               ) : (
@@ -380,14 +380,14 @@ export function CampaignBudgetBreakdown({
           label="Ad Group Allocation"
         />
 
-        <p className="text-xs text-slate-400 mb-4 leading-relaxed max-w-2xl">
+        <p className="text-xs text-text-secondary mb-4 leading-relaxed max-w-2xl">
           {pName}&apos;s algorithm automatically distributes your daily budget across ad
           groups based on real-time performance. Higher-performing groups receive
           more budget throughout the day.
         </p>
 
         {adGroups.length === 0 && (
-          <div className="flex items-center gap-2 text-xs text-slate-500 py-4">
+          <div className="flex items-center gap-2 text-xs text-text-secondary py-4">
             <Info className="w-3.5 h-3.5" />
             No ad groups configured for this campaign.
           </div>
@@ -403,10 +403,10 @@ export function CampaignBudgetBreakdown({
             return (
               <div
                 key={group.name}
-                className="border border-white/5 bg-white/[0.01] p-4"
+                className="border border-divider bg-transparent p-4"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-white font-medium">
+                  <span className="text-sm text-text font-medium">
                     {group.name}
                   </span>
                   {hasSpend ? (
@@ -421,42 +421,42 @@ export function CampaignBudgetBreakdown({
                 {hasSpend ? (
                   <>
                     <ProgressBar value={group.spend} max={totalAdGroupSpend} />
-                    <div className="flex items-center gap-4 mt-2 text-xs text-slate-300">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-text">
                       <span>
                         {groupPct.toFixed(1)}% of total spend
                       </span>
-                      <span className="text-white/10">|</span>
+                      <span className="text-text/10">|</span>
                       <span>
                         CPC{" "}
-                        <span className="text-white font-medium">
+                        <span className="text-text font-medium">
                           {formatCurrency(cpc, cur)}
                         </span>
                       </span>
-                      <span className="text-white/10">|</span>
+                      <span className="text-text/10">|</span>
                       <span>
                         CPA{" "}
-                        <span className="text-white font-medium">
+                        <span className="text-text font-medium">
                           {group.conversions > 0
                             ? formatCurrency(cpa, cur)
                             : "—"}
                         </span>
                       </span>
-                      <span className="text-white/10">|</span>
+                      <span className="text-text/10">|</span>
                       <span>
                         {formatNumber(group.impressions)} impr
                       </span>
-                      <span className="text-white/10">|</span>
+                      <span className="text-text/10">|</span>
                       <span>
                         {formatNumber(group.clicks)} clicks
                       </span>
-                      <span className="text-white/10">|</span>
+                      <span className="text-text/10">|</span>
                       <span>
                         {formatNumber(group.conversions)} conv
                       </span>
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-text-secondary mt-1">
                     Pending — allocation begins after launch
                   </p>
                 )}
@@ -482,19 +482,19 @@ export function CampaignBudgetBreakdown({
 
           <div className="flex flex-col gap-1.5 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm text-white font-bold">
+              <span className="text-sm text-text font-bold">
                 {strategy.name}
               </span>
               <span className="badge text-[10px]">Smart Bidding</span>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs text-text leading-relaxed max-w-xl">
               {strategy.explanation}
             </p>
 
             {strategy.targetLabel && strategy.targetValue && (
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
                   {strategy.targetLabel}
                 </span>
                 <span className="text-sm text-accent font-bold">
@@ -529,14 +529,14 @@ export function CampaignBudgetBreakdown({
 
           {/* % of workspace budget */}
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
               Workspace Budget Share
             </span>
             <span
               className={`text-lg font-bold ${
                 pctOfWorkspaceBudget !== null && pctOfWorkspaceBudget > 80
                   ? "text-amber-400"
-                  : "text-white"
+                  : "text-text"
               }`}
             >
               {pctOfWorkspaceBudget !== null
@@ -550,7 +550,7 @@ export function CampaignBudgetBreakdown({
                 className="mt-1"
               />
             )}
-            <span className="text-xs text-slate-300">
+            <span className="text-xs text-text">
               {workspaceConfig?.monthlyBudget
                 ? `of ${formatCurrency(workspaceConfig.monthlyBudget, cur)} monthly`
                 : "No workspace budget set"}
@@ -605,17 +605,17 @@ export function CampaignBudgetBreakdown({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Daily cap */}
-          <div className="border border-white/5 bg-white/[0.01] p-4 flex flex-col gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+          <div className="border border-divider bg-transparent p-4 flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
               Daily Spending Cap
             </span>
-            <span className="text-sm text-white font-bold">
+            <span className="text-sm text-text font-bold">
               {daily > 0 ? formatCurrency(daily, cur) : "Not set"}
             </span>
             {daily > 0 && campaign.platform === "google" && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-text-secondary">
                 Max{" "}
-                <span className="text-slate-300">
+                <span className="text-text">
                   {formatCurrency(daily * 2, cur)}
                 </span>{" "}
                 on high-opportunity days
@@ -624,15 +624,15 @@ export function CampaignBudgetBreakdown({
           </div>
 
           {/* Total cap */}
-          <div className="border border-white/5 bg-white/[0.01] p-4 flex flex-col gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+          <div className="border border-divider bg-transparent p-4 flex flex-col gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
               Lifetime Spending Cap
             </span>
-            <span className="text-sm text-white font-bold">
+            <span className="text-sm text-text font-bold">
               {total > 0 ? formatCurrency(total, cur) : "Not set"}
             </span>
             {total > 0 && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-text-secondary">
                 Campaign pauses automatically at cap
               </span>
             )}
@@ -645,7 +645,7 @@ export function CampaignBudgetBreakdown({
               <span className="text-xs text-amber-300 font-medium">
                 Daily budget flexibility
               </span>
-              <span className="text-xs text-slate-400 leading-relaxed">
+              <span className="text-xs text-text-secondary leading-relaxed">
                 {campaign.platform === "google"
                   ? "Google may spend up to 2x your daily budget on high-opportunity days, but your monthly average stays at your target. Over a 30-day billing period, you won't be charged more than your daily budget × 30.4."
                   : `${pName} may adjust daily spending based on performance opportunities. Your overall budget cap is respected over the billing period.`}
@@ -655,8 +655,8 @@ export function CampaignBudgetBreakdown({
 
           {/* Workspace headroom */}
           {workspaceConfig?.monthlyBudget && workspaceConfig.monthlyBudget > 0 && (
-            <div className="border border-white/5 bg-white/[0.01] p-4 flex flex-col gap-1 md:col-span-2">
-              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-600">
+            <div className="border border-divider bg-transparent p-4 flex flex-col gap-1 md:col-span-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">
                 Workspace Monthly Headroom
               </span>
               <div className="flex items-baseline gap-2">
@@ -669,7 +669,7 @@ export function CampaignBudgetBreakdown({
                 >
                   {headroom !== null ? formatCurrency(headroom, cur) : "—"}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-text-secondary">
                   remaining after this campaign&apos;s projected monthly spend
                 </span>
               </div>

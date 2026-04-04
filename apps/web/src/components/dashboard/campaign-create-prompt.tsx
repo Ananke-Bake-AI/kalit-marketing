@@ -149,7 +149,7 @@ export function CampaignCreatePrompt({
             setOpen(false);
             setResult(null);
           }}
-          className="text-zinc-500 hover:text-white transition-colors cursor-pointer"
+          className="text-text-secondary hover:text-text transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>
@@ -162,7 +162,7 @@ export function CampaignCreatePrompt({
           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
             mode === "prompt"
               ? "bg-accent/15 text-accent border border-accent/30"
-              : "text-zinc-500 border border-white/5 hover:text-white"
+              : "text-text-secondary border border-divider hover:text-text"
           }`}
         >
           <MessageSquare className="h-3 w-3" />
@@ -173,7 +173,7 @@ export function CampaignCreatePrompt({
           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
             mode === "url"
               ? "bg-accent/15 text-accent border border-accent/30"
-              : "text-zinc-500 border border-white/5 hover:text-white"
+              : "text-text-secondary border border-divider hover:text-text"
           }`}
         >
           <Globe className="h-3 w-3" />
@@ -195,13 +195,13 @@ export function CampaignCreatePrompt({
                 }
               }}
               placeholder={"Describe the campaign you want to create...\n\ne.g. 'Create a Google Search campaign targeting SaaS founders looking for AI marketing tools. $50/day budget, focus on conversions. Include ad groups for competitor keywords, problem-aware searches, and solution-aware searches.'"}
-              className="w-full bg-white/[0.03] border border-white/10 text-white text-sm p-3 pr-12 placeholder-zinc-600 focus:border-accent/50 focus:outline-none resize-none min-h-[120px]"
+              className="w-full bg-transparent border border-divider text-text text-sm p-3 pr-12 placeholder-zinc-600 focus:border-accent/50 focus:outline-none resize-none min-h-[120px]"
               disabled={loading}
             />
             <button
               onClick={handleCreateFromPrompt}
               disabled={!prompt.trim() || loading}
-              className="absolute bottom-3 right-3 p-1.5 text-accent hover:text-accent/80 disabled:text-zinc-600 transition-colors cursor-pointer"
+              className="absolute bottom-3 right-3 p-1.5 text-accent hover:text-accent/80 disabled:text-text-secondary transition-colors cursor-pointer"
               title="Create (Cmd+Enter)"
             >
               {loading ? (
@@ -229,7 +229,7 @@ export function CampaignCreatePrompt({
                   inputRef.current?.focus();
                 }}
                 disabled={loading}
-                className="px-2 py-1 text-[10px] bg-white/[0.03] border border-white/5 text-zinc-500 hover:text-accent hover:border-accent/30 transition-colors disabled:opacity-50 cursor-pointer"
+                className="px-2 py-1 text-[10px] bg-transparent border border-divider text-text-secondary hover:text-accent hover:border-accent/30 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {suggestion}
               </button>
@@ -241,7 +241,7 @@ export function CampaignCreatePrompt({
       {/* URL mode */}
       {mode === "url" && (
         <div className="space-y-3">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-text-secondary">
             Enter your website URL and AI will analyze it to create optimized campaigns with proper targeting, ad copy, and keywords.
           </p>
           <div className="flex gap-2">
@@ -253,7 +253,7 @@ export function CampaignCreatePrompt({
                 if (e.key === "Enter") handleCreateFromUrl();
               }}
               placeholder="https://your-website.com"
-              className="flex-1 bg-white/[0.03] border border-white/10 text-white text-sm px-3 py-2 placeholder-zinc-600 focus:border-accent/50 focus:outline-none"
+              className="flex-1 bg-transparent border border-divider text-text text-sm px-3 py-2 placeholder-zinc-600 focus:border-accent/50 focus:outline-none"
               disabled={loading}
             />
             <button
@@ -285,7 +285,7 @@ export function CampaignCreatePrompt({
         <div
           className={`flex items-start gap-2 p-3 text-xs ${
             result.success
-              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600"
               : "bg-red-500/10 border border-red-500/20 text-red-400"
           }`}
         >

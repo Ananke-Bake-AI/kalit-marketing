@@ -16,7 +16,7 @@ const platformColors: Record<string, string> = {
   google: "bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25",
   meta: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/25",
   tiktok: "bg-pink-500/15 text-pink-400 border-pink-500/30 hover:bg-pink-500/25",
-  x: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30 hover:bg-zinc-500/25",
+  x: "bg-zinc-500/15 text-text border-zinc-500/30 hover:bg-zinc-500/25",
   linkedin: "bg-sky-500/15 text-sky-400 border-sky-500/30 hover:bg-sky-500/25",
   reddit: "bg-orange-500/15 text-orange-400 border-orange-500/30 hover:bg-orange-500/25",
 };
@@ -82,7 +82,7 @@ export function CampaignPlatformAdapt({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-600">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-text-secondary">
           Adapt for:
         </span>
         {availablePlatforms.map((p) => (
@@ -91,7 +91,7 @@ export function CampaignPlatformAdapt({
             onClick={() => handleAdapt(p.id)}
             disabled={adapting !== null}
             className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
-              platformColors[p.id] || "bg-white/5 text-slate-400 border-white/10"
+              platformColors[p.id] || "bg-subtle text-text-secondary border-divider"
             }`}
           >
             {adapting === p.id ? (
@@ -103,7 +103,7 @@ export function CampaignPlatformAdapt({
           </button>
         ))}
         {adapted.length > 0 && (
-          <span className="text-[10px] text-emerald-400">
+          <span className="text-[10px] text-emerald-600">
             Created — <a href="" onClick={(e) => { e.preventDefault(); window.location.reload(); }} className="underline">refresh</a> to see
           </span>
         )}
@@ -112,7 +112,7 @@ export function CampaignPlatformAdapt({
         <p className="text-[10px] text-red-400">{error}</p>
       )}
       {adapting && (
-        <p className="text-[10px] text-slate-500 animate-pulse">Generating {platformLabels[adapting]} campaign...</p>
+        <p className="text-[10px] text-text-secondary animate-pulse">Generating {platformLabels[adapting]} campaign...</p>
       )}
     </div>
   );

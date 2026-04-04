@@ -72,11 +72,11 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
     return (
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Zap className="h-4 w-4 text-slate-500" />
-          <h3 className="text-sm font-semibold text-slate-100">Supervisor</h3>
+          <Zap className="h-4 w-4 text-text-secondary" />
+          <h3 className="text-sm font-semibold text-text">Supervisor</h3>
         </div>
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+          <Loader2 className="h-4 w-4 animate-spin text-text-secondary" />
         </div>
       </div>
     );
@@ -88,10 +88,10 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Zap className={`h-4 w-4 ${isRunning ? "text-accent" : "text-slate-500"}`} />
-          <h3 className="text-sm font-semibold text-slate-100">Supervisor</h3>
+          <Zap className={`h-4 w-4 ${isRunning ? "text-accent" : "text-text-secondary"}`} />
+          <h3 className="text-sm font-semibold text-text">Supervisor</h3>
           {isRunning ? (
-            <span className="badge bg-emerald-500/15 text-emerald-400 border-emerald-500/30">
+            <span className="badge bg-emerald-500/15 text-emerald-600 border-emerald-500/30">
               <span className="relative flex h-1.5 w-1.5 mr-1.5">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -99,14 +99,14 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
               Running
             </span>
           ) : (
-            <span className="badge bg-zinc-500/15 text-zinc-400 border-zinc-500/30">
+            <span className="badge bg-zinc-500/15 text-text-secondary border-zinc-500/30">
               {status?.supervisorStatus === "paused" ? "Paused" : "Idle"}
             </span>
           )}
         </div>
         <button
           onClick={fetchStatus}
-          className="text-slate-600 hover:text-slate-400 transition-colors"
+          className="text-text-secondary hover:text-text-secondary transition-colors"
           title="Refresh status"
         >
           <RefreshCw className="h-3 w-3" />
@@ -114,7 +114,7 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
       </div>
 
       {/* Description */}
-      <p className="text-[11px] text-slate-500 leading-relaxed mb-4">
+      <p className="text-[11px] text-text-secondary leading-relaxed mb-4">
         The Supervisor continuously monitors your workspace — running performance reviews,
         detecting anomalies, checking creative fatigue, and creating optimization tasks
         automatically based on your workspace&apos;s current lifecycle stage.
@@ -122,7 +122,7 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
 
       {/* Mode selector */}
       <div className="mb-4 space-y-2">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary">
           Schedule Mode
         </p>
         <div className="flex gap-2">
@@ -131,16 +131,16 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
             className={`flex-1 border px-3 py-2 text-left transition-all cursor-pointer ${
               scheduleMode === "automatic"
                 ? "border-accent/30 bg-accent/10"
-                : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                : "border-divider bg-transparent hover:border-divider"
             }`}
           >
             <div className="flex items-center gap-1.5 mb-0.5">
-              <Zap className={`h-3 w-3 ${scheduleMode === "automatic" ? "text-accent" : "text-slate-500"}`} />
-              <span className={`text-[10px] font-medium ${scheduleMode === "automatic" ? "text-accent" : "text-slate-500"}`}>
+              <Zap className={`h-3 w-3 ${scheduleMode === "automatic" ? "text-accent" : "text-text-secondary"}`} />
+              <span className={`text-[10px] font-medium ${scheduleMode === "automatic" ? "text-accent" : "text-text-secondary"}`}>
                 Automatic
               </span>
             </div>
-            <p className="text-[9px] text-slate-600 leading-snug">
+            <p className="text-[9px] text-text-secondary leading-snug">
               AI adjusts check frequency based on workspace stage
             </p>
           </button>
@@ -149,16 +149,16 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
             className={`flex-1 border px-3 py-2 text-left transition-all cursor-pointer ${
               scheduleMode === "custom"
                 ? "border-accent/30 bg-accent/10"
-                : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                : "border-divider bg-transparent hover:border-divider"
             }`}
           >
             <div className="flex items-center gap-1.5 mb-0.5">
-              <Settings2 className={`h-3 w-3 ${scheduleMode === "custom" ? "text-accent" : "text-slate-500"}`} />
-              <span className={`text-[10px] font-medium ${scheduleMode === "custom" ? "text-accent" : "text-slate-500"}`}>
+              <Settings2 className={`h-3 w-3 ${scheduleMode === "custom" ? "text-accent" : "text-text-secondary"}`} />
+              <span className={`text-[10px] font-medium ${scheduleMode === "custom" ? "text-accent" : "text-text-secondary"}`}>
                 Custom
               </span>
             </div>
-            <p className="text-[9px] text-slate-600 leading-snug">
+            <p className="text-[9px] text-text-secondary leading-snug">
               Fixed interval you control
             </p>
           </button>
@@ -166,12 +166,12 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
 
         {scheduleMode === "custom" && (
           <div className="flex items-center gap-2 mt-2">
-            <Clock className="h-3 w-3 text-slate-500" />
-            <span className="text-[10px] text-slate-400">Every</span>
+            <Clock className="h-3 w-3 text-text-secondary" />
+            <span className="text-[10px] text-text-secondary">Every</span>
             <select
               value={customInterval}
               onChange={(e) => setCustomInterval(Number(e.target.value))}
-              className="border border-white/10 bg-white/[0.05] px-2 py-1 text-[10px] text-white focus:border-accent/30 focus:outline-none"
+              className="border border-divider bg-white/[0.05] px-2 py-1 text-[10px] text-text focus:border-accent/30 focus:outline-none"
             >
               <option value={15}>15 min</option>
               <option value={30}>30 min</option>
@@ -188,9 +188,9 @@ export function SupervisorPanel({ workspaceId }: SupervisorPanelProps) {
       {/* Last run */}
       {status?.lastSupervisorRun && (
         <div className="mb-4">
-          <p className="text-[10px] text-slate-600">
+          <p className="text-[10px] text-text-secondary">
             Last run:{" "}
-            <span className="text-slate-400">
+            <span className="text-text-secondary">
               {new Date(status.lastSupervisorRun).toLocaleString()}
             </span>
           </p>

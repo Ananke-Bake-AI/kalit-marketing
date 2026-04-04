@@ -98,7 +98,7 @@ export function CampaignEditPrompt({
             setOpen(false);
             setResult(null);
           }}
-          className="text-slate-500 hover:text-white transition-colors cursor-pointer"
+          className="text-text-secondary hover:text-text transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>
@@ -116,13 +116,13 @@ export function CampaignEditPrompt({
             }
           }}
           placeholder="Describe what you want to change... e.g. 'Add a retargeting ad group for cart abandoners' or 'Make the tone more casual and add emoji to headlines' or 'Double the budget and add TikTok-specific ad copy'"
-          className="w-full bg-white/[0.03] border border-white/10 text-white text-sm p-3 pr-12 placeholder-slate-600 focus:border-purple-500/50 focus:outline-none resize-none min-h-[80px]"
+          className="w-full bg-transparent border border-divider text-text text-sm p-3 pr-12 placeholder-slate-600 focus:border-purple-500/50 focus:outline-none resize-none min-h-[80px]"
           disabled={loading}
         />
         <button
           onClick={handleSubmit}
           disabled={!prompt.trim() || loading}
-          className="absolute bottom-3 right-3 p-1.5 text-purple-400 hover:text-purple-300 disabled:text-slate-600 transition-colors cursor-pointer"
+          className="absolute bottom-3 right-3 p-1.5 text-purple-400 hover:text-purple-300 disabled:text-text-secondary transition-colors cursor-pointer"
           title="Send (Cmd+Enter)"
         >
           {loading ? (
@@ -146,7 +146,7 @@ export function CampaignEditPrompt({
         <div
           className={`flex items-start gap-2 p-3 text-xs ${
             result.success
-              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600"
               : "bg-red-500/10 border border-red-500/20 text-red-400"
           }`}
         >
@@ -176,7 +176,7 @@ export function CampaignEditPrompt({
               inputRef.current?.focus();
             }}
             disabled={loading}
-            className="px-2 py-1 text-[10px] bg-white/[0.03] border border-white/5 text-slate-500 hover:text-purple-400 hover:border-purple-500/30 transition-colors disabled:opacity-50 cursor-pointer"
+            className="px-2 py-1 text-[10px] bg-transparent border border-divider text-text-secondary hover:text-purple-400 hover:border-purple-500/30 transition-colors disabled:opacity-50 cursor-pointer"
           >
             {suggestion}
           </button>

@@ -47,7 +47,7 @@ const CATEGORY_CONFIG: Record<
   campaign_resume: {
     icon: PlayCircle,
     label: "Resume Campaign",
-    color: "text-emerald-400",
+    color: "text-emerald-600",
   },
   bid_strategy_change: {
     icon: ArrowUpRight,
@@ -64,7 +64,7 @@ const CATEGORY_CONFIG: Record<
 const IMPACT_STYLES: Record<string, string> = {
   high: "bg-red-500/15 text-red-400 border-red-500/30",
   medium: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  low: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+  low: "bg-zinc-500/15 text-text-secondary border-zinc-500/30",
 };
 
 export function RecommendationsPanel({
@@ -151,7 +151,7 @@ export function RecommendationsPanel({
   if (loading) {
     return (
       <div className="card p-6">
-        <div className="flex items-center gap-2 text-zinc-500">
+        <div className="flex items-center gap-2 text-text-secondary">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span className="text-sm">Loading recommendations...</span>
         </div>
@@ -162,8 +162,8 @@ export function RecommendationsPanel({
   if (recommendations.length === 0 && history.length === 0) return null;
 
   const STATUS_BADGE: Record<string, string> = {
-    applied: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-    dismissed: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+    applied: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+    dismissed: "bg-zinc-500/15 text-text-secondary border-zinc-500/30",
     failed: "bg-red-500/15 text-red-400 border-red-500/30",
     approved: "bg-blue-500/15 text-blue-400 border-blue-500/30",
   };
@@ -173,14 +173,14 @@ export function RecommendationsPanel({
   return (
     <div className="card overflow-hidden">
       {/* Header */}
-      <div className="border-b border-white/5 px-6 py-4 flex items-center justify-between">
+      <div className="border-b border-divider px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center bg-[#c8ff00]/10">
-            <Sparkles className="h-4 w-4 text-[#c8ff00]" />
+          <div className="flex h-8 w-8 items-center justify-center bg-[#6366F1]/10">
+            <Sparkles className="h-4 w-4 text-[#6366F1]" />
           </div>
           <div>
-            <p className="eyebrow text-[#c8ff00]">AI Recommendations</p>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <p className="eyebrow text-[#6366F1]">AI Recommendations</p>
+            <p className="text-xs text-text-secondary mt-0.5">
               {recommendations.length} pending
               {history.length > 0 ? ` · ${history.length} resolved` : ""}
             </p>
@@ -192,8 +192,8 @@ export function RecommendationsPanel({
             onClick={() => setTab("pending")}
             className={`px-3 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors ${
               tab === "pending"
-                ? "bg-[#c8ff00]/15 text-[#c8ff00] border border-[#c8ff00]/30"
-                : "text-zinc-500 border border-white/5 hover:text-white"
+                ? "bg-[#6366F1]/15 text-[#6366F1] border border-[#6366F1]/30"
+                : "text-text-secondary border border-divider hover:text-text"
             }`}
           >
             Pending ({recommendations.length})
@@ -202,8 +202,8 @@ export function RecommendationsPanel({
             onClick={() => setTab("history")}
             className={`px-3 py-1 text-[10px] font-medium uppercase tracking-wider transition-colors ${
               tab === "history"
-                ? "bg-white/10 text-white border border-white/20"
-                : "text-zinc-500 border border-white/5 hover:text-white"
+                ? "bg-subtle-strong text-text border border-divider"
+                : "text-text-secondary border border-divider hover:text-text"
             }`}
           >
             History ({history.length})
@@ -214,7 +214,7 @@ export function RecommendationsPanel({
       {/* Empty state for current tab */}
       {activeList.length === 0 && (
         <div className="px-6 py-8 text-center">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-text-secondary">
             {tab === "pending"
               ? "No pending recommendations"
               : "No resolved recommendations yet"}
@@ -228,7 +228,7 @@ export function RecommendationsPanel({
           const config = CATEGORY_CONFIG[rec.category] ?? {
             icon: AlertTriangle,
             label: rec.category,
-            color: "text-zinc-400",
+            color: "text-text-secondary",
           };
           const Icon = config.icon;
           const isLoading = actionLoading === rec.id;
@@ -236,11 +236,11 @@ export function RecommendationsPanel({
           return (
             <div
               key={rec.id}
-              className="px-6 py-4 flex items-start gap-4 hover:bg-white/[0.02] transition-colors"
+              className="px-6 py-4 flex items-start gap-4 hover:bg-transparent transition-colors"
             >
               {/* Icon */}
               <div
-                className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center bg-white/5 ${config.color}`}
+                className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center bg-subtle ${config.color}`}
               >
                 <Icon className="h-4 w-4" />
               </div>
@@ -253,24 +253,24 @@ export function RecommendationsPanel({
                   >
                     {rec.impact}
                   </span>
-                  <span className="text-[10px] text-zinc-600 uppercase tracking-wider">
+                  <span className="text-[10px] text-text-secondary uppercase tracking-wider">
                     {config.label}
                   </span>
                 </div>
 
-                <p className="text-sm font-medium text-zinc-200">
+                <p className="text-sm font-medium text-text">
                   {rec.title}
                 </p>
 
                 {rec.reason && (
-                  <p className="text-xs text-zinc-500 mt-1 flex items-start gap-1.5">
-                    <Bot className="h-3 w-3 mt-0.5 shrink-0 text-zinc-600" />
+                  <p className="text-xs text-text-secondary mt-1 flex items-start gap-1.5">
+                    <Bot className="h-3 w-3 mt-0.5 shrink-0 text-text-secondary" />
                     {rec.reason}
                   </p>
                 )}
 
                 {rec.campaign && (
-                  <p className="text-[10px] text-zinc-600 mt-1">
+                  <p className="text-[10px] text-text-secondary mt-1">
                     Campaign: {rec.campaign.name}
                   </p>
                 )}
@@ -283,7 +283,7 @@ export function RecommendationsPanel({
                     <button
                       onClick={() => handleAction(rec.id, "approve")}
                       disabled={isLoading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
                     >
                       {isLoading ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -295,7 +295,7 @@ export function RecommendationsPanel({
                     <button
                       onClick={() => handleAction(rec.id, "dismiss")}
                       disabled={isLoading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-500 hover:text-red-400 border border-white/5 hover:border-red-500/30 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-text-secondary hover:text-red-400 border border-divider hover:border-red-500/30 transition-colors disabled:opacity-50"
                     >
                       <X className="h-3 w-3" />
                       Dismiss

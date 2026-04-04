@@ -140,13 +140,13 @@ export function OnboardingGuide({
       <div className="mb-6 flex items-center justify-between">
         <div>
           <p className="eyebrow mb-1">Setup Guide</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-text-secondary">
             Complete these steps to activate your growth runtime.
           </p>
         </div>
         <button
           onClick={handleDismiss}
-          className="text-[10px] text-slate-600 transition-colors hover:text-slate-400"
+          className="text-[10px] text-text-secondary transition-colors hover:text-text-secondary"
         >
           Skip Setup
         </button>
@@ -161,7 +161,7 @@ export function OnboardingGuide({
           return (
             <div key={step.key} className="flex items-center gap-1">
               {i > 0 && (
-                <span className="text-[10px] text-slate-700">&rsaquo;</span>
+                <span className="text-[10px] text-text-secondary">&rsaquo;</span>
               )}
               <button
                 onClick={() => goToStep(step.key)}
@@ -169,8 +169,8 @@ export function OnboardingGuide({
                   isActive
                     ? "border border-accent/30 bg-accent/20 text-accent"
                     : isDone
-                      ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
-                      : "border border-white/5 bg-white/[0.03] text-slate-600"
+                      ? "border border-emerald-500/30 bg-emerald-500/15 text-emerald-600"
+                      : "border border-divider bg-transparent text-text-secondary"
                 }`}
               >
                 <Icon className="h-3 w-3" />
@@ -182,7 +182,7 @@ export function OnboardingGuide({
       </div>
 
       {/* Step content */}
-      <div className="panel-surface p-8">
+      <div className="card-white p-8">
         {currentStep === "welcome" && (
           <WelcomeStep
             workspaceName={workspaceName}

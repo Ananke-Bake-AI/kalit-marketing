@@ -97,11 +97,11 @@ export function ConnectPlatforms({ workspaceId, connectedAccounts }: ConnectPlat
   return (
     <div className="card p-5">
       <div className="flex items-center gap-2 mb-4">
-        <Plug className="h-4 w-4 text-slate-500" />
-        <h3 className="text-sm font-semibold text-slate-100">
+        <Plug className="h-4 w-4 text-text-secondary" />
+        <h3 className="text-sm font-semibold text-text">
           Connect Platforms
         </h3>
-        <span className="text-[10px] text-slate-600 ml-auto mr-2">
+        <span className="text-[10px] text-text-secondary ml-auto mr-2">
           {connectedAccounts.length} connected
         </span>
         <Link
@@ -122,7 +122,7 @@ export function ConnectPlatforms({ workspaceId, connectedAccounts }: ConnectPlat
       <div className="space-y-4">
         {categories.map((category) => (
           <div key={category}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary mb-2">
               {category}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -141,35 +141,35 @@ export function ConnectPlatforms({ workspaceId, connectedAccounts }: ConnectPlat
                       className={`flex items-center gap-3 border p-3 ${
                         isConnected
                           ? "border-emerald-500/20 bg-emerald-500/5"
-                          : "border-white/5 bg-white/[0.02]"
+                          : "border-divider bg-transparent"
                       }`}
                     >
                       <Icon
                         className={`h-4 w-4 shrink-0 ${
-                          isConnected ? "text-emerald-400" : "text-slate-500"
+                          isConnected ? "text-emerald-600" : "text-text-secondary"
                         }`}
                       />
                       <div className="flex-1 min-w-0">
                         <p
                           className={`text-xs font-medium ${
-                            isConnected ? "text-emerald-400" : "text-white"
+                            isConnected ? "text-emerald-600" : "text-text"
                           }`}
                         >
                           {p.name}
                         </p>
                         {isConnected && account?.accountName && (
-                          <p className="text-[10px] text-slate-500 truncate">
+                          <p className="text-[10px] text-text-secondary truncate">
                             {account.accountName}
                           </p>
                         )}
                       </div>
 
                       {isConnected ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <Check className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
                       ) : p.authType === "oauth" ? (
                         <button
                           onClick={() => handleOAuth(p.key)}
-                          className="flex items-center gap-1 border border-white/10 px-2 py-1 text-[10px] text-slate-400 hover:border-accent/30 hover:text-accent transition-all"
+                          className="flex items-center gap-1 border border-divider px-2 py-1 text-[10px] text-text-secondary hover:border-accent/30 hover:text-accent transition-all"
                         >
                           <ExternalLink className="h-2.5 w-2.5" />
                           Connect
@@ -186,7 +186,7 @@ export function ConnectPlatforms({ workspaceId, connectedAccounts }: ConnectPlat
                                 [p.key]: e.target.value,
                               }))
                             }
-                            className="w-24 border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] text-white placeholder:text-slate-600 focus:border-accent/30 focus:outline-none"
+                            className="w-24 border border-divider bg-transparent px-2 py-1 text-[10px] text-text placeholder:text-text-secondary focus:border-accent/30 focus:outline-none"
                           />
                           <button
                             onClick={() => handleApiKey(p.key)}
@@ -194,7 +194,7 @@ export function ConnectPlatforms({ workspaceId, connectedAccounts }: ConnectPlat
                               connecting === p.key ||
                               !apiKeyInput[p.key]?.trim()
                             }
-                            className="border border-white/10 px-2 py-1 text-[10px] text-slate-400 hover:border-accent/30 hover:text-accent transition-all disabled:opacity-50"
+                            className="border border-divider px-2 py-1 text-[10px] text-text-secondary hover:border-accent/30 hover:text-accent transition-all disabled:opacity-50"
                           >
                             {connecting === p.key ? (
                               <Loader2 className="h-2.5 w-2.5 animate-spin" />

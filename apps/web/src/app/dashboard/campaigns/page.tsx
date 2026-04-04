@@ -25,14 +25,14 @@ interface Workspace {
 }
 
 const statusColors: Record<string, string> = {
-  draft: "bg-zinc-500/20 text-zinc-400",
+  draft: "bg-zinc-500/20 text-text-secondary",
   pending_review: "bg-yellow-500/20 text-yellow-400",
-  active: "bg-emerald-500/20 text-emerald-400",
+  active: "bg-emerald-500/20 text-emerald-600",
   paused: "bg-orange-500/20 text-orange-400",
   optimizing: "bg-blue-500/20 text-blue-400",
   scaling: "bg-purple-500/20 text-purple-400",
   fatigued: "bg-red-500/20 text-red-400",
-  completed: "bg-zinc-500/20 text-zinc-400",
+  completed: "bg-zinc-500/20 text-text-secondary",
 };
 
 const typeLabels: Record<string, string> = {
@@ -116,10 +116,10 @@ export default function CampaignsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white font-sans">
+          <h1 className="text-2xl font-bold text-text font-sans">
             Campaigns
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             Campaign performance across all channels
           </p>
         </div>
@@ -168,14 +168,14 @@ export default function CampaignsPage() {
           },
         ].map((stat) => (
           <div key={stat.label} className="card p-4">
-            <p className="text-xs text-zinc-500 uppercase tracking-wider">
+            <p className="text-xs text-text-secondary uppercase tracking-wider">
               {stat.label}
             </p>
             <p
               className={`text-xl font-bold mt-1 ${
                 "highlight" in stat && stat.highlight
                   ? "text-accent"
-                  : "text-white"
+                  : "text-text"
               }`}
             >
               {stat.value}
@@ -201,12 +201,12 @@ export default function CampaignsPage() {
             className={`px-3 py-1.5 text-xs font-medium rounded-none border transition-colors ${
               filter === s
                 ? "bg-accent/10 border-accent text-accent"
-                : "bg-card border-white/5 text-zinc-400 hover:border-white/10"
+                : "bg-surface shadow-card rounded-3xl border-divider text-text-secondary hover:border-divider"
             }`}
           >
             {s === "all" ? "All" : s.replace("_", " ")}
             {s !== "all" && (
-              <span className="ml-1 text-zinc-600">
+              <span className="ml-1 text-text-secondary">
                 ({campaigns.filter((c) => c.status === s).length})
               </span>
             )}
@@ -218,12 +218,12 @@ export default function CampaignsPage() {
       {loading ? (
         <div className="card p-12 text-center">
           <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-zinc-500 mt-3">Loading campaigns...</p>
+          <p className="text-sm text-text-secondary mt-3">Loading campaigns...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
-          <p className="text-zinc-500">No campaigns found</p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p className="text-text-secondary">No campaigns found</p>
+          <p className="text-xs text-text-secondary mt-1">
             Campaigns will appear once workspaces enter the execution phase
           </p>
         </div>
@@ -232,7 +232,7 @@ export default function CampaignsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/5 text-zinc-500 text-xs uppercase tracking-wider">
+                <tr className="border-b border-divider text-text-secondary text-xs uppercase tracking-wider">
                   <th className="text-left p-3 font-medium">Campaign</th>
                   <th className="text-left p-3 font-medium">Type</th>
                   <th className="text-left p-3 font-medium">Status</th>
@@ -249,7 +249,7 @@ export default function CampaignsPage() {
                 {filtered.map((c) => (
                   <tr
                     key={c.id}
-                    className="hover:bg-white/[0.02] transition-colors cursor-pointer group"
+                    className="hover:bg-transparent transition-colors cursor-pointer group"
                     onClick={() => {
                       if (selectedWorkspace) {
                         window.location.href = `/dashboard/workspaces/${selectedWorkspace}/campaigns/${c.id}`;
@@ -257,40 +257,40 @@ export default function CampaignsPage() {
                     }}
                   >
                     <td className="p-3">
-                      <p className="text-white font-medium group-hover:text-accent transition-colors">{c.name}</p>
-                      <p className="text-xs text-zinc-600 mt-0.5">
+                      <p className="text-text font-medium group-hover:text-accent transition-colors">{c.name}</p>
+                      <p className="text-xs text-text-secondary mt-0.5">
                         {c.platform}
                       </p>
                     </td>
-                    <td className="p-3 text-zinc-400">
+                    <td className="p-3 text-text-secondary">
                       {typeLabels[c.type] || c.type}
                     </td>
                     <td className="p-3">
                       <span
                         className={`inline-block px-2 py-0.5 text-xs font-medium rounded-none ${
                           statusColors[c.status] ||
-                          "bg-zinc-500/20 text-zinc-400"
+                          "bg-zinc-500/20 text-text-secondary"
                         }`}
                       >
                         {c.status}
                       </span>
                     </td>
-                    <td className="p-3 text-right text-zinc-400">
+                    <td className="p-3 text-right text-text-secondary">
                       {formatCurrency(c.dailyBudget)}/d
                     </td>
-                    <td className="p-3 text-right text-white">
+                    <td className="p-3 text-right text-text">
                       {formatCurrency(c.spend)}
                     </td>
-                    <td className="p-3 text-right text-zinc-400">
+                    <td className="p-3 text-right text-text-secondary">
                       {formatNumber(c.impressions)}
                     </td>
-                    <td className="p-3 text-right text-zinc-400">
+                    <td className="p-3 text-right text-text-secondary">
                       {formatNumber(c.clicks)}
                     </td>
-                    <td className="p-3 text-right text-white">
+                    <td className="p-3 text-right text-text">
                       {formatNumber(c.conversions)}
                     </td>
-                    <td className="p-3 text-right text-zinc-400">
+                    <td className="p-3 text-right text-text-secondary">
                       {c.cpa !== null ? formatCurrency(c.cpa) : "—"}
                     </td>
                     <td
@@ -298,8 +298,8 @@ export default function CampaignsPage() {
                         c.roas !== null && c.roas >= 2
                           ? "text-accent"
                           : c.roas !== null && c.roas >= 1
-                            ? "text-emerald-400"
-                            : "text-zinc-400"
+                            ? "text-emerald-600"
+                            : "text-text-secondary"
                       }`}
                     >
                       {c.roas !== null ? `${c.roas.toFixed(2)}x` : "—"}

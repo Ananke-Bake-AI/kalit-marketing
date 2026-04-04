@@ -314,8 +314,8 @@ export function CampaignActions({
       {/* ── Unified Deployment Card ── */}
       <div className="card p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Deployment</p>
-          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-500" />}
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-text-secondary">Deployment</p>
+          {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-text-secondary" />}
         </div>
 
         {/* Platform rows — one per platform */}
@@ -324,14 +324,14 @@ export function CampaignActions({
           const pLabel = platformLabels[platform] || platform;
 
           return (
-            <div key={platform} className="flex items-center justify-between py-2.5 border-b border-white/5 last:border-0">
+            <div key={platform} className="flex items-center justify-between py-2.5 border-b border-divider last:border-0">
               <div className="flex items-center gap-2.5">
                 <span className={`w-2 h-2 rounded-full ${isLive ? "bg-emerald-400" : status === "failed" ? "bg-red-400" : "bg-zinc-500"}`} />
-                <span className="text-sm font-medium text-white">{pLabel}</span>
+                <span className="text-sm font-medium text-text">{pLabel}</span>
                 <span className={`text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 ${
-                  isLive ? "bg-emerald-500/15 text-emerald-400" :
+                  isLive ? "bg-emerald-500/15 text-emerald-600" :
                   status === "failed" ? "bg-red-500/15 text-red-400" :
-                  "bg-zinc-500/15 text-zinc-400"
+                  "bg-zinc-500/15 text-text-secondary"
                 }`}>
                   {status.replace(/_/g, " ")}
                 </span>
@@ -365,7 +365,7 @@ export function CampaignActions({
                   <button
                     onClick={() => handleBrowserSync(platform)}
                     disabled={!extensionDetected || syncStatus === "syncing"}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-white/5 text-slate-400 border border-white/10 hover:border-white/20 transition-colors disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium bg-subtle text-text-secondary border border-divider hover:border-divider transition-colors disabled:opacity-40"
                   >
                     {syncStatus === "syncing" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                     Sync
@@ -377,7 +377,7 @@ export function CampaignActions({
         })}
 
         {platforms.length === 0 && (
-          <p className="text-[10px] text-slate-500">No platforms configured for this campaign.</p>
+          <p className="text-[10px] text-text-secondary">No platforms configured for this campaign.</p>
         )}
 
         {/* Status messages */}
@@ -385,31 +385,31 @@ export function CampaignActions({
           <p className="text-[10px] text-accent animate-pulse">Opening ad platform...</p>
         )}
         {browserDeployStatus === "success" && (
-          <p className="text-[10px] text-emerald-400">Form filled — review and confirm live below</p>
+          <p className="text-[10px] text-emerald-600">Form filled — review and confirm live below</p>
         )}
         {syncStatus === "success" && syncResult && (
-          <p className="text-[10px] text-emerald-400">Synced {syncResult.campaignCount} campaign{syncResult.campaignCount !== 1 ? "s" : ""}, {syncResult.metricsFound} metrics</p>
+          <p className="text-[10px] text-emerald-600">Synced {syncResult.campaignCount} campaign{syncResult.campaignCount !== 1 ? "s" : ""}, {syncResult.metricsFound} metrics</p>
         )}
 
         {/* Extension missing for browser platforms */}
         {platforms.some(p => browserDeployPlatforms.includes(p)) && !extensionDetected && isDeployable && (
-          <p className="text-[10px] text-slate-500">
+          <p className="text-[10px] text-text-secondary">
             <a href="/dashboard/connections" className="text-accent underline hover:text-accent/80">Install the Kalit extension</a> to deploy via browser
           </p>
         )}
 
         {/* Quick actions bar */}
         {isDeployable && (
-          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+          <div className="flex items-center gap-2 pt-2 border-t border-divider">
             {(status === "draft" || status === "pending_approval") && (
               <button onClick={() => handleAction("approve")} disabled={loading}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
                 <CheckCircle className="h-3 w-3" /> Approve
               </button>
             )}
             {(status === "draft" || status === "pending_approval" || status === "approved") && (
               <button onClick={() => handleAction("reject")} disabled={loading}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-zinc-500 hover:text-red-400 transition-colors disabled:opacity-40">
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-text-secondary hover:text-red-400 transition-colors disabled:opacity-40">
                 <XCircle className="h-3 w-3" /> Reject
               </button>
             )}
@@ -426,7 +426,7 @@ export function CampaignActions({
                 } catch { /* ignore */ } finally { setLoading(false); }
               }}
               disabled={loading}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-slate-500 hover:text-accent transition-colors disabled:opacity-40 ml-auto">
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium text-text-secondary hover:text-accent transition-colors disabled:opacity-40 ml-auto">
               <CheckCircle className="h-3 w-3" /> Mark as Live
             </button>
           </div>
@@ -434,7 +434,7 @@ export function CampaignActions({
 
         {/* Pause / Resume for live campaigns */}
         {isLive && (
-          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+          <div className="flex items-center gap-2 pt-2 border-t border-divider">
             {status !== "paused" ? (
               <button onClick={() => handleAction("pause")} disabled={loading}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-orange-400 hover:bg-orange-500/10 transition-colors disabled:opacity-40">
@@ -442,7 +442,7 @@ export function CampaignActions({
               </button>
             ) : (
               <button onClick={() => handleAction("resume")} disabled={loading}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-emerald-400 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium text-emerald-600 hover:bg-emerald-500/10 transition-colors disabled:opacity-40">
                 <Play className="h-3 w-3" /> Resume
               </button>
             )}
@@ -460,7 +460,7 @@ export function CampaignActions({
 
       {/* Launch results */}
       {result?.results?.map((r, i) => (
-        <div key={i} className={`p-3 border text-xs ${r.success ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
+        <div key={i} className={`p-3 border text-xs ${r.success ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600" : "bg-red-500/10 border-red-500/20 text-red-400"}`}>
           <p className="font-medium">{r.platform} — {r.success ? "Launched" : "Failed"}</p>
           {r.error && <p className="mt-1 opacity-80">{r.error}</p>}
         </div>

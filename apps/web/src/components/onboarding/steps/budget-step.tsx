@@ -69,10 +69,10 @@ export function BudgetStep({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-bold tracking-[-0.04em] text-white">
+        <h2 className="text-lg font-bold tracking-[-0.04em] text-text">
           Budget & Goals
         </h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-text-secondary">
           Define your growth budget and success metrics.
         </p>
       </div>
@@ -80,7 +80,7 @@ export function BudgetStep({
       <div className="max-w-xl space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Monthly Budget
             </label>
             <input
@@ -92,7 +92,7 @@ export function BudgetStep({
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Currency
             </label>
             <select
@@ -108,7 +108,7 @@ export function BudgetStep({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
             Primary Goal
           </label>
           <select
@@ -126,7 +126,7 @@ export function BudgetStep({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Target CAC
             </label>
             <input
@@ -136,12 +136,12 @@ export function BudgetStep({
               placeholder="50"
               className="input w-full"
             />
-            <p className="mt-1 text-[10px] text-slate-600">
+            <p className="mt-1 text-[10px] text-text-secondary">
               Max cost per acquisition (optional)
             </p>
           </div>
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Target ROAS
             </label>
             <input
@@ -151,7 +151,7 @@ export function BudgetStep({
               placeholder="3.0"
               className="input w-full"
             />
-            <p className="mt-1 text-[10px] text-slate-600">
+            <p className="mt-1 text-[10px] text-text-secondary">
               Minimum return on ad spend (optional)
             </p>
           </div>

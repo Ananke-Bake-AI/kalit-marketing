@@ -78,11 +78,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   icon: "bg-purple-500/15 text-purple-400 border-purple-500/30",
   font: "bg-orange-500/15 text-orange-400 border-orange-500/30",
   color_swatch: "bg-pink-500/15 text-pink-400 border-pink-500/30",
-  guideline_doc: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  guideline_doc: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
   social_template: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
   ad_template: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
   video: "bg-red-500/15 text-red-400 border-red-500/30",
-  raw_asset: "bg-slate-500/15 text-slate-400 border-slate-500/30",
+  raw_asset: "bg-slate-500/15 text-text-secondary border-slate-500/30",
 };
 
 // ─── Helper ──────────────────────────────────────────────────────
@@ -236,8 +236,8 @@ export default function AssetsPage() {
       <div className="flex items-center justify-between">
         <div>
           <p className="eyebrow mb-1">Workspace Assets</p>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Brand Drive</h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <h1 className="text-2xl font-bold tracking-tight text-text">Brand Drive</h1>
+          <p className="mt-1 text-xs text-text-secondary">
             Upload logos, images, and brand assets — AI uses these to generate on-brand creatives
           </p>
         </div>
@@ -256,7 +256,7 @@ export default function AssetsPage() {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-slate-500" />
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-text-secondary" />
             </div>
           )}
           <button
@@ -287,13 +287,13 @@ export default function AssetsPage() {
 
       {/* Brand Palette Extraction */}
       {assets.length > 0 && (
-        <div className="panel-surface p-4">
+        <div className="card-white p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Pipette className="h-4 w-4 text-accent" />
               <div>
-                <p className="text-xs font-medium text-slate-200">Brand Color Palette</p>
-                <p className="text-[10px] text-slate-500">Auto-extract dominant colors from your brand assets</p>
+                <p className="text-xs font-medium text-text">Brand Color Palette</p>
+                <p className="text-[10px] text-text-secondary">Auto-extract dominant colors from your brand assets</p>
               </div>
             </div>
             <button
@@ -313,15 +313,15 @@ export default function AssetsPage() {
               {extractedPalette.map((color, i) => (
                 <div key={i} className="group relative">
                   <div
-                    className="h-10 w-10 border border-white/10 transition-transform hover:scale-110"
+                    className="h-10 w-10 border border-divider transition-transform hover:scale-110"
                     style={{ backgroundColor: color.hex }}
                   />
-                  <div className="absolute -bottom-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap bg-slate-900 px-2 py-1 text-[9px] text-slate-300 group-hover:block">
+                  <div className="absolute -bottom-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap bg-text px-2 py-1 text-[9px] text-text group-hover:block">
                     {color.hex} — {color.label} ({color.percentage}%)
                   </div>
                 </div>
               ))}
-              <span className="ml-2 text-[10px] text-slate-600">Saved to workspace config</span>
+              <span className="ml-2 text-[10px] text-text-secondary">Saved to workspace config</span>
             </div>
           )}
         </div>
@@ -329,10 +329,10 @@ export default function AssetsPage() {
 
       {/* Upload Panel */}
       {showUpload && selectedWorkspace && (
-        <div className="panel-surface p-6">
+        <div className="card-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title">Upload Assets</h2>
-            <button onClick={() => setShowUpload(false)} className="text-slate-500 hover:text-slate-300">
+            <button onClick={() => setShowUpload(false)} className="text-text-secondary hover:text-text">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -350,7 +350,7 @@ export default function AssetsPage() {
       <div className="flex items-center gap-3">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -371,7 +371,7 @@ export default function AssetsPage() {
                 className={`flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider transition-all ${
                   active
                     ? "bg-accent/15 text-accent border border-accent/30"
-                    : "border border-white/5 text-slate-500 hover:text-slate-300 hover:border-white/10"
+                    : "border border-divider text-text-secondary hover:text-text hover:border-divider"
                 }`}
               >
                 <Icon className="h-3 w-3" />
@@ -382,16 +382,16 @@ export default function AssetsPage() {
         </div>
 
         {/* View Toggle */}
-        <div className="flex border border-white/10">
+        <div className="flex border border-divider">
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 ${viewMode === "grid" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}
+            className={`p-2 ${viewMode === "grid" ? "bg-subtle-strong text-text" : "text-text-secondary hover:text-text"}`}
           >
             <Grid3X3 className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 ${viewMode === "list" ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"}`}
+            className={`p-2 ${viewMode === "list" ? "bg-subtle-strong text-text" : "text-text-secondary hover:text-text"}`}
           >
             <List className="h-3.5 w-3.5" />
           </button>
@@ -405,9 +405,9 @@ export default function AssetsPage() {
         </div>
       ) : assets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
-          <FolderOpen className="mb-4 h-12 w-12 text-slate-700" />
-          <p className="text-sm text-slate-400">No assets yet</p>
-          <p className="mt-1 text-xs text-slate-600">
+          <FolderOpen className="mb-4 h-12 w-12 text-text-secondary" />
+          <p className="text-sm text-text-secondary">No assets yet</p>
+          <p className="mt-1 text-xs text-text-secondary">
             Upload your startup&apos;s logos, images, and brand materials to get started
           </p>
           <button
@@ -499,7 +499,7 @@ function AssetCard({
 
       {/* Thumbnail */}
       <div
-        className="relative flex h-36 cursor-pointer items-center justify-center bg-white/[0.02]"
+        className="relative flex h-36 cursor-pointer items-center justify-center bg-transparent"
         onClick={onPreview}
       >
         {isImage ? (
@@ -509,26 +509,26 @@ function AssetCard({
             className="h-full w-full object-contain p-2"
           />
         ) : isVideo ? (
-          <Film className="h-10 w-10 text-slate-600" />
+          <Film className="h-10 w-10 text-text-secondary" />
         ) : (
-          <FileText className="h-10 w-10 text-slate-600" />
+          <FileText className="h-10 w-10 text-text-secondary" />
         )}
 
         {/* Hover overlay */}
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-          <Eye className="h-5 w-5 text-white" />
+          <Eye className="h-5 w-5 text-text" />
         </div>
       </div>
 
       {/* Info */}
       <div className="flex flex-1 flex-col p-3">
-        <p className="truncate text-xs font-medium text-slate-200">{asset.name}</p>
+        <p className="truncate text-xs font-medium text-text">{asset.name}</p>
         <div className="mt-1 flex items-center gap-2">
           <span className={`badge text-[8px] ${CATEGORY_COLORS[asset.category] || CATEGORY_COLORS.raw_asset}`}>
             {getCategoryLabel(asset.category)}
           </span>
         </div>
-        <div className="mt-1 flex items-center gap-2 text-[10px] text-slate-600">
+        <div className="mt-1 flex items-center gap-2 text-[10px] text-text-secondary">
           <span>{formatFileSize(asset.fileSize)}</span>
           {asset.width && asset.height && (
             <span>{asset.width}x{asset.height}</span>
@@ -539,7 +539,7 @@ function AssetCard({
         {asset.tags.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1">
             {asset.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="bg-white/5 px-1.5 py-0.5 text-[9px] text-slate-500">
+              <span key={tag} className="bg-subtle px-1.5 py-0.5 text-[9px] text-text-secondary">
                 {tag}
               </span>
             ))}
@@ -548,16 +548,16 @@ function AssetCard({
 
         {/* Actions */}
         <div className="mt-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <button onClick={onTogglePrimary} className="p-1 text-slate-500 hover:text-accent" title="Toggle primary">
+          <button onClick={onTogglePrimary} className="p-1 text-text-secondary hover:text-accent" title="Toggle primary">
             {asset.isPrimary ? <StarOff className="h-3 w-3" /> : <Star className="h-3 w-3" />}
           </button>
-          <button onClick={onEdit} className="p-1 text-slate-500 hover:text-cyan-400" title="Edit">
+          <button onClick={onEdit} className="p-1 text-text-secondary hover:text-accent" title="Edit">
             <Pencil className="h-3 w-3" />
           </button>
-          <a href={asset.url} download={asset.fileName} className="p-1 text-slate-500 hover:text-slate-200" title="Download">
+          <a href={asset.url} download={asset.fileName} className="p-1 text-text-secondary hover:text-text" title="Download">
             <Download className="h-3 w-3" />
           </a>
-          <button onClick={onDelete} className="ml-auto p-1 text-slate-500 hover:text-red-400" title="Delete">
+          <button onClick={onDelete} className="ml-auto p-1 text-text-secondary hover:text-red-400" title="Delete">
             <Trash2 className="h-3 w-3" />
           </button>
         </div>
@@ -584,28 +584,28 @@ function AssetRow({
   const isImage = asset.mimeType.startsWith("image/");
 
   return (
-    <div className="group flex items-center gap-4 border border-white/5 bg-white/[0.02] px-4 py-2.5 transition-all hover:border-white/10 hover:bg-white/[0.04]">
+    <div className="group flex items-center gap-4 border border-divider bg-transparent px-4 py-2.5 transition-all hover:border-divider hover:bg-subtle">
       {/* Thumbnail */}
       <div
-        className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center bg-white/[0.03]"
+        className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center bg-transparent"
         onClick={onPreview}
       >
         {isImage ? (
           <img src={asset.url} alt={asset.name} className="h-full w-full object-contain" />
         ) : (
-          <FileText className="h-4 w-4 text-slate-600" />
+          <FileText className="h-4 w-4 text-text-secondary" />
         )}
       </div>
 
       {/* Name + meta */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="truncate text-xs font-medium text-slate-200">{asset.name}</p>
+          <p className="truncate text-xs font-medium text-text">{asset.name}</p>
           {asset.isPrimary && (
             <Star className="h-3 w-3 shrink-0 fill-accent text-accent" />
           )}
         </div>
-        <div className="flex items-center gap-3 text-[10px] text-slate-600">
+        <div className="flex items-center gap-3 text-[10px] text-text-secondary">
           <span>{asset.fileName}</span>
           <span>{formatFileSize(asset.fileSize)}</span>
           {asset.width && asset.height && <span>{asset.width}x{asset.height}</span>}
@@ -620,7 +620,7 @@ function AssetRow({
       {/* Tags */}
       <div className="hidden gap-1 lg:flex">
         {asset.tags.slice(0, 3).map((tag) => (
-          <span key={tag} className="bg-white/5 px-1.5 py-0.5 text-[9px] text-slate-500">
+          <span key={tag} className="bg-subtle px-1.5 py-0.5 text-[9px] text-text-secondary">
             {tag}
           </span>
         ))}
@@ -628,16 +628,16 @@ function AssetRow({
 
       {/* Actions */}
       <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button onClick={onTogglePrimary} className="p-1.5 text-slate-500 hover:text-accent">
+        <button onClick={onTogglePrimary} className="p-1.5 text-text-secondary hover:text-accent">
           {asset.isPrimary ? <StarOff className="h-3 w-3" /> : <Star className="h-3 w-3" />}
         </button>
-        <button onClick={onEdit} className="p-1.5 text-slate-500 hover:text-cyan-400">
+        <button onClick={onEdit} className="p-1.5 text-text-secondary hover:text-accent">
           <Pencil className="h-3 w-3" />
         </button>
-        <a href={asset.url} download={asset.fileName} className="p-1.5 text-slate-500 hover:text-slate-200">
+        <a href={asset.url} download={asset.fileName} className="p-1.5 text-text-secondary hover:text-text">
           <Download className="h-3 w-3" />
         </a>
-        <button onClick={onDelete} className="p-1.5 text-slate-500 hover:text-red-400">
+        <button onClick={onDelete} className="p-1.5 text-text-secondary hover:text-red-400">
           <Trash2 className="h-3 w-3" />
         </button>
       </div>
@@ -654,11 +654,11 @@ function AssetPreviewModal({ asset, onClose }: { asset: Asset; onClose: () => vo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="panel-surface relative max-h-[90vh] max-w-4xl w-full overflow-auto"
+        className="card-white relative max-h-[90vh] max-w-4xl w-full overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
-        <button onClick={onClose} className="absolute right-4 top-4 z-10 text-slate-400 hover:text-white">
+        <button onClick={onClose} className="absolute right-4 top-4 z-10 text-text-secondary hover:text-text">
           <X className="h-5 w-5" />
         </button>
 
@@ -670,8 +670,8 @@ function AssetPreviewModal({ asset, onClose }: { asset: Asset; onClose: () => vo
             <video src={asset.url} controls className="max-h-[60vh]" />
           ) : (
             <div className="flex flex-col items-center py-20">
-              <FileText className="mb-4 h-16 w-16 text-slate-600" />
-              <p className="text-sm text-slate-400">Preview not available</p>
+              <FileText className="mb-4 h-16 w-16 text-text-secondary" />
+              <p className="text-sm text-text-secondary">Preview not available</p>
             </div>
           )}
         </div>
@@ -679,7 +679,7 @@ function AssetPreviewModal({ asset, onClose }: { asset: Asset; onClose: () => vo
         {/* Metadata */}
         <div className="space-y-3 p-6">
           <div className="flex items-center gap-3">
-            <h3 className="text-lg font-bold text-white">{asset.name}</h3>
+            <h3 className="text-lg font-bold text-text">{asset.name}</h3>
             {asset.isPrimary && (
               <div className="badge bg-accent/20 text-accent border-accent/40">
                 <Star className="mr-1 h-2.5 w-2.5 fill-current" />
@@ -691,42 +691,42 @@ function AssetPreviewModal({ asset, onClose }: { asset: Asset; onClose: () => vo
           <div className="grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
             <div>
               <p className="eyebrow mb-0.5">Category</p>
-              <p className="text-slate-300">{getCategoryLabel(asset.category)}</p>
+              <p className="text-text">{getCategoryLabel(asset.category)}</p>
             </div>
             <div>
               <p className="eyebrow mb-0.5">Size</p>
-              <p className="text-slate-300">{formatFileSize(asset.fileSize)}</p>
+              <p className="text-text">{formatFileSize(asset.fileSize)}</p>
             </div>
             <div>
               <p className="eyebrow mb-0.5">Dimensions</p>
-              <p className="text-slate-300">
+              <p className="text-text">
                 {asset.width && asset.height ? `${asset.width} x ${asset.height}` : "N/A"}
               </p>
             </div>
             <div>
               <p className="eyebrow mb-0.5">Type</p>
-              <p className="text-slate-300">{asset.mimeType}</p>
+              <p className="text-text">{asset.mimeType}</p>
             </div>
           </div>
 
           {asset.description && (
             <div>
               <p className="eyebrow mb-0.5">Description</p>
-              <p className="text-xs text-slate-400">{asset.description}</p>
+              <p className="text-xs text-text-secondary">{asset.description}</p>
             </div>
           )}
 
           {asset.usageNotes && (
             <div>
               <p className="eyebrow mb-0.5">AI Usage Notes</p>
-              <p className="text-xs text-slate-400">{asset.usageNotes}</p>
+              <p className="text-xs text-text-secondary">{asset.usageNotes}</p>
             </div>
           )}
 
           {asset.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {asset.tags.map((tag) => (
-                <span key={tag} className="bg-white/5 px-2 py-0.5 text-[10px] text-slate-400">
+                <span key={tag} className="bg-subtle px-2 py-0.5 text-[10px] text-text-secondary">
                   {tag}
                 </span>
               ))}
@@ -774,17 +774,17 @@ function AssetEditModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={onClose}>
-      <div className="panel-surface w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="card-white w-full max-w-lg p-6" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="section-title">Edit Asset</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button onClick={onClose} className="text-text-secondary hover:text-text">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">Name</label>
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">Name</label>
             <input
               value={editForm.name}
               onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
@@ -792,7 +792,7 @@ function AssetEditModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">Category</label>
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">Category</label>
             <select
               value={editForm.category}
               onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
@@ -806,7 +806,7 @@ function AssetEditModal({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">Description</label>
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">Description</label>
             <textarea
               value={editForm.description}
               onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
@@ -815,7 +815,7 @@ function AssetEditModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">
               AI Usage Notes
             </label>
             <input
@@ -826,7 +826,7 @@ function AssetEditModal({
             />
           </div>
           <div>
-            <label className="mb-1 block text-[10px] uppercase tracking-widest text-slate-500">Tags</label>
+            <label className="mb-1 block text-[10px] uppercase tracking-widest text-text-secondary">Tags</label>
             <input
               value={editForm.tags}
               onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}

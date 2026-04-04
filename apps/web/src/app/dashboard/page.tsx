@@ -4,19 +4,19 @@ import Link from "next/link";
 import { prisma } from "@kalit/db";
 import { auth } from "@/lib/auth";
 
-const lifecycleColors: Record<string, { bg: string; text: string; border: string }> = {
-  onboarding:        { bg: "bg-cyan-500/15",    text: "text-cyan-400",    border: "border-cyan-500/30" },
-  researching:       { bg: "bg-blue-500/15",     text: "text-blue-400",    border: "border-blue-500/30" },
-  planning:          { bg: "bg-indigo-500/15",   text: "text-indigo-400",  border: "border-indigo-500/30" },
-  producing_content: { bg: "bg-purple-500/15",   text: "text-purple-400",  border: "border-purple-500/30" },
-  reviewing:         { bg: "bg-yellow-500/15",   text: "text-yellow-400",  border: "border-yellow-500/30" },
-  executing:         { bg: "bg-lime-500/15",     text: "text-lime-400",    border: "border-lime-500/30" },
-  observing:         { bg: "bg-emerald-500/15",  text: "text-emerald-400", border: "border-emerald-500/30" },
-  adapting:          { bg: "bg-orange-500/15",   text: "text-orange-400",  border: "border-orange-500/30" },
-  learning:          { bg: "bg-pink-500/15",     text: "text-pink-400",    border: "border-pink-500/30" },
-  scaling:           { bg: "bg-teal-500/15",     text: "text-teal-400",    border: "border-teal-500/30" },
-  paused:            { bg: "bg-white/5",         text: "text-gray-400",    border: "border-white/10" },
-  churned:           { bg: "bg-red-500/15",      text: "text-red-400",     border: "border-red-500/30" },
+const lifecycleColors: Record<string, { bg: string; text: string }> = {
+  onboarding:        { bg: "bg-cyan-100",    text: "text-cyan-700" },
+  researching:       { bg: "bg-blue-100",    text: "text-blue-700" },
+  planning:          { bg: "bg-indigo-100",  text: "text-indigo-700" },
+  producing_content: { bg: "bg-purple-100",  text: "text-purple-700" },
+  reviewing:         { bg: "bg-yellow-100",  text: "text-yellow-700" },
+  executing:         { bg: "bg-lime-100",    text: "text-lime-700" },
+  observing:         { bg: "bg-emerald-100", text: "text-emerald-700" },
+  adapting:          { bg: "bg-orange-100",  text: "text-orange-700" },
+  learning:          { bg: "bg-pink-100",    text: "text-pink-700" },
+  scaling:           { bg: "bg-teal-100",    text: "text-teal-700" },
+  paused:            { bg: "bg-gray-100",    text: "text-gray-500" },
+  churned:           { bg: "bg-red-100",     text: "text-red-700" },
 };
 
 function formatCurrency(amount: number): string {
@@ -34,8 +34,6 @@ export default async function DashboardPage() {
   const session = await auth();
   const userId = session?.user?.id;
 
-  // Scope workspaces to current user's memberships
-  // Only show all workspaces in dev mode (AUTH_DISABLED=true)
   const workspaces = await prisma.workspace.findMany({
     where: AUTH_DISABLED
       ? undefined
@@ -77,18 +75,13 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <p className="eyebrow mb-2">Control Plane</p>
-          <h1 className="text-xl font-bold tracking-[-0.04em] text-white">
-            Client Workspaces
-          </h1>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="eyebrow mb-1">Control Plane</p>
+          <h1 className="hero-title text-2xl">Client Workspaces</h1>
+          <p className="mt-1 text-sm text-text-secondary">
             Each workspace is an autonomous growth runtime for a client
           </p>
         </div>
-        <Link
-          href="/dashboard/workspaces/new"
-          className="btn-primary px-4 py-2 text-xs"
-        >
+        <Link href="/dashboard/workspaces/new" className="btn-primary px-6 py-2.5">
           New Workspace
         </Link>
       </div>
@@ -108,10 +101,10 @@ export default async function DashboardPage() {
 
       {workspaces.length === 0 ? (
         /* Empty state */
-        <div className="panel-surface p-12 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center border border-white/10 bg-white/[0.03]">
+        <div className="card-white p-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-accent/10">
             <svg
-              className="h-8 w-8 text-slate-600"
+              className="h-8 w-8 text-accent"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -124,17 +117,15 @@ export default async function DashboardPage() {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-bold uppercase tracking-[-0.02em] text-gray-200">
-            No workspaces yet
-          </h3>
-          <p className="mx-auto mt-2 max-w-md text-sm text-gray-500">
+          <h3 className="hero-title text-lg">No workspaces yet</h3>
+          <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
             Create a workspace to start managing autonomous growth for a client.
             Each workspace gets its own strategy, campaigns, creatives, and
             learning memory.
           </p>
           <Link
             href="/dashboard/workspaces/new"
-            className="btn-primary mt-6 inline-flex px-5 py-2.5 text-xs"
+            className="btn-primary mt-6 inline-flex px-6 py-2.5"
           >
             Create First Workspace
           </Link>
@@ -151,19 +142,19 @@ export default async function DashboardPage() {
               <Link
                 key={w.id}
                 href={`/dashboard/workspaces/${w.id}`}
-                className="card flex items-center justify-between p-5 transition-all hover:border-white/10 hover:bg-white/[0.03] group"
+                className="card-gradient-hover flex items-center justify-between p-5 group"
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div>
                     <div className="flex items-center gap-2.5">
-                      <h3 className="text-sm font-semibold text-white group-hover:text-accent transition-colors">
+                      <h3 className="text-sm font-semibold text-text group-hover:text-accent transition-colors">
                         {w.name}
                       </h3>
-                      <span className={`badge ${colors.bg} ${colors.text} ${colors.border}`}>
+                      <span className={`badge ${colors.bg} ${colors.text}`}>
                         {w.status.replace(/_/g, " ")}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-600 mt-1">
+                    <p className="text-[12px] text-text-secondary mt-1">
                       {w._count.campaigns} campaigns · {w._count.tasks} tasks · {w._count.connectedAccounts} platforms
                     </p>
                   </div>
@@ -172,24 +163,24 @@ export default async function DashboardPage() {
                 <div className="flex items-center gap-6 shrink-0">
                   {spend > 0 && (
                     <div className="text-right">
-                      <p className="text-xs text-slate-500">Spend</p>
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-xs text-text-secondary">Spend</p>
+                      <p className="text-sm font-semibold text-text">
                         {formatCurrency(spend)}
                       </p>
                     </div>
                   )}
                   {roas !== null && (
                     <div className="text-right">
-                      <p className="text-xs text-slate-500">ROAS</p>
+                      <p className="text-xs text-text-secondary">ROAS</p>
                       <p
-                        className={`text-sm font-medium ${roas >= 2 ? "text-accent" : roas >= 1 ? "text-emerald-400" : "text-red-400"}`}
+                        className={`text-sm font-semibold ${roas >= 2 ? "text-k-green" : roas >= 1 ? "text-emerald-600" : "text-red-500"}`}
                       >
                         {roas.toFixed(2)}x
                       </p>
                     </div>
                   )}
                   <svg
-                    className="h-4 w-4 text-slate-700 group-hover:text-slate-400 transition-colors"
+                    className="h-4 w-4 text-text-secondary/30 group-hover:text-accent transition-colors"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -213,10 +204,7 @@ export default async function DashboardPage() {
         <p className="eyebrow mb-3">Lifecycle States</p>
         <div className="flex flex-wrap gap-2">
           {Object.entries(lifecycleColors).map(([status, colors]) => (
-            <span
-              key={status}
-              className={`badge ${colors.bg} ${colors.text} ${colors.border}`}
-            >
+            <span key={status} className={`badge ${colors.bg} ${colors.text}`}>
               {status.replace(/_/g, " ")}
             </span>
           ))}
@@ -236,9 +224,9 @@ function StatCard({
   highlight?: boolean;
 }) {
   return (
-    <div className="card p-5">
+    <div className="card-white p-5">
       <p className="eyebrow mb-3">{label}</p>
-      <p className={`text-2xl font-bold ${highlight ? "text-accent" : "text-white"}`}>
+      <p className={`text-2xl font-bold ${highlight ? "text-accent" : "text-text"}`}>
         {value}
       </p>
     </div>

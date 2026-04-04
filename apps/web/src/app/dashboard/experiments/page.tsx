@@ -24,9 +24,9 @@ interface Workspace {
 }
 
 const statusColors: Record<string, string> = {
-  planned: "bg-zinc-500/20 text-zinc-400",
+  planned: "bg-zinc-500/20 text-text-secondary",
   running: "bg-blue-500/20 text-blue-400",
-  completed: "bg-emerald-500/20 text-emerald-400",
+  completed: "bg-emerald-500/20 text-emerald-600",
   inconclusive: "bg-yellow-500/20 text-yellow-400",
   cancelled: "bg-red-500/20 text-red-400",
 };
@@ -75,10 +75,10 @@ export default function ExperimentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white font-sans">
+          <h1 className="text-2xl font-bold text-text font-sans">
             Experiments
           </h1>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="text-sm text-text-secondary mt-1">
             A/B tests, hypothesis validation, and experiment results
           </p>
         </div>
@@ -105,12 +105,12 @@ export default function ExperimentsPage() {
             className={`px-3 py-1.5 text-xs font-medium rounded-none border transition-colors ${
               filter === s
                 ? "bg-accent/10 border-accent text-accent"
-                : "bg-card border-white/5 text-zinc-400 hover:border-white/10"
+                : "bg-surface shadow-card rounded-3xl border-divider text-text-secondary hover:border-divider"
             }`}
           >
             {s === "all" ? "All" : s.replace("_", " ")}
             {s !== "all" && (
-              <span className="ml-1 text-zinc-600">
+              <span className="ml-1 text-text-secondary">
                 ({experiments.filter((e) => e.status === s).length})
               </span>
             )}
@@ -122,12 +122,12 @@ export default function ExperimentsPage() {
       {loading ? (
         <div className="card p-12 text-center">
           <div className="w-6 h-6 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-zinc-500 mt-3">Loading experiments...</p>
+          <p className="text-sm text-text-secondary mt-3">Loading experiments...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="card p-12 text-center">
-          <p className="text-zinc-500">No experiments found</p>
-          <p className="text-xs text-zinc-600 mt-1">
+          <p className="text-text-secondary">No experiments found</p>
+          <p className="text-xs text-text-secondary mt-1">
             Experiments will appear once the system begins hypothesis testing
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function ExperimentsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-white font-medium truncate">
+                    <h3 className="text-text font-medium truncate">
                       {exp.name}
                     </h3>
                     {/* Pulsing indicator for running experiments */}
@@ -150,13 +150,13 @@ export default function ExperimentsPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-zinc-600 mt-0.5 font-mono">
+                  <p className="text-xs text-text-secondary mt-0.5 font-mono">
                     {exp.id}
                   </p>
                 </div>
                 <span
                   className={`inline-block px-2 py-0.5 text-xs font-medium rounded-none shrink-0 ${
-                    statusColors[exp.status] || "bg-zinc-500/20 text-zinc-400"
+                    statusColors[exp.status] || "bg-zinc-500/20 text-text-secondary"
                   }`}
                 >
                   {exp.status}
@@ -165,10 +165,10 @@ export default function ExperimentsPage() {
 
               {/* Hypothesis */}
               <div>
-                <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">
                   Hypothesis
                 </p>
-                <p className="text-sm text-zinc-300 leading-relaxed">
+                <p className="text-sm text-text leading-relaxed">
                   {exp.hypothesis}
                 </p>
               </div>
@@ -176,26 +176,26 @@ export default function ExperimentsPage() {
               {/* Success Metric + Confidence */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
+                  <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">
                     Success Metric
                   </p>
-                  <p className="text-sm text-white font-medium">
+                  <p className="text-sm text-text font-medium">
                     {exp.successMetric.replace(/_/g, " ")}
                   </p>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs text-zinc-500 uppercase tracking-wider">
+                    <p className="text-xs text-text-secondary uppercase tracking-wider">
                       Confidence
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-text-secondary">
                       {exp.confidence !== null
                         ? `${(exp.confidence * 100).toFixed(1)}%`
                         : "Pending"}{" "}
                       / {(exp.targetConfidence * 100).toFixed(0)}% target
                     </p>
                   </div>
-                  <div className="w-full h-2 bg-white/5 rounded-none overflow-hidden">
+                  <div className="w-full h-2 bg-subtle rounded-none overflow-hidden">
                     <div
                       className={`h-full rounded-none transition-all ${
                         exp.confidence !== null &&
@@ -218,7 +218,7 @@ export default function ExperimentsPage() {
               {/* Winner (if completed) */}
               {exp.winnerVariant && (
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
+                  <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">
                     Winner
                   </p>
                   <p className="text-sm text-accent font-medium">
@@ -230,10 +230,10 @@ export default function ExperimentsPage() {
               {/* Outcome */}
               {exp.outcome && (
                 <div>
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
+                  <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">
                     Outcome
                   </p>
-                  <p className="text-sm text-zinc-300 leading-relaxed">
+                  <p className="text-sm text-text leading-relaxed">
                     {exp.outcome}
                   </p>
                 </div>
@@ -241,18 +241,18 @@ export default function ExperimentsPage() {
 
               {/* Learnings */}
               {exp.learnings && (
-                <div className="border-t border-white/5 pt-3">
-                  <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1">
+                <div className="border-t border-divider pt-3">
+                  <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">
                     Learnings
                   </p>
-                  <p className="text-sm text-zinc-400 leading-relaxed">
+                  <p className="text-sm text-text-secondary leading-relaxed">
                     {exp.learnings}
                   </p>
                 </div>
               )}
 
               {/* Dates */}
-              <div className="flex gap-4 text-xs text-zinc-600">
+              <div className="flex gap-4 text-xs text-text-secondary">
                 <span>
                   Created:{" "}
                   {new Date(exp.createdAt).toLocaleDateString()}

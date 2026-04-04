@@ -114,10 +114,10 @@ export function ContextStep({
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-lg font-bold tracking-[-0.04em] text-white">
+        <h2 className="text-lg font-bold tracking-[-0.04em] text-text">
           Import Your Context
         </h2>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-text-secondary">
           Share your website or reference files so our AI can understand your
           brand, product, and audience automatically.
         </p>
@@ -127,18 +127,18 @@ export function ContextStep({
         <div className="max-w-xl">
           {/* Website URL */}
           <div className="mb-6">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Website URL
             </p>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Globe className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                <Globe className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-secondary" />
                 <input
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://your-startup.com"
-                  className="w-full border border-white/10 bg-white/[0.03] py-2.5 pl-9 pr-3 text-xs text-white placeholder:text-slate-600 focus:border-accent/30 focus:outline-none"
+                  className="w-full border border-divider bg-transparent py-2.5 pl-9 pr-3 text-xs text-text placeholder:text-text-secondary focus:border-accent/30 focus:outline-none"
                   disabled={analyzing}
                 />
               </div>
@@ -161,14 +161,14 @@ export function ContextStep({
 
           {/* Divider */}
           <div className="mb-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-[10px] text-slate-600">OR</span>
-            <div className="h-px flex-1 bg-white/10" />
+            <div className="h-px flex-1 bg-subtle-strong" />
+            <span className="text-[10px] text-text-secondary">OR</span>
+            <div className="h-px flex-1 bg-subtle-strong" />
           </div>
 
           {/* File upload */}
           <div className="mb-6">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-gray-400">
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-text-secondary">
               Upload Reference File
             </p>
             <input
@@ -182,7 +182,7 @@ export function ContextStep({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={analyzing}
-              className="flex items-center gap-3 border border-dashed border-white/10 bg-white/[0.02] px-5 py-4 text-xs text-slate-400 transition-all hover:border-white/20 hover:text-white disabled:opacity-50"
+              className="flex items-center gap-3 border border-dashed border-divider bg-transparent px-5 py-4 text-xs text-text-secondary transition-all hover:border-divider hover:text-text disabled:opacity-50"
             >
               {uploadedFile ? (
                 <>
@@ -196,7 +196,7 @@ export function ContextStep({
                 </>
               )}
             </button>
-            <p className="mt-1.5 text-[10px] text-slate-600">
+            <p className="mt-1.5 text-[10px] text-text-secondary">
               .txt, .md, .pdf, .doc, .csv supported
             </p>
           </div>
@@ -213,8 +213,8 @@ export function ContextStep({
           {extracted ? (
             <div className="mb-6 max-w-2xl">
               <div className="mb-4 flex items-center gap-2 border border-emerald-500/20 bg-emerald-500/5 p-3">
-                <Check className="h-4 w-4 text-emerald-400" />
-                <p className="text-sm text-emerald-400">
+                <Check className="h-4 w-4 text-emerald-600" />
+                <p className="text-sm text-emerald-600">
                   Context extracted and saved to workspace memory.
                 </p>
               </div>
@@ -267,8 +267,8 @@ export function ContextStep({
           ) : (
             <div className="mb-6 border border-emerald-500/20 bg-emerald-500/5 p-5">
               <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-400" />
-                <p className="text-sm text-emerald-400">
+                <Check className="h-4 w-4 text-emerald-600" />
+                <p className="text-sm text-emerald-600">
                   Context already imported for this workspace.
                 </p>
               </div>
@@ -288,7 +288,7 @@ export function ContextStep({
           {!done && (
             <button
               onClick={onComplete}
-              className="text-xs text-slate-600 transition-colors hover:text-slate-400"
+              className="text-xs text-text-secondary transition-colors hover:text-text-secondary"
             >
               Skip
             </button>
@@ -316,14 +316,14 @@ function InfoCard({
 }) {
   return (
     <div
-      className={`border border-white/5 bg-white/[0.02] p-3 ${
+      className={`border border-divider bg-transparent p-3 ${
         span ? "sm:col-span-2" : ""
       }`}
     >
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-text-secondary">
         {label}
       </p>
-      <p className="text-xs leading-relaxed text-white">{value}</p>
+      <p className="text-xs leading-relaxed text-text">{value}</p>
     </div>
   );
 }
