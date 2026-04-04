@@ -187,7 +187,7 @@ async function handleCanonicalSync(workspaceId: string, body: unknown) {
       // Update ad groups if available
       if (scraped.adGroups && scraped.adGroups.length > 0) {
         for (const scrapedAg of scraped.adGroups) {
-          const dbAg = dbCampaign.adGroups.find(
+          const dbAg = (dbCampaign.adGroups as Array<{ id: string; name: string }>).find(
             (ag) => ag.name.toLowerCase() === scrapedAg.name.toLowerCase() ||
                     ag.name.toLowerCase().includes(scrapedAg.name.toLowerCase()) ||
                     scrapedAg.name.toLowerCase().includes(ag.name.toLowerCase())
