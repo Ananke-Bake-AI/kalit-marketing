@@ -273,7 +273,7 @@ async function handleLegacySync(workspaceId: string, body: unknown) {
     where: {
       workspaceId,
       platform: syncData.platform,
-      status: { in: ["active", "paused", "optimizing", "scaling", "monitoring"] },
+      status: { in: ["active", "paused", "optimizing", "launching"] },
     },
   });
 
