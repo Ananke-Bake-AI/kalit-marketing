@@ -216,7 +216,7 @@ async function handleCanonicalSync(workspaceId: string, body: unknown) {
   await prisma.event.create({
     data: {
       workspaceId,
-      type: "performance_alert", // closest valid EventType
+      type: "performance_anomaly",
       data: {
         syncType: "browser_canonical",
         platform: syncData.platform,
@@ -307,7 +307,7 @@ async function handleLegacySync(workspaceId: string, body: unknown) {
   await prisma.event.create({
     data: {
       workspaceId,
-      type: "performance_alert", // closest valid EventType
+      type: "performance_anomaly",
       data: {
         syncType: "browser_legacy",
         platform: syncData.platform,
