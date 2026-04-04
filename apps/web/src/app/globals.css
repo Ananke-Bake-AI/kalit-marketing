@@ -203,6 +203,7 @@
     @apply inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium;
     border-radius: var(--radius-pill);
     background-color: var(--glass-50);
+    border: 1px solid transparent;
   }
 
   /* ── Input ─────────────────────────────────────── */

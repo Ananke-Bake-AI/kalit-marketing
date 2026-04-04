@@ -4,19 +4,19 @@ import Link from "next/link";
 import { prisma } from "@kalit/db";
 import { auth } from "@/lib/auth";
 
-const lifecycleColors: Record<string, { bg: string; text: string }> = {
-  onboarding:        { bg: "bg-cyan-100",    text: "text-cyan-700" },
-  researching:       { bg: "bg-blue-100",    text: "text-blue-700" },
-  planning:          { bg: "bg-indigo-100",  text: "text-indigo-700" },
-  producing_content: { bg: "bg-purple-100",  text: "text-purple-700" },
-  reviewing:         { bg: "bg-yellow-100",  text: "text-yellow-700" },
-  executing:         { bg: "bg-lime-100",    text: "text-lime-700" },
-  observing:         { bg: "bg-emerald-100", text: "text-emerald-700" },
-  adapting:          { bg: "bg-orange-100",  text: "text-orange-700" },
-  learning:          { bg: "bg-pink-100",    text: "text-pink-700" },
-  scaling:           { bg: "bg-teal-100",    text: "text-teal-700" },
-  paused:            { bg: "bg-gray-100",    text: "text-gray-500" },
-  churned:           { bg: "bg-red-100",     text: "text-red-700" },
+const lifecycleColors: Record<string, { bg: string; text: string; border: string }> = {
+  onboarding:        { bg: "rgba(34,211,238,0.12)", text: "#22d3ee", border: "rgba(34,211,238,0.25)" },
+  researching:       { bg: "rgba(100,118,255,0.12)", text: "#6476ff", border: "rgba(100,118,255,0.25)" },
+  planning:          { bg: "rgba(129,140,248,0.12)", text: "#818cf8", border: "rgba(129,140,248,0.25)" },
+  producing_content: { bg: "rgba(168,85,247,0.12)",  text: "#a855f7", border: "rgba(168,85,247,0.25)" },
+  reviewing:         { bg: "rgba(250,204,21,0.12)",  text: "#facc15", border: "rgba(250,204,21,0.25)" },
+  executing:         { bg: "rgba(132,204,22,0.12)",  text: "#84cc16", border: "rgba(132,204,22,0.25)" },
+  observing:         { bg: "rgba(52,211,153,0.12)",  text: "#34d399", border: "rgba(52,211,153,0.25)" },
+  adapting:          { bg: "rgba(251,146,60,0.12)",  text: "#fb923c", border: "rgba(251,146,60,0.25)" },
+  learning:          { bg: "rgba(244,114,182,0.12)", text: "#f472b6", border: "rgba(244,114,182,0.25)" },
+  scaling:           { bg: "rgba(45,212,191,0.12)",  text: "#2dd4bf", border: "rgba(45,212,191,0.25)" },
+  paused:            { bg: "rgba(148,163,184,0.08)", text: "#94a3b8", border: "rgba(148,163,184,0.2)" },
+  churned:           { bg: "rgba(248,113,113,0.12)", text: "#f87171", border: "rgba(248,113,113,0.25)" },
 };
 
 function formatCurrency(amount: number): string {
@@ -150,7 +150,10 @@ export default async function DashboardPage() {
                       <h3 className="text-sm font-semibold text-text group-hover:text-accent transition-colors">
                         {w.name}
                       </h3>
-                      <span className={`badge ${colors.bg} ${colors.text}`}>
+                      <span
+                        className="badge"
+                        style={{ backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }}
+                      >
                         {w.status.replace(/_/g, " ")}
                       </span>
                     </div>
@@ -204,7 +207,11 @@ export default async function DashboardPage() {
         <p className="eyebrow mb-3">Lifecycle States</p>
         <div className="flex flex-wrap gap-2">
           {Object.entries(lifecycleColors).map(([status, colors]) => (
-            <span key={status} className={`badge ${colors.bg} ${colors.text}`}>
+            <span
+              key={status}
+              className="badge"
+              style={{ backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }}
+            >
               {status.replace(/_/g, " ")}
             </span>
           ))}
